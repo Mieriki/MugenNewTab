@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用导航中心</title>
+    <script src="js/themes.config.js"></script>
+    <script src="js/apps.config.js"></script>
+    <style>
+        :root {
+            /* Material 3 动态颜色变量 */
+            --md-sys-color-primary: #B14A6B;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #FFD8E1;
+            --md-sys-color-on-primary-container: #3D001F;
+            --md-sys-color-secondary: #7D5F65;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #FFD8E1;
+            --md-sys-color-on-secondary-container: #2A1519;
+            --md-sys-color-surface: #FFF8F9;
+            --md-sys-color-surface-variant: #F3DDE2;
+            --md-sys-color-on-surface: #201A1A;
+            --md-sys-color-on-surface-variant: #534345;
+            --md-sys-color-background: #FFF8F9;
+            --md-sys-color-on-background: #201A1A;
+            --md-sys-color-outline: #847376;
+            --md-sys-color-outline-variant: #E5E5E5;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-success: #376B2F;
+            --md-sys-color-inverse-surface: #201A1A;
+            --md-sys-color-inverse-on-surface: #F3DDE2;
+
+            --md-easing: cubic-bezier(0.4, 0, 0.2, 1);
+            --md-transition-fast: 0.15s;
+            --md-transition-medium: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-surface);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: background-color var(--md-transition-medium) var(--md-easing),
+            color var(--md-transition-medium) var(--md-easing);
+        }
+
+        /* 顶部应用栏 */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
+            color: var(--md-sys-color-on-primary);
+            padding: 0 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 100%;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 100%;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all var(--md-transition-medium) var(--md-easing);
+            flex-shrink: 0;
+        }
+
+        /* Logo为图片时的样式 - 去除背景框 */
+        .brand-icon.is-image {
+            background: transparent;
+            backdrop-filter: none;
+            border: none;
+            box-shadow: none;
+            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+        }
+
+        .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 2px;
+        }
+
+        .brand-icon.is-image img {
+            padding: 0;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+            gap: 2px;
+        }
+
+        .brand-text h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            line-height: 1.2;
+        }
+
+        .brand-text p {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        /* 主题切换器 */
+        .theme-switcher {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 8px 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .theme-switcher label {
+            font-size: 13px;
+            color: var(--md-sys-color-primary);
+            font-weight: 600;
+        }
+
+        .theme-select {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--md-transition-fast) var(--md-easing);
+            outline: none;
+            font-weight: 500;
+            min-width: 100px;
+        }
+
+        .theme-select:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        /* 左侧导航栏 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 64px;
+            width: 260px;
+            height: calc(100vh - 64px);
+            background: var(--md-sys-color-surface);
+            backdrop-filter: blur(12px);
+            box-shadow: 2px 0 8px rgba(177, 74, 107, 0.15);
+            z-index: 999;
+            overflow-y: auto;
+            border-right: 1px solid var(--md-sys-color-outline);
+        }
+
+        .nav-menu {
+            padding: 16px 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            margin: 6px 8px;
+            border-radius: 12px;
+            color: var(--md-sys-color-on-surface);
+            text-decoration: none;
+            transition: all var(--md-transition-fast) var(--md-easing);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: 0 4px 12px rgba(177, 74, 107, 0.15);
+        }
+
+        .nav-icon {
+            margin-right: 14px;
+            font-size: 20px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            margin-left: 260px;
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+            padding: 32px 40px;
+        }
+
+        /* 内容头部 */
+        .content-header {
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--md-sys-color-primary-container);
+            position: relative;
+        }
+
+        .content-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: var(--md-sys-color-primary);
+        }
+
+        .content-title {
+            font-size: 1.75rem;
+            color: var(--md-sys-color-primary);
+            font-weight: 700;
+        }
+
+        /* 分类区域 */
+        .category {
+            margin-bottom: 48px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .category-title {
+            font-size: 1.25rem;
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0.8;
+        }
+
+        .category-title img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        /* 应用网格 */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .app-card {
+            background: var(--md-sys-color-surface);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(177, 74, 107, 0.15);
+            transition: all var(--md-transition-medium) var(--md-easing);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--md-sys-color-outline);
+            height: 100%;
+        }
+
+        .app-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+        }
+
+        .app-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: var(--md-sys-color-on-primary);
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(177, 74, 107, 0.15);
+        }
+
+        .app-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+
+        .app-name {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 8px;
+        }
+
+        .app-card:hover .app-name {
+            color: var(--md-sys-color-primary);
+        }
+
+        .app-description {
+            font-size: 0.875rem;
+            color: var(--md-sys-color-on-surface-variant);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 1rem;
+        }
+
+        /* 移动端菜单按钮 */
+        .menu-toggle {
+            display: none;
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            margin-right: 8px;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--md-transition-fast) var(--md-easing);
+            flex-shrink: 0;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        /* 遮罩层 */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 998;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .app-header {
+                height: 56px;
+                padding: 0 16px;
+            }
+
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 20px;
+            }
+
+            .brand-icon.is-image {
+                width: 40px;
+                height: 40px;
+            }
+
+            .brand-text h1 {
+                font-size: 1.1rem;
+            }
+
+            .brand-text p {
+                display: none;
+            }
+
+            .menu-toggle {
+                display: flex;
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+
+            .sidebar {
+                width: 240px;
+                top: 56px;
+                height: calc(100vh - 56px);
+                transform: translateX(-100%);
+                transition: transform var(--md-transition-medium) var(--md-easing);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                margin-top: 56px;
+                padding: 20px;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .theme-switcher {
+                padding: 6px 10px;
+            }
+
+            .theme-switcher label {
+                display: none;
+            }
+
+            .theme-select {
+                min-width: 80px;
+                font-size: 12px;
+            }
+
+            .overlay.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 顶部应用栏 -->
+<header class="app-header">
+    <div class="header-brand">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+        <div class="brand">
+            <div class="brand-icon" id="headerLogo">🧭</div>
+            <div class="brand-text">
+                <h1>应用导航中心</h1>
+                <p>统一应用管理平台</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="theme-switcher">
+        <label for="themeSelect">🎨</label>
+        <select id="themeSelect" class="theme-select"></select>
+    </div>
+</header>
+
+<!-- 遮罩层（移动端） -->
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- 左侧导航栏 -->
+<aside class="sidebar" id="sidebar">
+    <nav class="nav-menu" id="navMenu">
+        <!-- 导航菜单将动态生成 -->
+    </nav>
+</aside>
+
+<!-- 主内容区域 -->
+<main class="main-content" id="contentArea">
+    <!-- 应用内容将通过JavaScript动态加载 -->
+</main>
+
+<script src="js/ThemeManager.js"></script>
+<script>
+    class AppNavigator {
+        constructor() {
+            this.currentCategory = 'all';
+            this.init();
+        }
+
+        init() {
+            this.bindEvents();
+            this.renderNavigation();
+            this.renderApps();
+            setTimeout(() => this.updateHeaderLogo(), 0);
+        }
+
+        updateHeaderLogo() {
+            const logoContainer = document.getElementById('headerLogo');
+            if (!logoContainer || typeof themeConfig === 'undefined') return;
+
+            const themeSelect = document.getElementById('themeSelect');
+            const currentThemeId = themeSelect ? themeSelect.value : 'material-rose';
+
+            const currentTheme = themeConfig.themes.find(t => t.id === currentThemeId);
+
+            if (currentTheme && currentTheme.logo) {
+                let logo = currentTheme.logo;
+
+                // 检测是否为纯 Base64 字符串（没有 data: 前缀）
+                // 纯 Base64 特征：只包含 A-Z, a-z, 0-9, +, /, =，且长度较长
+                const isPureBase64 = /^[A-Za-z0-9+/=]+$/.test(logo) && logo.length > 20;
+
+                // 检测是否为完整 Data URI
+                const isDataUri = logo.startsWith('data:');
+
+                // 检测是否为 URL 或文件路径
+                const isUrl = logo.startsWith('http') || logo.startsWith('//') || logo.includes('.');
+
+                let isImage = false;
+
+                if (isPureBase64) {
+                    // 纯 Base64，自动添加 PNG 前缀（最常见）
+                    logo = 'data:image/png;base64,' + logo;
+                    isImage = true;
+                } else if (isDataUri) {
+                    // 已经是完整的 Data URI
+                    isImage = true;
+                } else if (isUrl) {
+                    // 是 URL 或文件路径
+                    isImage = true;
+                }
+
+                if (isImage) {
+                    logoContainer.classList.add('is-image');
+                    logoContainer.innerHTML = `<img src="${logo}" alt="Logo" onerror="this.parentElement.classList.remove('is-image'); this.parentElement.textContent='🧭'; console.error('Logo加载失败:', '${logo.substring(0, 50)}...');">`;
+                } else {
+                    // Emoji 或文本
+                    logoContainer.classList.remove('is-image');
+                    logoContainer.textContent = logo;
+                }
+            } else {
+                logoContainer.classList.remove('is-image');
+                logoContainer.textContent = '🧭';
+            }
+        }
+
+        renderNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            if (!navMenu) return;
+
+            navMenu.innerHTML = '';
+            appConfig.categories.forEach(category => {
+                const navItem = document.createElement('a');
+                navItem.href = '#';
+                navItem.className = 'nav-item';
+                navItem.dataset.category = category.id;
+                if (category.id === 'all') navItem.classList.add('active');
+
+                const isImage = category.icon.includes('.') || category.icon.startsWith('http') || category.icon.startsWith('data:');
+                const iconHtml = isImage ? `<img src="${category.icon}" alt="${category.name}">` : category.icon;
+
+                navItem.innerHTML = `
+                        <span class="nav-icon">${iconHtml}</span>
+                        <span>${category.name}</span>
+                    `;
+                navMenu.appendChild(navItem);
+            });
+        }
+
+        bindEvents() {
+            const navMenu = document.getElementById('navMenu');
+            if (navMenu) {
+                navMenu.addEventListener('click', (e) => {
+                    const navItem = e.target.closest('.nav-item');
+                    if (navItem) {
+                        e.preventDefault();
+                        const category = navItem.dataset.category;
+                        this.switchCategory(category);
+                        this.updateActiveNav(navItem);
+
+                        if (window.innerWidth <= 768) {
+                            toggleSidebar();
+                        }
+                    }
+                });
+            }
+
+            const themeSelect = document.getElementById('themeSelect');
+            if (themeSelect) {
+                themeSelect.addEventListener('change', () => {
+                    setTimeout(() => this.updateHeaderLogo(), 50);
+                });
+
+                document.addEventListener('themeChanged', () => {
+                    this.updateHeaderLogo();
+                });
+            }
+        }
+
+        switchCategory(category) {
+            this.currentCategory = category;
+            this.renderApps();
+        }
+
+        updateActiveNav(activeItem) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            activeItem.classList.add('active');
+        }
+
+        renderApps() {
+            const contentArea = document.getElementById('contentArea');
+            if (!contentArea) return;
+
+            let html = '';
+
+            if (this.currentCategory === 'all') {
+                appConfig.categories
+                    .filter(cat => cat.id !== 'all')
+                    .forEach((category, index) => {
+                        const appsInCategory = appConfig.apps.filter(app => app.category === category.id);
+                        if (appsInCategory.length > 0) {
+                            html += `<div style="animation-delay: ${index * 0.1}s" class="category">
+                                    ${this.createCategoryHTML(category, appsInCategory)}
+                                </div>`;
+                        }
+                    });
+
+                if (!html) {
+                    html = '<div class="empty-state">暂无应用</div>';
+                }
+            } else {
+                const category = appConfig.categories.find(cat => cat.id === this.currentCategory);
+                const appsInCategory = appConfig.apps.filter(app => app.category === this.currentCategory);
+
+                if (category && appsInCategory.length > 0) {
+                    html = `<div class="category">
+                            <div class="content-header">
+                                <h2 class="content-title">${category.name}</h2>
+                            </div>
+                            <div class="apps-grid">
+                                ${appsInCategory.map(app => this.createAppCardHTML(app)).join('')}
+                            </div>
+                        </div>`;
+                } else {
+                    html = '<div class="empty-state">该分类下暂无应用</div>';
+                }
+            }
+
+            contentArea.innerHTML = html;
+        }
+
+        createCategoryHTML(category, apps) {
+            const isImage = category.icon.includes('.') || category.icon.startsWith('http') || category.icon.startsWith('data:');
+            const iconHtml = isImage ? `<img src="${category.icon}" alt="${category.name}">` : category.icon;
+
+            return `
+                    <h3 class="category-title">${iconHtml} ${category.name}</h3>
+                    <div class="apps-grid">
+                        ${apps.map(app => this.createAppCardHTML(app)).join('')}
+                    </div>
+                `;
+        }
+
+        createAppCardHTML(app) {
+            const isImage = app.icon.includes('.') || app.icon.startsWith('http') || app.icon.startsWith('data:');
+            const iconHtml = isImage ? `<img src="${app.icon}" alt="${app.name}">` : app.icon;
+
+            return `
+                    <a href="${app.url}" class="app-card" data-app-id="${app.id}" target="_blank">
+                        <div class="app-icon">${iconHtml}</div>
+                        <h3 class="app-name">${app.name}</h3>
+                        <p class="app-description">${app.description}</p>
+                    </a>
+                `;
+        }
+    }
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof ThemeManager !== 'undefined') {
+            new ThemeManager();
+        }
+
+        const appNavigator = new AppNavigator();
+        window.appNavigator = appNavigator;
+    });
+</script>
+</body>
+</html>

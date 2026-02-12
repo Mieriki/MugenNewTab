@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多格式数据转换工具</title>
+
+    <!-- 外部库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" id="hljs-theme">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+
+    <!-- 主题配置（确保路径正确） -->
+    <script src="../js/themes.config.js"></script>
+    <script src="../js/ThemeManager.js"></script>
+
+    <style>
+        :root {
+            /* Material 3 动态颜色变量 - 将由 ThemeManager 自动设置 */
+            --md-sys-color-primary: #B14A6B;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #FFD8E1;
+            --md-sys-color-on-primary-container: #3D001F;
+            --md-sys-color-secondary: #7D5F65;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #FFD8E1;
+            --md-sys-color-on-secondary-container: #2A1519;
+            --md-sys-color-surface: #FFF8F9;
+            --md-sys-color-surface-variant: #F3DDE2;
+            --md-sys-color-on-surface: #201A1A;
+            --md-sys-color-on-surface-variant: #534345;
+            --md-sys-color-background: #FFF8F9;
+            --md-sys-color-on-background: #201A1A;
+            --md-sys-color-outline: #847376;
+            --md-sys-color-outline-variant: #E5E5E5;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-success: #376B2F;
+
+            /* 衍生变量 */
+            --md-primary: var(--md-sys-color-primary);
+            --md-on-primary: var(--md-sys-color-on-primary);
+            --md-primary-container: var(--md-sys-color-primary-container);
+            --md-surface: var(--md-sys-color-surface);
+            --md-surface-variant: var(--md-sys-color-surface-variant);
+            --md-background: var(--md-sys-color-background);
+            --md-on-surface: var(--md-sys-color-on-surface);
+            --md-on-surface-variant: var(--md-sys-color-on-surface-variant);
+            --md-outline: var(--md-sys-color-outline);
+            --md-shadow: rgba(177, 74, 107, 0.15);
+
+            /* 过渡动画 */
+            --md-easing: cubic-bezier(0.4, 0, 0.2, 1);
+            --md-transition-fast: 0.15s;
+            --md-transition-medium: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-surface);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: background-color var(--md-transition-medium) var(--md-easing),
+            color var(--md-transition-medium) var(--md-easing);
+        }
+
+        /* 主题切换器 - 固定在右上角 */
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 8px 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-switcher label {
+            font-size: 13px;
+            color: var(--md-sys-color-primary);
+            font-weight: 600;
+        }
+
+        .theme-select {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--md-transition-fast) var(--md-easing);
+            outline: none;
+            font-weight: 500;
+        }
+
+        .theme-select:hover {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        /* 顶部应用栏 - 主题色背景 */
+        .top-app-bar {
+            background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
+            color: var(--md-sys-color-on-primary);
+            padding: 24px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-bottom: none;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-align: center;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .brand-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .brand-text p {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 4px 0 0 0;
+            font-weight: 500;
+        }
+
+        /* 主布局 */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            padding-top: 20px;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            background: var(--md-sys-color-surface);
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--md-shadow);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-size: 0.875rem;
+            color: var(--md-sys-color-on-surface-variant);
+            font-weight: 500;
+        }
+
+        .format-select {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+            min-width: 140px;
+            transition: all var(--md-transition-fast) var(--md-easing);
+        }
+
+        .format-select:focus {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+        }
+
+        /* Material 3 按钮样式 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 24px;
+            border-radius: 20px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--md-transition-fast) var(--md-easing);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-filled {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: 0 2px 8px var(--md-shadow);
+        }
+
+        .btn-filled:hover {
+            background: var(--md-sys-color-primary);
+            box-shadow: 0 4px 16px var(--md-shadow);
+            transform: translateY(-1px);
+        }
+
+        .btn-outlined {
+            background: transparent;
+            color: var(--md-sys-color-primary);
+            border: 2px solid var(--md-sys-color-outline);
+        }
+
+        .btn-outlined:hover {
+            background: var(--md-sys-color-primary-container);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        /* 编辑器网格 */
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            height: calc(100vh - 240px);
+            min-height: 500px;
+        }
+
+        @media (max-width: 968px) {
+            .editor-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .panel {
+                height: 400px !important;
+            }
+            .theme-switcher {
+                top: 12px;
+                right: 12px;
+                padding: 6px 10px;
+            }
+            .theme-switcher label {
+                display: none; /* 移动端隐藏标签，只显示下拉框 */
+            }
+            .top-app-bar {
+                padding-top: 20px;
+                padding-bottom: 20px;
+            }
+            .brand-text h1 {
+                font-size: 1.4rem;
+            }
+        }
+
+        /* 面板卡片 */
+        .panel {
+            background: var(--md-sys-color-surface);
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 2px 8px var(--md-shadow);
+            transition: box-shadow var(--md-transition-medium) var(--md-easing);
+        }
+
+        .panel:hover {
+            box-shadow: 0 8px 24px var(--md-shadow);
+        }
+
+        .panel-header {
+            background: var(--md-sys-color-surface-variant);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-body {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: var(--md-sys-color-background);
+        }
+
+        textarea, .code-display {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Roboto Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            color: var(--md-sys-color-on-surface);
+            tab-size: 2;
+        }
+
+        textarea::placeholder {
+            color: var(--md-sys-color-on-surface-variant);
+            opacity: 0.6;
+        }
+
+        .code-display {
+            overflow: auto;
+            background: var(--md-sys-color-background);
+        }
+
+        .code-display pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: transparent !important;
+        }
+
+        /* 工具栏 */
+        .panel-toolbar {
+            padding: 12px 20px;
+            background: var(--md-sys-color-surface);
+            border-top: 1px solid var(--md-sys-color-outline-variant);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: pointer;
+            transition: all var(--md-transition-fast) var(--md-easing);
+            font-size: 18px;
+        }
+
+        .btn-icon:hover {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-primary);
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        .char-count {
+            font-size: 0.75rem;
+            color: var(--md-sys-color-on-surface-variant);
+            align-self: center;
+        }
+
+        /* 状态提示 */
+        .snackbar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--md-sys-color-inverse-surface);
+            color: var(--md-sys-color-inverse-on-surface);
+            padding: 14px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            transition: transform 0.4s var(--md-easing);
+            font-weight: 500;
+        }
+
+        .snackbar.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .snackbar.error {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-error);
+        }
+
+        .snackbar.success {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        /* 加载遮罩 */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--md-transition-medium);
+            z-index: 10;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .circular-progress {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--md-sys-color-primary-container);
+            border-top-color: var(--md-sys-color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--md-sys-color-on-surface-variant);
+            gap: 16px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            opacity: 0.3;
+            color: var(--md-sys-color-primary);
+        }
+
+        /* 深色模式适配 */
+        body[data-theme="dark-mode"] .loading-overlay,
+        body[data-theme="cyberpunk"] .loading-overlay {
+            background: rgba(0,0,0,0.7);
+        }
+
+        body[data-theme="dark-mode"] .code-display,
+        body[data-theme="cyberpunk"] .code-display {
+            background: #1a1a2e;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 主题切换器 - 固定在右上角，白色背景与主题头部形成对比 -->
+<div class="theme-switcher">
+    <label for="themeSelect">🎨</label>
+    <select id="themeSelect" class="theme-select"></select>
+</div>
+
+<!-- 顶部应用栏 - 主题色渐变背景 -->
+<header class="top-app-bar">
+    <div class="brand">
+        <div class="brand-icon">🛠️</div>
+        <div class="brand-text">
+            <h1>数据格式转换器</h1>
+            <p>JSON • XML • YAML • Properties 互转工具</p>
+        </div>
+    </div>
+</header>
+
+<main class="main-container">
+    <!-- 控制面板 -->
+    <div class="control-panel">
+        <div class="control-group">
+            <label class="control-label">输入格式:</label>
+            <select id="inputFormat" class="format-select">
+                <option value="auto">🤖 自动检测</option>
+                <option value="json">📋 JSON</option>
+                <option value="xml">📄 XML</option>
+                <option value="yaml">📃 YAML</option>
+                <option value="properties">⚙️ Properties</option>
+            </select>
+        </div>
+
+        <button class="btn btn-filled" onclick="convertData()">
+            <span>🚀</span> 转换
+        </button>
+
+        <button class="btn btn-outlined" onclick="clearAll()">
+            <span>🗑️</span> 清空
+        </button>
+
+        <div class="control-group">
+            <label class="control-label">输出格式:</label>
+            <select id="outputFormat" class="format-select">
+                <option value="json" selected>📋 JSON (格式化)</option>
+                <option value="json-min">📋 JSON (压缩)</option>
+                <option value="xml">📄 XML</option>
+                <option value="yaml">📃 YAML</option>
+                <option value="properties">⚙️ Properties</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 编辑器区域 -->
+    <div class="editor-grid">
+        <!-- 输入面板 -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span>📥</span>
+                    输入数据
+                </div>
+                <span class="badge" id="detectedBadge">等待输入...</span>
+            </div>
+            <div class="panel-body">
+                <textarea id="inputArea" placeholder="在此粘贴 JSON、XML、YAML 或 Properties 内容...&#10;支持嵌套转义的 JSON，如: {&quot;config&quot;: &quot;{\&quot;key\&quot;:\&quot;value\&quot;}&quot;}"></textarea>
+                <div class="loading-overlay" id="inputLoading">
+                    <div class="circular-progress"></div>
+                </div>
+            </div>
+            <div class="panel-toolbar">
+                <button class="btn-icon" onclick="pasteFromClipboard()" title="粘贴">📋</button>
+                <button class="btn-icon" onclick="loadExample()" title="加载示例">💡</button>
+                <div class="spacer"></div>
+                <span class="char-count" id="inputStats">0 字符</span>
+            </div>
+        </div>
+
+        <!-- 输出面板 -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span>📤</span>
+                    转换结果
+                </div>
+                <span class="badge" id="outputBadge">JSON</span>
+            </div>
+            <div class="panel-body">
+                <div id="outputArea" class="code-display">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <p>转换后的内容将显示在这里</p>
+                    </div>
+                </div>
+                <div class="loading-overlay" id="outputLoading">
+                    <div class="circular-progress"></div>
+                </div>
+            </div>
+            <div class="panel-toolbar">
+                <button class="btn-icon" onclick="copyOutput()" title="复制结果">📋</button>
+                <button class="btn-icon" onclick="downloadOutput()" title="下载文件">💾</button>
+                <div class="spacer"></div>
+                <button class="btn-icon" onclick="formatCurrent()" title="重新格式化">✨</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 状态提示 -->
+<div class="snackbar" id="snackbar">
+    <span id="snackbarText">操作成功</span>
+</div>
+
+<script>
+    // ==================== 核心转换逻辑 ====================
+
+    // 递归解析嵌套 JSON 字符串
+    function parseNestedJSON(obj) {
+        if (typeof obj === 'string') {
+            try {
+                const trimmed = obj.trim();
+                if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+                    (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+                    const parsed = JSON.parse(trimmed);
+                    return parseNestedJSON(parsed);
+                }
+                return obj;
+            } catch (e) {
+                return obj;
+            }
+        } else if (Array.isArray(obj)) {
+            return obj.map(item => parseNestedJSON(item));
+        } else if (typeof obj === 'object' && obj !== null) {
+            const result = {};
+            for (let key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    result[key] = parseNestedJSON(obj[key]);
+                }
+            }
+            return result;
+        }
+        return obj;
+    }
+
+    // 智能格式检测 - 修复版，能正确识别 Properties
+    function detectFormat(str) {
+        str = str.trim();
+        if (!str) return 'unknown';
+
+        // 1. JSON 检测（最严格）
+        if ((str.startsWith('{') && str.endsWith('}')) ||
+            (str.startsWith('[') && str.endsWith(']'))) {
+            try {
+                JSON.parse(str);
+                return 'json';
+            } catch(e) {
+                try {
+                    looseJSONParse(str);
+                    return 'json';
+                } catch(e2) {
+                    // 不是 JSON，继续
+                }
+            }
+        }
+
+        // 2. XML 检测（最严格）
+        if (str.startsWith('<?xml') || (str.startsWith('<') && str.endsWith('>'))) {
+            // 验证是否真 XML
+            if (str.includes('</') || str.includes('/>')) {
+                return 'xml';
+            }
+        }
+
+        // 3. 分行分析非注释内容
+        const lines = str.split('\n')
+            .map(l => l.trim())
+            .filter(l => l && !l.startsWith('#') && !l.startsWith('!') && !l.startsWith('//'));
+
+        if (lines.length === 0) return 'unknown';
+
+        let propertiesScore = 0;
+        let yamlScore = 0;
+
+        for (const line of lines) {
+            // Properties 特征：key=value，等号前是合法标识符（无空格、无冒号）
+            // 排除 Markdown 标题等误报（如 ## Title）
+            const eqMatch = line.match(/^([a-zA-Z0-9_.-]+)\s*=\s*(.*)$/);
+            if (eqMatch && !line.match(/^#{1,6}\s/)) {
+                propertiesScore++;
+                continue;
+            }
+
+            // YAML 特征 1：key: value（冒号后有空格或换行，且冒号不在引号内）
+            // 使用更精确的正则：排除时间戳（如 10:30）和路径（如 http://）
+            if (/^[a-zA-Z0-9_-]+:(\s|$)/.test(line) && !line.match(/^\d+:\d+/)) {
+                yamlScore++;
+                continue;
+            }
+
+            // YAML 特征 2：列表项
+            if (line.match(/^-\s+\w/) || line.match(/^-\s*$/)) {
+                yamlScore++;
+                continue;
+            }
+
+            // YAML 特征 3：缩进结构（空格开头后跟 key:）
+            if (/^\s+[a-zA-Z0-9_-]+:/.test(line)) {
+                yamlScore++;
+            }
+        }
+
+        // 决策逻辑：Properties 优先级，因为有明确的 = 特征
+        if (propertiesScore > 0 && propertiesScore >= yamlScore) {
+            return 'properties';
+        }
+
+        if (yamlScore > propertiesScore && yamlScore >= lines.length * 0.2) {
+            return 'yaml';
+        }
+
+        // 平局或无法确定时的回退策略
+        if (propertiesScore > 0) return 'properties';
+        if (yamlScore > 0) return 'yaml';
+
+        return 'unknown';
+    }
+
+    // 宽松 JSON 解析（修复常见错误）
+    function looseJSONParse(str) {
+        // 处理单引号、无引号键、尾随逗号等
+        let cleaned = str
+            .replace(/'/g, '"')
+            .replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":')
+            .replace(/,\s*([}\]])/g, '$1');
+        return JSON.parse(cleaned);
+    }
+
+    // 解析输入数据
+    function parseInput(str, format) {
+        if (!str.trim()) throw new Error('请输入内容');
+
+        if (format === 'auto') {
+            format = detectFormat(str);
+        }
+
+        let result;
+        switch(format) {
+            case 'json':
+                try {
+                    result = JSON.parse(str);
+                } catch(e) {
+                    result = looseJSONParse(str);
+                }
+                // 递归解析嵌套 JSON
+                result = parseNestedJSON(result);
+                break;
+
+            case 'xml':
+                result = parseXML(str);
+                break;
+
+            case 'yaml':
+                result = jsyaml.load(str);
+                break;
+
+            case 'properties':
+                result = parseProperties(str);
+                break;
+
+            default:
+                throw new Error('无法识别的格式，请手动选择输入格式');
+        }
+
+        return result;
+    }
+
+    // XML 解析器
+    function parseXML(xmlStr) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xmlStr, 'text/xml');
+
+        const errorNode = doc.getElementsByTagName('parsererror');
+        if (errorNode.length > 0) {
+            throw new Error('XML 格式错误');
+        }
+
+        return xmlNodeToObject(doc.documentElement);
+    }
+
+    function xmlNodeToObject(node) {
+        let obj = {};
+
+        // 处理属性
+        if (node.attributes && node.attributes.length > 0) {
+            obj['@attributes'] = {};
+            for (let i = 0; i < node.attributes.length; i++) {
+                const attr = node.attributes[i];
+                obj['@attributes'][attr.name] = attr.value;
+            }
+        }
+
+        // 处理子节点
+        if (node.hasChildNodes()) {
+            const children = node.childNodes;
+            let hasElementChild = false;
+            let textContent = '';
+
+            for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                if (child.nodeType === 1) { // Element
+                    hasElementChild = true;
+                    const childName = child.nodeName;
+                    const childObj = xmlNodeToObject(child);
+
+                    if (obj[childName]) {
+                        if (!Array.isArray(obj[childName])) {
+                            obj[childName] = [obj[childName]];
+                        }
+                        obj[childName].push(childObj);
+                    } else {
+                        obj[childName] = childObj;
+                    }
+                } else if (child.nodeType === 3 || child.nodeType === 4) { // Text or CDATA
+                    textContent += child.nodeValue;
+                }
+            }
+
+            textContent = textContent.trim();
+            if (!hasElementChild && textContent) {
+                return textContent;
+            } else if (textContent) {
+                obj['#text'] = textContent;
+            }
+        }
+
+        return Object.keys(obj).length === 0 ? '' : obj;
+    }
+
+    // Properties 解析器
+    function parseProperties(str) {
+        const obj = {};
+        const lines = str.split('\n');
+
+        for (let line of lines) {
+            line = line.trim();
+            if (!line || line.startsWith('#') || line.startsWith('!')) continue;
+
+            const eqIndex = line.indexOf('=');
+            if (eqIndex > 0) {
+                let key = line.substring(0, eqIndex).trim();
+                let value = line.substring(eqIndex + 1).trim();
+
+                // 处理转义字符
+                value = value
+                    .replace(/\\n/g, '\n')
+                    .replace(/\\t/g, '\t')
+                    .replace(/\\r/g, '\r')
+                    .replace(/\\\\/g, '\\');
+
+                // 设置嵌套属性 (a.b.c)
+                setNestedProperty(obj, key, value);
+            }
+        }
+
+        return obj;
+    }
+
+    function setNestedProperty(obj, key, value) {
+        const keys = key.split('.');
+        let current = obj;
+
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (!(keys[i] in current)) {
+                current[keys[i]] = {};
+            }
+            current = current[keys[i]];
+        }
+
+        // 尝试类型转换
+        const finalKey = keys[keys.length - 1];
+        current[finalKey] = autoConvertType(value);
+    }
+
+    function autoConvertType(val) {
+        if (val === 'true') return true;
+        if (val === 'false') return false;
+        if (/^-?\d+$/.test(val)) return parseInt(val);
+        if (/^-?\d+\.\d+$/.test(val)) return parseFloat(val);
+        return val;
+    }
+
+    // 转换为输出格式
+    function convertToFormat(obj, format) {
+        switch(format) {
+            case 'json':
+                return JSON.stringify(obj, null, 2);
+            case 'json-min':
+                return JSON.stringify(obj);
+            case 'xml':
+                return objectToXML(obj, 'root');
+            case 'yaml':
+                return jsyaml.dump(obj, { indent: 2, lineWidth: -1 });
+            case 'properties':
+                return objectToProperties(obj);
+            default:
+                return JSON.stringify(obj, null, 2);
+        }
+    }
+
+    // 对象转 XML
+    function objectToXML(obj, rootName) {
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootName}>\n`;
+        xml += objectToXMLRecursive(obj, '  ');
+        xml += `</${rootName}>`;
+        return xml;
+    }
+
+    function objectToXMLRecursive(obj, indent) {
+        let xml = '';
+        for (let key in obj) {
+            if (key === '@attributes' || key === '#text') continue;
+
+            const value = obj[key];
+            const attrs = (value && typeof value === 'object' && !Array.isArray(value) && value['@attributes'])
+                ? ' ' + Object.entries(value['@attributes']).map(([k, v]) => `${k}="${v}"`).join(' ')
+                : '';
+
+            if (typeof value === 'object' && value !== null) {
+                if (Array.isArray(value)) {
+                    value.forEach(item => {
+                        if (typeof item === 'object' && item !== null) {
+                            xml += `${indent}<${key}>\n`;
+                            xml += objectToXMLRecursive(item, indent + '  ');
+                            xml += `${indent}</${key}>\n`;
+                        } else {
+                            xml += `${indent}<${key}>${item}</${key}>\n`;
+                        }
+                    });
+                } else {
+                    const text = value['#text'] || '';
+                    xml += `${indent}<${key}${attrs}>${text}\n`;
+                    xml += objectToXMLRecursive(value, indent + '  ');
+                    xml += `${indent}</${key}>\n`;
+                }
+            } else {
+                xml += `${indent}<${key}>${escapeXml(value)}</${key}>\n`;
+            }
+        }
+        return xml;
+    }
+
+    function escapeXml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+
+    // 对象转 Properties
+    function objectToProperties(obj, prefix = '') {
+        let lines = [];
+        for (let key in obj) {
+            const newKey = prefix ? `${prefix}.${key}` : key;
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+                lines.push(objectToProperties(obj[key], newKey));
+            } else {
+                let val = String(obj[key]);
+                val = val
+                    .replace(/\\/g, '\\\\')
+                    .replace(/\n/g, '\\n')
+                    .replace(/\r/g, '\\r')
+                    .replace(/\t/g, '\\t');
+                lines.push(`${newKey}=${val}`);
+            }
+        }
+        return lines.join('\n');
+    }
+
+    // ==================== UI 交互逻辑 ====================
+
+    let currentData = null;
+    let currentOutput = '';
+
+    // 输入监听
+    const inputArea = document.getElementById('inputArea');
+    inputArea.addEventListener('input', function() {
+        const len = this.value.length;
+        document.getElementById('inputStats').textContent = `${len} 字符`;
+
+        if (this.value.trim()) {
+            const fmt = detectFormat(this.value);
+            const badge = document.getElementById('detectedBadge');
+            const fmtNames = {
+                'json': 'JSON',
+                'xml': 'XML',
+                'yaml': 'YAML',
+                'properties': 'Properties',
+                'unknown': '未知'
+            };
+            badge.textContent = fmtNames[fmt] || '未知';
+        } else {
+            document.getElementById('detectedBadge').textContent = '等待输入...';
+        }
+    });
+
+    // 主转换函数
+    function convertData() {
+        const input = inputArea.value;
+        const inFormat = document.getElementById('inputFormat').value;
+        const outFormat = document.getElementById('outputFormat').value;
+
+        if (!input.trim()) {
+            showSnackbar('请输入内容', 'error');
+            return;
+        }
+
+        showLoading(true);
+
+        setTimeout(() => {
+            try {
+                // 解析
+                currentData = parseInput(input, inFormat);
+
+                // 转换
+                currentOutput = convertToFormat(currentData, outFormat);
+
+                // 显示
+                displayOutput(currentOutput, outFormat);
+
+                // 更新徽章
+                const badge = document.getElementById('outputBadge');
+                const names = {
+                    'json': 'JSON',
+                    'json-min': 'JSON',
+                    'xml': 'XML',
+                    'yaml': 'YAML',
+                    'properties': 'Properties'
+                };
+                badge.textContent = names[outFormat];
+
+                // 更新检测到的格式徽章（如果自动检测）
+                if (inFormat === 'auto') {
+                    const detected = detectFormat(input);
+                    const fmtNames = {
+                        'json': 'JSON',
+                        'xml': 'XML',
+                        'yaml': 'YAML',
+                        'properties': 'Properties',
+                        'unknown': '未知'
+                    };
+                    document.getElementById('detectedBadge').textContent = '检测: ' + (fmtNames[detected] || '未知');
+                }
+
+                showSnackbar('转换成功！', 'success');
+            } catch (err) {
+                console.error(err);
+                showSnackbar('错误: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }, 100);
+    }
+
+    function displayOutput(content, format) {
+        const outputArea = document.getElementById('outputArea');
+        const langMap = {
+            'json': 'json',
+            'json-min': 'json',
+            'xml': 'xml',
+            'yaml': 'yaml',
+            'properties': 'properties'
+        };
+        const lang = langMap[format] || 'plaintext';
+
+        outputArea.innerHTML = `<pre><code class="language-${lang}">${escapeHtml(content)}</code></pre>`;
+
+        if (window.hljs) {
+            outputArea.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 工具函数
+    async function pasteFromClipboard() {
+        try {
+            const text = await navigator.clipboard.readText();
+            inputArea.value = text;
+            inputArea.dispatchEvent(new Event('input'));
+            showSnackbar('已粘贴', 'success');
+        } catch (err) {
+            showSnackbar('无法访问剪贴板', 'error');
+        }
+    }
+
+    function copyOutput() {
+        if (!currentOutput) {
+            showSnackbar('没有可复制的内容', 'error');
+            return;
+        }
+
+        navigator.clipboard.writeText(currentOutput).then(() => {
+            showSnackbar('已复制到剪贴板', 'success');
+        }).catch(() => {
+            // 降级
+            const ta = document.createElement('textarea');
+            ta.value = currentOutput;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showSnackbar('已复制到剪贴板', 'success');
+        });
+    }
+
+    function downloadOutput() {
+        if (!currentOutput) {
+            showSnackbar('没有可下载的内容', 'error');
+            return;
+        }
+
+        const format = document.getElementById('outputFormat').value;
+        const mimeTypes = {
+            'json': 'application/json',
+            'json-min': 'application/json',
+            'xml': 'application/xml',
+            'yaml': 'application/x-yaml',
+            'properties': 'text/plain'
+        };
+        const extensions = {
+            'json': 'json',
+            'json-min': 'json',
+            'xml': 'xml',
+            'yaml': 'yaml',
+            'properties': 'properties'
+        };
+
+        const blob = new Blob([currentOutput], { type: mimeTypes[format] });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `converted.${extensions[format]}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showSnackbar('下载已开始', 'success');
+    }
+
+    function loadExample() {
+        const example = `
+server.port=10271
+server.servlet.context-path=/pas
+spring.profiles.active=local
+
+# 数据库配置
+spring.datasource.url=jdbc:mysql://localhost:3306/test
+spring.datasource.username=root
+spring.datasource.password=123456
+
+# 嵌套JSON示例
+app.config={"theme":"dark","version":"1.0.0"}
+`;
+        inputArea.value = example.trim();
+        inputArea.dispatchEvent(new Event('input'));
+        showSnackbar('已加载 Properties 示例', 'success');
+    }
+
+    function clearAll() {
+        inputArea.value = '';
+        inputArea.dispatchEvent(new Event('input'));
+        document.getElementById('outputArea').innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <p>转换后的内容将显示在这里</p>
+                </div>
+            `;
+        currentData = null;
+        currentOutput = '';
+        showSnackbar('已清空', 'success');
+    }
+
+    function formatCurrent() {
+        if (currentData) {
+            const fmt = document.getElementById('outputFormat').value;
+            if (fmt === 'json-min') {
+                document.getElementById('outputFormat').value = 'json';
+            }
+            convertData();
+        }
+    }
+
+    function showLoading(show) {
+        const method = show ? 'add' : 'remove';
+        document.getElementById('inputLoading').classList[method]('active');
+        document.getElementById('outputLoading').classList[method]('active');
+    }
+
+    function showSnackbar(msg, type = '') {
+        const bar = document.getElementById('snackbar');
+        document.getElementById('snackbarText').textContent = msg;
+        bar.className = 'snackbar ' + type;
+
+        requestAnimationFrame(() => {
+            bar.classList.add('show');
+        });
+
+        setTimeout(() => {
+            bar.classList.remove('show');
+        }, 3000);
+    }
+
+    // 键盘快捷键
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            convertData();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            clearAll();
+        }
+    });
+
+    // ==================== 初始化 ====================
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // 初始化主题管理器（使用用户提供的 ThemeManager）
+        if (typeof ThemeManager !== 'undefined') {
+            new ThemeManager();
+
+            // 监听主题变化，调整代码高亮主题
+            const themeSelect = document.getElementById('themeSelect');
+            if (themeSelect) {
+                themeSelect.addEventListener('change', (e) => {
+                    const isDark = ['dark-mode', 'cyberpunk'].includes(e.target.value);
+                    const hljsTheme = document.getElementById('hljs-theme');
+                    if (isDark) {
+                        hljsTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css';
+                    } else {
+                        hljsTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css';
+                    }
+                });
+            }
+        } else {
+            console.warn('ThemeManager 未加载');
+        }
+    });
+</script>
+</body>
+</html>

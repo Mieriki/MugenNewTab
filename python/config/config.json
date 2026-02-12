@@ -1,0 +1,25 @@
+{
+  "log_levels": [
+    "ERROR"
+  ],
+  "keywords": [],
+  "regex_patterns": [],
+  "exclude_patterns": [
+    "DEBUG.*health.check"
+  ],
+  "timestamp_pattern": "\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}",
+  "log_level_pattern": "\\b(DEBUG|INFO|WARNING|ERROR|CRITICAL)\\b",
+  "time_range": {
+    "enabled": true,
+    "start_time": "-1h",
+    "end_time": "-0m",
+    "time_format": "%Y-%m-%d %H:%M:%S",
+    "auto_detect_format": true
+  },
+  "settings": {
+    "file_pattern": "*.log",
+    "recursive": true,
+    "auto_save": true,
+    "default_output_dir": "./output"
+  }
+}
