@@ -492,9 +492,370 @@
                 display: block;
             }
         }
+
+        /* 壁纸层 */
+        .wallpaper-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: opacity var(--md-transition-medium) var(--md-easing),
+            filter var(--md-transition-medium) var(--md-easing);
+            pointer-events: none;
+        }
+
+        .wallpaper-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: var(--md-sys-color-background);
+            transition: opacity var(--md-transition-medium) var(--md-easing);
+            pointer-events: none;
+        }
+
+        /* 壁纸控制面板 */
+        .wallpaper-controls {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--md-sys-color-surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid var(--md-sys-color-outline);
+            z-index: 1001;
+            width: 280px;
+            transform: translateY(calc(100% + 80px));
+            transition: transform var(--md-transition-medium) var(--md-easing);
+        }
+
+        .wallpaper-controls.show {
+            transform: translateY(0);
+        }
+
+        .wallpaper-controls-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .wallpaper-controls-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--md-sys-color-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .wallpaper-close {
+            background: none;
+            border: none;
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--md-transition-fast) var(--md-easing);
+        }
+
+        .wallpaper-close:hover {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-primary);
+        }
+
+        .wallpaper-input-group {
+            margin-bottom: 16px;
+        }
+
+        .wallpaper-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 8px;
+        }
+
+        .wallpaper-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 8px;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            font-size: 13px;
+            font-family: inherit;
+            transition: all var(--md-transition-fast) var(--md-easing);
+        }
+
+        .wallpaper-input:focus {
+            outline: none;
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.1);
+        }
+
+        .wallpaper-slider-container {
+            margin-bottom: 16px;
+        }
+
+        .wallpaper-slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .wallpaper-slider-value {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--md-sys-color-primary);
+            background: var(--md-sys-color-primary-container);
+            padding: 2px 8px;
+            border-radius: 12px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .wallpaper-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--md-sys-color-surface-variant);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .wallpaper-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(177, 74, 107, 0.3);
+            transition: transform var(--md-transition-fast) var(--md-easing);
+        }
+
+        .wallpaper-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .wallpaper-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(177, 74, 107, 0.3);
+        }
+
+        .wallpaper-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .wallpaper-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--md-transition-fast) var(--md-easing);
+            font-family: inherit;
+        }
+
+        .wallpaper-btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .wallpaper-btn-primary:hover {
+            background: var(--md-sys-color-secondary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(177, 74, 107, 0.25);
+        }
+
+        .wallpaper-btn-secondary {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .wallpaper-btn-secondary:hover {
+            background: var(--md-sys-color-outline-variant);
+        }
+
+        /* 壁纸设置按钮 */
+        .wallpaper-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 4px 16px rgba(177, 74, 107, 0.35);
+            z-index: 1000;
+            transition: all var(--md-transition-medium) var(--md-easing);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wallpaper-toggle:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 6px 20px rgba(177, 74, 107, 0.45);
+        }
+
+        .wallpaper-toggle.active {
+            background: var(--md-sys-color-secondary);
+            transform: rotate(45deg);
+        }
+
+        /* 壁纸预设选择 */
+        .wallpaper-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .wallpaper-preset {
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all var(--md-transition-fast) var(--md-easing);
+        }
+
+        .wallpaper-preset:hover {
+            transform: scale(1.05);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .wallpaper-preset.active {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .wallpaper-controls {
+                left: 16px;
+                right: 16px;
+                bottom: 80px;
+                width: auto;
+            }
+
+            .wallpaper-toggle {
+                bottom: 16px;
+                right: 16px;
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+        }
     </style>
+    <base target="_blank">
 </head>
 <body>
+<!-- 壁纸层 -->
+<div class="wallpaper-layer" id="wallpaperLayer"></div>
+<div class="wallpaper-overlay" id="wallpaperOverlay"></div>
+
+<!-- 壁纸设置按钮 -->
+<button class="wallpaper-toggle" id="wallpaperToggle" onclick="toggleWallpaperControls()" title="壁纸设置">🖼️</button>
+
+<!-- 壁纸控制面板 -->
+<div class="wallpaper-controls" id="wallpaperControls">
+    <div class="wallpaper-controls-header">
+        <div class="wallpaper-controls-title">
+            <span>🎨</span>
+            <span>壁纸设置</span>
+        </div>
+        <button class="wallpaper-close" onclick="toggleWallpaperControls()">✕</button>
+    </div>
+
+    <!-- 预设壁纸 -->
+    <div class="wallpaper-input-group">
+        <label class="wallpaper-label">预设壁纸</label>
+        <div class="wallpaper-presets" id="wallpaperPresets">
+            <div class="wallpaper-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变"></div>
+            <div class="wallpaper-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变"></div>
+            <div class="wallpaper-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变"></div>
+            <div class="wallpaper-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变"></div>
+        </div>
+    </div>
+
+    <!-- 自定义URL -->
+    <div class="wallpaper-input-group">
+        <label class="wallpaper-label">图片URL</label>
+        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片链接..." onchange="updateWallpaper()">
+    </div>
+
+    <!-- 透明度 -->
+    <div class="wallpaper-slider-container">
+        <div class="wallpaper-slider-header">
+            <label class="wallpaper-label" style="margin:0">透明度</label>
+            <span class="wallpaper-slider-value" id="opacityValue">50%</span>
+        </div>
+        <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50" oninput="updateWallpaperSettings()">
+    </div>
+
+    <!-- 模糊度 -->
+    <div class="wallpaper-slider-container">
+        <div class="wallpaper-slider-header">
+            <label class="wallpaper-label" style="margin:0">模糊程度</label>
+            <span class="wallpaper-slider-value" id="blurValue">0px</span>
+        </div>
+        <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0" oninput="updateWallpaperSettings()">
+    </div>
+
+    <!-- 遮罩透明度 -->
+    <div class="wallpaper-slider-container">
+        <div class="wallpaper-slider-header">
+            <label class="wallpaper-label" style="margin:0">遮罩透明度</label>
+            <span class="wallpaper-slider-value" id="overlayValue">70%</span>
+        </div>
+        <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="70" oninput="updateWallpaperSettings()">
+    </div>
+
+    <div class="wallpaper-actions">
+        <button class="wallpaper-btn wallpaper-btn-secondary" onclick="resetWallpaper()">重置</button>
+        <button class="wallpaper-btn wallpaper-btn-primary" onclick="saveWallpaperSettings()">应用</button>
+    </div>
+</div>
+
 
 <!-- 顶部应用栏 -->
 <header class="app-header">
@@ -742,6 +1103,218 @@
         const appNavigator = new AppNavigator();
         window.appNavigator = appNavigator;
     });
+</script>
+
+<script>
+    // 壁纸管理器
+    class WallpaperManager {
+        constructor() {
+            this.defaults = {
+                url: '',
+                opacity: 50,
+                blur: 0,
+                overlayOpacity: 70
+            };
+            this.settings = this.loadSettings();
+            this.init();
+        }
+
+        init() {
+            this.applySettings();
+            this.bindPresetEvents();
+        }
+
+        loadSettings() {
+            try {
+                const saved = localStorage.getItem('appNavigator_wallpaper');
+                return saved ? JSON.parse(saved) : { ...this.defaults };
+            } catch (e) {
+                return { ...this.defaults };
+            }
+        }
+
+        saveSettings() {
+            localStorage.setItem('appNavigator_wallpaper', JSON.stringify(this.settings));
+        }
+
+        applySettings() {
+            const layer = document.getElementById('wallpaperLayer');
+            const overlay = document.getElementById('wallpaperOverlay');
+            const urlInput = document.getElementById('wallpaperUrl');
+            const opacitySlider = document.getElementById('opacitySlider');
+            const blurSlider = document.getElementById('blurSlider');
+            const overlaySlider = document.getElementById('overlaySlider');
+
+            if (!layer || !overlay) return;
+
+            // 应用壁纸
+            if (this.settings.url) {
+                if (this.settings.url.includes('gradient')) {
+                    layer.style.backgroundImage = this.settings.url;
+                } else {
+                    layer.style.backgroundImage = `url(${this.settings.url})`;
+                }
+                layer.style.opacity = this.settings.opacity / 100;
+                layer.style.filter = `blur(${this.settings.blur}px)`;
+            } else {
+                layer.style.backgroundImage = '';
+                layer.style.opacity = 0;
+            }
+
+            // 应用遮罩
+            overlay.style.opacity = (100 - this.settings.overlayOpacity) / 100;
+
+            // 同步控件
+            if (urlInput) urlInput.value = this.settings.url;
+            if (opacitySlider) opacitySlider.value = this.settings.opacity;
+            if (blurSlider) blurSlider.value = this.settings.blur;
+            if (overlaySlider) overlaySlider.value = this.settings.overlayOpacity;
+
+            this.updateDisplayValues();
+        }
+
+        updateDisplayValues() {
+            const opacityValue = document.getElementById('opacityValue');
+            const blurValue = document.getElementById('blurValue');
+            const overlayValue = document.getElementById('overlayValue');
+
+            if (opacityValue) opacityValue.textContent = this.settings.opacity + '%';
+            if (blurValue) blurValue.textContent = this.settings.blur + 'px';
+            if (overlayValue) overlayValue.textContent = this.settings.overlayOpacity + '%';
+        }
+
+        bindPresetEvents() {
+            const presets = document.querySelectorAll('.wallpaper-preset');
+            presets.forEach(preset => {
+                preset.addEventListener('click', (e) => {
+                    // 移除其他激活状态
+                    presets.forEach(p => p.classList.remove('active'));
+                    // 添加当前激活状态
+                    e.target.classList.add('active');
+                    // 设置URL
+                    const url = e.target.dataset.url;
+                    document.getElementById('wallpaperUrl').value = url;
+                    this.updateFromInputs();
+                });
+            });
+        }
+
+        updateFromInputs() {
+            const urlInput = document.getElementById('wallpaperUrl');
+            const opacitySlider = document.getElementById('opacitySlider');
+            const blurSlider = document.getElementById('blurSlider');
+            const overlaySlider = document.getElementById('overlaySlider');
+
+            this.settings = {
+                url: urlInput ? urlInput.value : '',
+                opacity: parseInt(opacitySlider ? opacitySlider.value : 50),
+                blur: parseInt(blurSlider ? blurSlider.value : 0),
+                overlayOpacity: parseInt(overlaySlider ? overlaySlider.value : 70)
+            };
+
+            this.applySettings();
+        }
+
+        reset() {
+            this.settings = { ...this.defaults };
+            document.querySelectorAll('.wallpaper-preset').forEach(p => p.classList.remove('active'));
+            this.applySettings();
+            this.saveSettings();
+        }
+
+        save() {
+            this.saveSettings();
+            // 显示提示
+            this.showToast('壁纸设置已保存');
+        }
+
+        showToast(message) {
+            const existing = document.querySelector('.wallpaper-toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'wallpaper-toast';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                right: 24px;
+                background: var(--md-sys-color-inverse-surface);
+                color: var(--md-sys-color-inverse-on-surface);
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-size: 13px;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 1002;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+    }
+
+    // 全局壁纸管理器实例
+    let wallpaperManager;
+
+    // 全局函数
+    function toggleWallpaperControls() {
+        const controls = document.getElementById('wallpaperControls');
+        const toggle = document.getElementById('wallpaperToggle');
+
+        if (controls && toggle) {
+            controls.classList.toggle('show');
+            toggle.classList.toggle('active');
+        }
+    }
+
+    function updateWallpaper() {
+        if (wallpaperManager) {
+            wallpaperManager.updateFromInputs();
+        }
+    }
+
+    function updateWallpaperSettings() {
+        if (wallpaperManager) {
+            wallpaperManager.updateFromInputs();
+        }
+    }
+
+    function resetWallpaper() {
+        if (wallpaperManager) {
+            wallpaperManager.reset();
+        }
+    }
+
+    function saveWallpaperSettings() {
+        if (wallpaperManager) {
+            wallpaperManager.save();
+            toggleWallpaperControls();
+        }
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        wallpaperManager = new WallpaperManager();
+    });
+
+    // 添加动画样式
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
 </script>
 </body>
 </html>
