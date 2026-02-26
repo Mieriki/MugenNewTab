@@ -313,56 +313,69 @@
         /* 应用网格 */
         .apps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
         }
 
         .app-card {
             background: var(--md-sys-color-surface);
             border-radius: 16px;
-            padding: 24px;
+            padding: 16px;
             box-shadow: 0 2px 8px rgba(177, 74, 107, 0.15);
             transition: all var(--md-transition-medium) var(--md-easing);
             cursor: pointer;
             text-decoration: none;
             color: inherit;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            align-items: center;
+            gap: 16px;
             border: 1px solid var(--md-sys-color-outline);
-            height: 100%;
         }
 
         .app-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            border-color: var(--md-sys-color-primary);
         }
 
         .app-icon {
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
-            border-radius: 16px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 26px;
             color: var(--md-sys-color-on-primary);
-            margin-bottom: 16px;
             box-shadow: 0 4px 12px rgba(177, 74, 107, 0.15);
+            flex-shrink: 0;
         }
 
         .app-icon img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 16px;
+            border-radius: 14px;
+        }
+
+        .app-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .app-name {
-            font-size: 1.125rem;
-            font-weight: 700;
+            font-size: 1rem;
+            font-weight: 600;
             color: var(--md-sys-color-on-surface);
-            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
         }
 
         .app-card:hover .app-name {
@@ -370,10 +383,15 @@
         }
 
         .app-description {
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             color: var(--md-sys-color-on-surface-variant);
-            line-height: 1.5;
-            flex: 1;
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            max-height: 2.8em;
         }
 
         /* 空状态 */
@@ -473,6 +491,7 @@
 
             .apps-grid {
                 grid-template-columns: 1fr;
+                gap: 12px;
             }
 
             .theme-switcher {
@@ -1081,8 +1100,10 @@
             return `
                     <a href="${app.url}" class="app-card" data-app-id="${app.id}" target="_blank">
                         <div class="app-icon">${iconHtml}</div>
-                        <h3 class="app-name">${app.name}</h3>
-                        <p class="app-description">${app.description}</p>
+                        <div class="app-content">
+                            <h3 class="app-name">${app.name}</h3>
+                            <p class="app-description">${app.description}</p>
+                        </div>
                     </a>
                 `;
         }
