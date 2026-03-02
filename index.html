@@ -1155,8 +1155,8 @@
             const logoContainer = document.getElementById('headerLogo');
             if (!logoContainer || typeof themeConfig === 'undefined') return;
 
-            // 从localStorage获取当前主题，与ThemeManager保持一致
-            const currentThemeId = localStorage.getItem('theme') || themeConfig.defaultTheme || 'material-rose';
+            // 修复：使用 'selectedTheme' 与 ThemeManager 保持一致
+            const currentThemeId = localStorage.getItem('selectedTheme') || themeConfig.defaultTheme || 'material-rose';
             const currentTheme = themeConfig.themes.find(t => t.id === currentThemeId);
 
             if (currentTheme && currentTheme.logo) {
@@ -1211,9 +1211,9 @@
                 const iconHtml = isImage ? `<img src="${category.icon}" alt="${category.name}">` : category.icon;
 
                 navItem.innerHTML = `
-                        <span class="nav-icon">${iconHtml}</span>
-                        <span>${category.name}</span>
-                    `;
+                    <span class="nav-icon">${iconHtml}</span>
+                    <span>${category.name}</span>
+                `;
                 navMenu.appendChild(navItem);
             });
         }
@@ -1265,8 +1265,8 @@
                         const appsInCategory = appConfig.apps.filter(app => app.category === category.id);
                         if (appsInCategory.length > 0) {
                             html += `<div style="animation-delay: ${index * 0.1}s" class="category">
-                                    ${this.createCategoryHTML(category, appsInCategory)}
-                                </div>`;
+                                ${this.createCategoryHTML(category, appsInCategory)}
+                            </div>`;
                         }
                     });
 
@@ -1279,13 +1279,13 @@
 
                 if (category && appsInCategory.length > 0) {
                     html = `<div class="category">
-                            <div class="content-header">
-                                <h2 class="content-title">${category.name}</h2>
-                            </div>
-                            <div class="apps-grid">
-                                ${appsInCategory.map(app => this.createAppCardHTML(app)).join('')}
-                            </div>
-                        </div>`;
+                        <div class="content-header">
+                            <h2 class="content-title">${category.name}</h2>
+                        </div>
+                        <div class="apps-grid">
+                            ${appsInCategory.map(app => this.createAppCardHTML(app)).join('')}
+                        </div>
+                    </div>`;
                 } else {
                     html = '<div class="empty-state">该分类下暂无应用</div>';
                 }
@@ -1299,11 +1299,11 @@
             const iconHtml = isImage ? `<img src="${category.icon}" alt="${category.name}">` : category.icon;
 
             return `
-                    <h3 class="category-title">${iconHtml} ${category.name}</h3>
-                    <div class="apps-grid">
-                        ${apps.map(app => this.createAppCardHTML(app)).join('')}
-                    </div>
-                `;
+                <h3 class="category-title">${iconHtml} ${category.name}</h3>
+                <div class="apps-grid">
+                    ${apps.map(app => this.createAppCardHTML(app)).join('')}
+                </div>
+            `;
         }
 
         createAppCardHTML(app) {
@@ -1311,14 +1311,14 @@
             const iconHtml = isImage ? `<img src="${app.icon}" alt="${app.name}">` : app.icon;
 
             return `
-                    <a href="${app.url}" class="app-card" data-app-id="${app.id}" target="_blank">
-                        <div class="app-icon">${iconHtml}</div>
-                        <div class="app-content">
-                            <h3 class="app-name">${app.name}</h3>
-                            <p class="app-description">${app.description}</p>
-                        </div>
-                    </a>
-                `;
+                <a href="${app.url}" class="app-card" data-app-id="${app.id}" target="_blank">
+                    <div class="app-icon">${iconHtml}</div>
+                    <div class="app-content">
+                        <h3 class="app-name">${app.name}</h3>
+                        <p class="app-description">${app.description}</p>
+                    </div>
+                </a>
+            `;
         }
     }
 
@@ -1336,6 +1336,11 @@
 
         const appNavigator = new AppNavigator();
         window.appNavigator = appNavigator;
+
+        // 初始化主题下拉菜单
+        if (typeof renderThemeOptions === 'function') {
+            renderThemeOptions();
+        }
     });
 </script>
 
@@ -1421,11 +1426,8 @@
             const presets = document.querySelectorAll('.wallpaper-preset');
             presets.forEach(preset => {
                 preset.addEventListener('click', (e) => {
-                    // 移除其他激活状态
                     presets.forEach(p => p.classList.remove('active'));
-                    // 添加当前激活状态
                     e.target.classList.add('active');
-                    // 设置URL
                     const url = e.target.dataset.url;
                     document.getElementById('wallpaperUrl').value = url;
                     this.updateFromInputs();
@@ -1458,7 +1460,6 @@
 
         save() {
             this.saveSettings();
-            // 显示提示
             this.showToast('壁纸设置已保存');
         }
 
@@ -1549,8 +1550,9 @@
         }
     `;
     document.head.appendChild(style);
+</script>
 
-
+<script>
     // ==================== 主题切换器优化 ====================
 
     // 主题下拉菜单控制
@@ -1585,18 +1587,21 @@
         if (!container || typeof themeConfig === 'undefined') return;
 
         container.innerHTML = '';
-        const currentTheme = localStorage.getItem('theme') || themeConfig.defaultTheme || 'material-rose';
+        // 修复：使用 'selectedTheme' 与 ThemeManager 保持一致
+        const currentTheme = localStorage.getItem('selectedTheme') || themeConfig.defaultTheme || 'material-rose';
 
         themeConfig.themes.forEach(theme => {
             const option = document.createElement('div');
             option.className = 'theme-option' + (theme.id === currentTheme ? ' active' : '');
+            option.dataset.themeId = theme.id;
             option.onclick = () => selectTheme(theme.id);
 
             const color = theme.colors && theme.colors['--md-sys-color-primary'] ? theme.colors['--md-sys-color-primary'] : '#B14A6B';
 
             option.innerHTML = `
-                <div class="theme-color-dot" style="background: ${color}"></div>
-                <span class="theme-name">${theme.name}</span>
+                <div class="theme-option-preview" style="background: ${color}"></div>
+                <span class="theme-option-name">${theme.name}</span>
+                <span class="theme-option-check">✓</span>
             `;
 
             container.appendChild(option);
@@ -1605,8 +1610,8 @@
 
     // 选择主题
     function selectTheme(themeId) {
-        // 应用主题
-        localStorage.setItem('theme', themeId);
+        // 修复：使用 'selectedTheme' 与 ThemeManager 保持一致
+        localStorage.setItem('selectedTheme', themeId);
 
         if (typeof themeConfig !== 'undefined' && themeConfig.themes) {
             const theme = themeConfig.themes.find(t => t.id === themeId);
@@ -1668,7 +1673,9 @@
 
         if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
             dropdown.classList.remove('show');
-            if (btn) btn.style.transform = '';
+            if (btn) btn.classList.remove('active');
+            const overlay = document.getElementById('themeDropdownOverlay');
+            if (overlay) overlay.classList.remove('show');
         }
     });
 
@@ -1685,57 +1692,6 @@
         }
     `;
     document.head.appendChild(themeAnimStyle);
-
-</script>
-
-<script>
-    // 主题下拉菜单渲染器
-    function renderThemeDropdown() {
-        if (typeof themeConfig === 'undefined') return;
-
-        const dropdown = document.getElementById('themeDropdown');
-        const themeSelect = document.getElementById('themeSelect');
-
-        if (!dropdown || !themeSelect) return;
-
-        dropdown.innerHTML = '';
-
-        themeConfig.themes.forEach(theme => {
-            const option = document.createElement('div');
-            option.className = 'theme-option';
-            option.dataset.themeId = theme.id;
-            if (theme.id === themeSelect.value) {
-                option.classList.add('active');
-                document.getElementById('currentThemeName').textContent = theme.name;
-            }
-
-            const primaryColor = theme.colors['--md-sys-color-primary'] || '#B14A6B';
-
-            option.innerHTML = `
-                <div class="theme-option-preview" style="background: ${primaryColor}"></div>
-                <span class="theme-option-name">${theme.name}</span>
-                <span class="theme-option-check">✓</span>
-            `;
-
-            option.addEventListener('click', () => {
-                themeSelect.value = theme.id;
-                themeSelect.dispatchEvent(new Event('change'));
-                document.dispatchEvent(new Event('themeChanged'));
-                toggleThemeDropdown();
-            });
-
-            dropdown.appendChild(option);
-        });
-    }
-
-    // 页面加载完成后渲染下拉菜单
-    document.addEventListener('DOMContentLoaded', () => {
-        // 等待ThemeManager初始化完成
-        setTimeout(renderThemeDropdown, 100);
-    });
-
-    // 监听主题配置加载完成事件
-    document.addEventListener('themeConfigLoaded', renderThemeDropdown);
 </script>
 </body>
 </html>
