@@ -227,14 +227,14 @@
             background: rgba(255,255,255,0.2);
         }
 
-        /* 主题切换器 */
-        .theme-switcher {
+        /* 个性化设置按钮 */
+        .personalization-switcher {
             position: relative;
             flex-shrink: 0;
             margin-left: auto;
         }
 
-        .theme-toggle-btn {
+        .personalization-toggle-btn {
             display: flex;
             align-items: center;
             gap: 6px;
@@ -250,58 +250,82 @@
             font-family: inherit;
         }
 
-        .theme-toggle-btn:hover {
+        .personalization-toggle-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
 
-        .theme-toggle-btn .theme-icon {
+        .personalization-toggle-btn .personalization-icon {
             font-size: 16px;
         }
 
-        .theme-toggle-btn .dropdown-arrow {
+        .personalization-toggle-btn .dropdown-arrow {
             font-size: 10px;
             opacity: 0.8;
             transition: transform 0.2s ease;
         }
 
-        .theme-toggle-btn.active .dropdown-arrow {
+        .personalization-toggle-btn.active .dropdown-arrow {
             transform: rotate(180deg);
         }
 
-        .theme-dropdown {
+        /* 个性化下拉面板 */
+        .personalization-dropdown {
             position: absolute;
             top: calc(100% + 6px);
             right: 0;
             background: var(--md-sys-color-surface);
-            border-radius: 12px;
-            padding: 6px;
-            min-width: 180px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
             border: 1px solid var(--md-sys-color-outline-variant);
             opacity: 0;
             visibility: hidden;
             transform: translateY(-8px) scale(0.96);
             transform-origin: top right;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1002;
-            max-height: 320px;
-            overflow-y: auto;
+            width: 520px;
+            max-height: 70vh;
+            overflow: hidden;
         }
 
-        .theme-dropdown.show {
+        .personalization-dropdown.show {
             opacity: 1;
             visibility: visible;
             transform: translateY(0) scale(1);
         }
 
-        .theme-dropdown-header {
-            padding: 6px 10px 10px;
-            margin-bottom: 4px;
+        .personalization-panel {
+            display: flex;
+            height: 100%;
+            max-height: 60vh;
+        }
+
+        .panel-column {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .theme-column {
+            flex: 0 0 45%;
+            border-right: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .wallpaper-column {
+            flex: 0 0 55%;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
             border-bottom: 1px solid var(--md-sys-color-outline-variant);
         }
 
-        .theme-dropdown-title {
-            font-size: 11px;
+        .panel-title {
+            font-size: 13px;
             font-weight: 600;
             color: var(--md-sys-color-primary);
             text-transform: uppercase;
@@ -311,20 +335,22 @@
             gap: 6px;
         }
 
+        /* 主题选项 */
+        .theme-options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
         .theme-option {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 10px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.15s ease;
             color: var(--md-sys-color-on-surface);
-            margin-bottom: 2px;
-        }
-
-        .theme-option:last-child {
-            margin-bottom: 0;
         }
 
         .theme-option:hover {
@@ -337,8 +363,8 @@
         }
 
         .theme-option-preview {
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             border: 2px solid transparent;
             flex-shrink: 0;
@@ -373,7 +399,152 @@
             transform: scale(1);
         }
 
-        .theme-dropdown-overlay {
+        /* 壁纸设置区域 */
+        .wallpaper-presets-compact {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .wallpaper-preset {
+            aspect-ratio: 16/10;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #666;
+            background: var(--md-sys-color-surface-variant);
+        }
+
+        .wallpaper-preset:hover {
+            transform: scale(1.05);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .wallpaper-preset.active {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px var(--md-sys-color-primary-container);
+        }
+
+        .wallpaper-input-group {
+            margin-bottom: 12px;
+        }
+
+        .wallpaper-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 8px;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            font-size: 12px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .wallpaper-input:focus {
+            outline: none;
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.08);
+        }
+
+        .sliders-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .slider-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .slider-item label {
+            font-size: 11px;
+            color: var(--md-sys-color-on-surface-variant);
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .slider-item span {
+            color: var(--md-sys-color-primary);
+            font-weight: 700;
+        }
+
+        .wallpaper-slider {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--md-sys-color-surface-variant);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .wallpaper-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary);
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .wallpaper-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .wallpaper-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .wallpaper-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .wallpaper-btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .wallpaper-btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .wallpaper-btn-secondary {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .wallpaper-btn-secondary:hover {
+            background: var(--md-sys-color-outline-variant);
+        }
+
+        .personalization-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -384,7 +555,7 @@
             background: transparent;
         }
 
-        .theme-dropdown-overlay.show {
+        .personalization-overlay.show {
             display: block;
         }
 
@@ -405,6 +576,13 @@
 
         .sidebar.collapsed {
             width: var(--sidebar-collapsed-width);
+        }
+
+        /* 修复收起时菜单居中 */
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
         }
 
         .nav-menu {
@@ -469,13 +647,6 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-        }
-
-        /* 修复侧边栏收起时菜单图标居中 */
-        .sidebar.collapsed .nav-item {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
         }
 
         /* Tooltip for collapsed sidebar */
@@ -714,17 +885,6 @@
                 font-size: 18px;
             }
 
-            .sidebar.collapsed .nav-item {
-                justify-content: center;
-                padding-left: 0;
-                padding-right: 0;
-            }
-
-            .sidebar.collapsed .nav-icon {
-                margin-right: 0;
-                font-size: 20px;
-            }
-
             .main-content {
                 margin-left: 0 !important;
                 padding: 16px;
@@ -739,18 +899,31 @@
                 gap: 10px;
             }
 
-            .theme-toggle-btn {
-                padding: 6px;
+            /* 移动端个性化面板全宽 */
+            .personalization-dropdown {
+                width: calc(100vw - 32px);
+                right: 16px;
+                max-height: 70vh;
             }
 
-            .theme-toggle-btn .theme-label,
-            .theme-toggle-btn .dropdown-arrow {
+            .personalization-panel {
+                flex-direction: column;
+                max-height: 60vh;
+            }
+
+            .theme-column {
+                flex: 1;
+                border-right: none;
+                border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            }
+
+            .wallpaper-column {
+                flex: 1;
+            }
+
+            .personalization-toggle-btn .personalization-label,
+            .personalization-toggle-btn .dropdown-arrow {
                 display: none;
-            }
-
-            .theme-dropdown {
-                right: -8px;
-                min-width: 160px;
             }
         }
 
@@ -782,331 +955,22 @@
             pointer-events: none;
         }
 
-        /* 壁纸控制面板 */
-        .wallpaper-controls {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--md-sys-color-surface);
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-            border: 1px solid var(--md-sys-color-outline-variant);
-            z-index: 1001;
-            width: 260px;
-            transform: translateY(calc(100% + 60px));
-            transition: transform var(--md-transition-medium) var(--md-easing);
+        /* Toast 动画 */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
-
-        .wallpaper-controls.show {
-            transform: translateY(0);
-        }
-
-        .wallpaper-controls-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--md-sys-color-outline-variant);
-        }
-
-        .wallpaper-controls-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--md-sys-color-primary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .wallpaper-close {
-            background: none;
-            border: none;
-            color: var(--md-sys-color-on-surface-variant);
-            cursor: pointer;
-            font-size: 16px;
-            padding: 4px;
-            border-radius: 6px;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all var(--md-transition-fast) var(--md-easing);
-        }
-
-        .wallpaper-close:hover {
-            background: var(--md-sys-color-surface-variant);
-            color: var(--md-sys-color-primary);
-        }
-
-        .wallpaper-input-group {
-            margin-bottom: 12px;
-        }
-
-        .wallpaper-label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--md-sys-color-on-surface-variant);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .wallpaper-input {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 6px;
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
-            font-size: 12px;
-            font-family: inherit;
-            transition: all var(--md-transition-fast) var(--md-easing);
-        }
-
-        .wallpaper-input:focus {
-            outline: none;
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.08);
-        }
-
-        .wallpaper-slider-container {
-            margin-bottom: 12px;
-        }
-
-        .wallpaper-slider-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-
-        .wallpaper-slider-value {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--md-sys-color-primary);
-            background: var(--md-sys-color-primary-container);
-            padding: 2px 8px;
-            border-radius: 12px;
-            min-width: 36px;
-            text-align: center;
-        }
-
-        .wallpaper-slider {
-            width: 100%;
-            height: 4px;
-            border-radius: 2px;
-            background: var(--md-sys-color-surface-variant);
-            outline: none;
-            -webkit-appearance: none;
-            appearance: none;
-            cursor: pointer;
-        }
-
-        .wallpaper-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--md-sys-color-primary);
-            cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            transition: transform var(--md-transition-fast) var(--md-easing);
-        }
-
-        .wallpaper-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
-        }
-
-        .wallpaper-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .wallpaper-btn {
-            flex: 1;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--md-transition-fast) var(--md-easing);
-            font-family: inherit;
-        }
-
-        .wallpaper-btn-primary {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-        }
-
-        .wallpaper-btn-primary:hover {
-            background: var(--md-sys-color-secondary);
-            transform: translateY(-1px);
-        }
-
-        .wallpaper-btn-secondary {
-            background: var(--md-sys-color-surface-variant);
-            color: var(--md-sys-color-on-surface);
-        }
-
-        .wallpaper-btn-secondary:hover {
-            background: var(--md-sys-color-outline-variant);
-        }
-
-        /* 壁纸设置按钮 */
-        .wallpaper-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            border: none;
-            cursor: pointer;
-            font-size: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
-            transition: all var(--md-transition-medium) var(--md-easing);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .wallpaper-toggle:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .wallpaper-toggle.active {
-            background: var(--md-sys-color-secondary);
-            transform: rotate(45deg);
-        }
-
-        /* 壁纸预设选择 */
-        .wallpaper-presets {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-
-        .wallpaper-preset {
-            aspect-ratio: 16/9;
-            border-radius: 6px;
-            background-size: cover;
-            background-position: center;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all var(--md-transition-fast) var(--md-easing);
-        }
-
-        .wallpaper-preset:hover {
-            transform: scale(1.05);
-            border-color: var(--md-sys-color-primary);
-        }
-
-        .wallpaper-preset.active {
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
-        }
-
-        /* 响应式调整 */
-        @media (max-width: 768px) {
-            .wallpaper-controls {
-                left: 16px;
-                right: 16px;
-                bottom: 72px;
-                width: auto;
-            }
-
-            .wallpaper-toggle {
-                bottom: 16px;
-                right: 16px;
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
-            }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 1; }
         }
     </style>
-    <base target="_blank">
     <base target="_blank">
 </head>
 <body>
 <!-- 壁纸层 -->
 <div class="wallpaper-layer" id="wallpaperLayer"></div>
 <div class="wallpaper-overlay" id="wallpaperOverlay"></div>
-
-<!-- 壁纸设置按钮 -->
-<button class="wallpaper-toggle" id="wallpaperToggle" onclick="toggleWallpaperControls()" title="壁纸设置">🖼️</button>
-
-<!-- 壁纸控制面板 -->
-<div class="wallpaper-controls" id="wallpaperControls">
-    <div class="wallpaper-controls-header">
-        <div class="wallpaper-controls-title">
-            <span>🎨</span>
-            <span>壁纸设置</span>
-        </div>
-        <button class="wallpaper-close" onclick="toggleWallpaperControls()">✕</button>
-    </div>
-
-    <!-- 预设壁纸 -->
-    <div class="wallpaper-input-group">
-        <label class="wallpaper-label">预设壁纸</label>
-        <div class="wallpaper-presets" id="wallpaperPresets">
-            <div class="wallpaper-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变"></div>
-            <div class="wallpaper-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变"></div>
-            <div class="wallpaper-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变"></div>
-            <div class="wallpaper-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变"></div>
-        </div>
-    </div>
-
-    <!-- 自定义URL -->
-    <div class="wallpaper-input-group">
-        <label class="wallpaper-label">图片URL</label>
-        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片链接..." onchange="updateWallpaper()">
-    </div>
-
-    <!-- 透明度 -->
-    <div class="wallpaper-slider-container">
-        <div class="wallpaper-slider-header">
-            <label class="wallpaper-label" style="margin:0">透明度</label>
-            <span class="wallpaper-slider-value" id="opacityValue">50%</span>
-        </div>
-        <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50" oninput="updateWallpaperSettings()">
-    </div>
-
-    <!-- 模糊度 -->
-    <div class="wallpaper-slider-container">
-        <div class="wallpaper-slider-header">
-            <label class="wallpaper-label" style="margin:0">模糊程度</label>
-            <span class="wallpaper-slider-value" id="blurValue">0px</span>
-        </div>
-        <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0" oninput="updateWallpaperSettings()">
-    </div>
-
-    <!-- 遮罩透明度 -->
-    <div class="wallpaper-slider-container">
-        <div class="wallpaper-slider-header">
-            <label class="wallpaper-label" style="margin:0">遮罩透明度</label>
-            <span class="wallpaper-slider-value" id="overlayValue">70%</span>
-        </div>
-        <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="70" oninput="updateWallpaperSettings()">
-    </div>
-
-    <div class="wallpaper-actions">
-        <button class="wallpaper-btn wallpaper-btn-secondary" onclick="resetWallpaper()">重置</button>
-        <button class="wallpaper-btn wallpaper-btn-primary" onclick="saveWallpaperSettings()">应用</button>
-    </div>
-</div>
-
 
 <!-- 顶部应用栏 -->
 <header class="app-header">
@@ -1125,21 +989,70 @@
         </div>
     </div>
 
-    <div class="theme-switcher">
-        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleThemeDropdown()" title="切换主题">
-            <span class="theme-icon">🎨</span>
-            <span class="theme-label">主题</span>
+    <div class="personalization-switcher">
+        <button class="personalization-toggle-btn" id="personalizationToggleBtn" onclick="togglePersonalizationPanel()" title="个性化设置">
+            <span class="personalization-icon">🎨</span>
+            <span class="personalization-label">个性化</span>
             <span class="dropdown-arrow">▼</span>
         </button>
-        <div class="theme-dropdown-overlay" id="themeDropdownOverlay" onclick="toggleThemeDropdown()"></div>
-        <div class="theme-dropdown" id="themeDropdown">
-            <div class="theme-dropdown-header">
-                <div class="theme-dropdown-title">
-                    <span>✨</span>
-                    <span>选择主题</span>
+        <div class="personalization-overlay" id="personalizationOverlay" onclick="togglePersonalizationPanel()"></div>
+        <div class="personalization-dropdown" id="personalizationDropdown">
+            <div class="personalization-panel">
+                <!-- 左侧：主题选择 -->
+                <div class="panel-column theme-column">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>✨</span>
+                            <span>主题配色</span>
+                        </div>
+                    </div>
+                    <div id="themeOptions" class="theme-options-list"></div>
+                </div>
+
+                <!-- 右侧：壁纸设置 -->
+                <div class="panel-column wallpaper-column">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span>🖼️</span>
+                            <span>壁纸背景</span>
+                        </div>
+                    </div>
+
+                    <!-- 预设壁纸 -->
+                    <div class="wallpaper-presets-compact" id="wallpaperPresets">
+                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变"></div>
+                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变"></div>
+                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变"></div>
+                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变"></div>
+                    </div>
+
+                    <!-- 自定义URL -->
+                    <div class="wallpaper-input-group">
+                        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..." onchange="updateWallpaper()">
+                    </div>
+
+                    <!-- 滑块组 -->
+                    <div class="sliders-group">
+                        <div class="slider-item">
+                            <label>壁纸透明度 <span id="opacityValue">50%</span></label>
+                            <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50" oninput="updateWallpaperSettings()">
+                        </div>
+                        <div class="slider-item">
+                            <label>模糊程度 <span id="blurValue">0px</span></label>
+                            <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0" oninput="updateWallpaperSettings()">
+                        </div>
+                        <div class="slider-item">
+                            <label>背景遮罩 <span id="overlayValue">85%</span></label>
+                            <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="85" oninput="updateWallpaperSettings()">
+                        </div>
+                    </div>
+
+                    <div class="wallpaper-actions">
+                        <button class="wallpaper-btn wallpaper-btn-secondary" onclick="resetWallpaper()">重置</button>
+                        <button class="wallpaper-btn wallpaper-btn-primary" onclick="saveWallpaperSettings()">应用</button>
+                    </div>
                 </div>
             </div>
-            <div id="themeOptions"></div>
         </div>
     </div>
 </header>
@@ -1233,7 +1146,7 @@
 
                 if (isImage) {
                     logoContainer.classList.add('is-image');
-                    logoContainer.innerHTML = `<img src="${logo}" alt="Logo" onerror="this.parentElement.classList.remove('is-image'); this.parentElement.textContent='🧭'; console.error('Logo加载失败:', '${logo.substring(0, 50)}...');">`;
+                    logoContainer.innerHTML = `<img src="${logo}" alt="Logo" onerror="this.parentElement.classList.remove('is-image'); this.parentElement.textContent='🧭';">`;
                 } else {
                     logoContainer.classList.remove('is-image');
                     logoContainer.textContent = logo;
@@ -1391,10 +1304,6 @@
 
         const appNavigator = new AppNavigator();
         window.appNavigator = appNavigator;
-
-        if (typeof renderThemeOptions === 'function') {
-            renderThemeOptions();
-        }
     });
 </script>
 
@@ -1406,7 +1315,7 @@
                 url: '',
                 opacity: 50,
                 blur: 0,
-                overlayOpacity: 70
+                overlayOpacity: 85
             };
             this.settings = this.loadSettings();
             this.init();
@@ -1496,7 +1405,7 @@
                 url: urlInput ? urlInput.value : '',
                 opacity: parseInt(opacitySlider ? opacitySlider.value : 50),
                 blur: parseInt(blurSlider ? blurSlider.value : 0),
-                overlayOpacity: parseInt(overlaySlider ? overlaySlider.value : 70)
+                overlayOpacity: parseInt(overlaySlider ? overlaySlider.value : 85)
             };
 
             this.applySettings();
@@ -1507,103 +1416,16 @@
             document.querySelectorAll('.wallpaper-preset').forEach(p => p.classList.remove('active'));
             this.applySettings();
             this.saveSettings();
-        }
-
-        save() {
-            this.saveSettings();
-            this.showToast('壁纸设置已保存');
-        }
-
-        showToast(message) {
-            const existing = document.querySelector('.wallpaper-toast');
-            if (existing) existing.remove();
-
-            const toast = document.createElement('div');
-            toast.className = 'wallpaper-toast';
-            toast.style.cssText = `
-                position: fixed;
-                bottom: 80px;
-                right: 20px;
-                background: var(--md-sys-color-inverse-surface);
-                color: var(--md-sys-color-inverse-on-surface);
-                padding: 10px 16px;
-                border-radius: 8px;
-                font-size: 12px;
-                font-weight: 500;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                z-index: 1002;
-                animation: slideIn 0.3s ease;
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 2000);
+            showToast('已恢复默认设置');
         }
     }
 
     let wallpaperManager;
 
-    function toggleWallpaperControls() {
-        const controls = document.getElementById('wallpaperControls');
-        const toggle = document.getElementById('wallpaperToggle');
-
-        if (controls && toggle) {
-            controls.classList.toggle('show');
-            toggle.classList.toggle('active');
-        }
-    }
-
-    function updateWallpaper() {
-        if (wallpaperManager) {
-            wallpaperManager.updateFromInputs();
-        }
-    }
-
-    function updateWallpaperSettings() {
-        if (wallpaperManager) {
-            wallpaperManager.updateFromInputs();
-        }
-    }
-
-    function resetWallpaper() {
-        if (wallpaperManager) {
-            wallpaperManager.reset();
-        }
-    }
-
-    function saveWallpaperSettings() {
-        if (wallpaperManager) {
-            wallpaperManager.save();
-            toggleWallpaperControls();
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        wallpaperManager = new WallpaperManager();
-    });
-
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-</script>
-
-<script>
-    function toggleThemeDropdown() {
-        const dropdown = document.getElementById('themeDropdown');
-        const overlay = document.getElementById('themeDropdownOverlay');
-        const btn = document.getElementById('themeToggleBtn');
+    function togglePersonalizationPanel() {
+        const dropdown = document.getElementById('personalizationDropdown');
+        const overlay = document.getElementById('personalizationOverlay');
+        const btn = document.getElementById('personalizationToggleBtn');
 
         if (!dropdown) return;
 
@@ -1617,10 +1439,7 @@
             dropdown.classList.add('show');
             if (overlay) overlay.classList.add('show');
             if (btn) btn.classList.add('active');
-
-            if (typeof renderThemeOptions === 'function') {
-                renderThemeOptions();
-            }
+            renderThemeOptions();
         }
     }
 
@@ -1662,67 +1481,91 @@
         }
 
         document.dispatchEvent(new CustomEvent('themeChanged', { detail: { themeId } }));
-        toggleThemeDropdown();
-        showThemeToast(themeId);
+
+        // 更新选中状态
+        document.querySelectorAll('.theme-option').forEach(opt => {
+            opt.classList.remove('active');
+            if (opt.dataset.themeId === themeId) opt.classList.add('active');
+        });
+
+        showToast(`已切换到 ${themeConfig.themes.find(t => t.id === themeId)?.name || '新主题'}`);
     }
 
-    function showThemeToast(themeId) {
-        if (typeof themeConfig === 'undefined') return;
+    function updateWallpaper() {
+        if (wallpaperManager) {
+            wallpaperManager.updateFromInputs();
+        }
+    }
 
-        const theme = themeConfig.themes.find(t => t.id === themeId);
-        const themeName = theme ? theme.name : '新主题';
+    function updateWallpaperSettings() {
+        if (wallpaperManager) {
+            wallpaperManager.updateFromInputs();
+        }
+    }
+
+    function resetWallpaper() {
+        if (wallpaperManager) {
+            wallpaperManager.reset();
+        }
+    }
+
+    function saveWallpaperSettings() {
+        if (wallpaperManager) {
+            wallpaperManager.saveSettings();
+            togglePersonalizationPanel();
+            showToast('壁纸设置已保存');
+        }
+    }
+
+    function showToast(message) {
+        const existing = document.querySelector('.toast-notification');
+        if (existing) existing.remove();
 
         const toast = document.createElement('div');
+        toast.className = 'toast-notification';
         toast.style.cssText = `
             position: fixed;
             top: 70px;
             right: 20px;
             background: var(--md-sys-color-inverse-surface);
             color: var(--md-sys-color-inverse-on-surface);
-            padding: 10px 16px;
-            border-radius: 8px;
+            padding: 12px 20px;
+            border-radius: 12px;
             font-size: 13px;
             font-weight: 500;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 1003;
             animation: slideInRight 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            border: 1px solid var(--md-sys-color-outline-variant);
         `;
-        toast.innerHTML = `<span>✨</span><span>已切换到 ${themeName}</span>`;
+        toast.innerHTML = `<span>✨</span><span>${message}</span>`;
         document.body.appendChild(toast);
 
         setTimeout(() => {
             toast.style.animation = 'slideOutRight 0.3s ease';
             setTimeout(() => toast.remove(), 300);
-        }, 2000);
+        }, 2500);
     }
 
+    // 点击外部关闭
     document.addEventListener('click', (e) => {
-        const dropdown = document.getElementById('themeDropdown');
-        const btn = document.getElementById('themeToggleBtn');
+        const dropdown = document.getElementById('personalizationDropdown');
+        const btn = document.getElementById('personalizationToggleBtn');
 
         if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
             dropdown.classList.remove('show');
-            if (btn) btn.classList.remove('active');
-            const overlay = document.getElementById('themeDropdownOverlay');
+            btn.classList.remove('active');
+            const overlay = document.getElementById('personalizationOverlay');
             if (overlay) overlay.classList.remove('show');
         }
     });
 
-    const themeAnimStyle = document.createElement('style');
-    themeAnimStyle.textContent = `
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 1; }
-        }
-    `;
-    document.head.appendChild(themeAnimStyle);
+    document.addEventListener('DOMContentLoaded', () => {
+        wallpaperManager = new WallpaperManager();
+    });
 </script>
 </body>
 </html>
