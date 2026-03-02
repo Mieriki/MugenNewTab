@@ -149,45 +149,234 @@
             line-height: 1.2;
         }
 
-        /* 主题切换器 */
+        /* 主题切换器 - 优化版 */
         .theme-switcher {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 8px 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            position: relative;
             flex-shrink: 0;
         }
 
-        .theme-switcher label {
-            font-size: 13px;
-            color: var(--md-sys-color-primary);
-            font-weight: 600;
-        }
-
-        .theme-select {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            border: none;
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 13px;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all var(--md-transition-fast) var(--md-easing);
-            outline: none;
+        .theme-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 24px;
+            color: white;
+            font-size: 14px;
             font-weight: 500;
-            min-width: 100px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
         }
 
-        .theme-select:hover {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+        .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .theme-toggle-btn:active {
+            transform: translateY(0);
+        }
+
+        .theme-toggle-btn .theme-icon {
+            font-size: 18px;
+        }
+
+        .theme-toggle-btn .theme-label {
+            font-size: 14px;
+        }
+
+        .theme-toggle-btn .dropdown-arrow {
+            font-size: 10px;
+            opacity: 0.8;
+            margin-left: 4px;
+            transition: transform 0.2s ease;
+        }
+
+        .theme-toggle-btn.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .theme-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--md-sys-color-surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 8px;
+            min-width: 200px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            border: 1px solid var(--md-sys-color-outline);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.95);
+            transform-origin: top right;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1002;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .theme-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .theme-dropdown-header {
+            padding: 8px 12px 12px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .theme-dropdown-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--md-sys-color-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 2px;
+        }
+
+        .theme-option:last-child {
+            margin-bottom: 0;
+        }
+
+        .theme-option:hover {
+            background: var(--md-sys-color-primary-container);
+        }
+
+        .theme-option.active {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-primary);
+        }
+
+        .theme-option-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+
+        .theme-option:hover .theme-option-preview {
+            transform: scale(1.15);
+        }
+
+        .theme-option.active .theme-option-preview {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container), 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .theme-option-name {
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .theme-option-check {
+            font-size: 14px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--md-sys-color-primary);
+        }
+
+        .theme-option.active .theme-option-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 下拉菜单滚动条 */
+        .theme-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .theme-dropdown::-webkit-scrollbar-track {
+            background: transparent;
+            margin: 4px;
+        }
+
+        .theme-dropdown::-webkit-scrollbar-thumb {
+            background: var(--md-sys-color-outline);
+            border-radius: 3px;
+        }
+
+        .theme-dropdown::-webkit-scrollbar-thumb:hover {
+            background: var(--md-sys-color-on-surface-variant);
+        }
+
+        /* 遮罩层 */
+        .theme-dropdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1001;
+            display: none;
+            background: transparent;
+        }
+
+        .theme-dropdown-overlay.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .theme-toggle-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 18px;
+            }
+
+            .theme-dropdown {
+                right: -8px;
+                min-width: 160px;
+            }
+
+            .theme-toggle-btn {
+                padding: 8px;
+            }
+
+            .theme-toggle-btn .theme-label,
+            .theme-toggle-btn .dropdown-arrow {
+                display: none;
+            }
+
+            .theme-dropdown {
+                right: -60px;
+                min-width: 180px;
+            }
+
+            .theme-option {
+                padding: 8px 10px;
+            }
+
+            .theme-option-name {
+                font-size: 13px;
+            }
         }
 
         /* 左侧导航栏 */
@@ -495,16 +684,39 @@
             }
 
             .theme-switcher {
-                padding: 6px 10px;
+                margin-left: 8px;
             }
 
-            .theme-switcher label {
+            .theme-switcher-btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .theme-switcher-btn .dropdown-arrow {
+                font-size: 12px;
+                opacity: 0.8;
+                transition: transform var(--md-transition-fast) var(--md-easing);
+            }
+
+            .theme-switcher-btn.active .dropdown-arrow {
+                transform: rotate(180deg);
+            }
+
+            theme-switcher-btn .theme-name {
                 display: none;
             }
 
-            .theme-select {
-                min-width: 80px;
-                font-size: 12px;
+            .theme-dropdown {
+                right: -40px;
+                min-width: 160px;
+            }
+
+            .theme-option {
+                padding: 8px 10px;
+            }
+
+            .theme-option-name {
+                font-size: 13px;
             }
 
             .overlay.show {
@@ -891,8 +1103,21 @@
     </div>
 
     <div class="theme-switcher">
-        <label for="themeSelect">🎨</label>
-        <select id="themeSelect" class="theme-select"></select>
+        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleThemeDropdown()" title="切换主题">
+            <span class="theme-icon">🎨</span>
+            <span class="theme-label">主题</span>
+            <span class="dropdown-arrow">▼</span>
+        </button>
+        <div class="theme-dropdown-overlay" id="themeDropdownOverlay" onclick="toggleThemeDropdown()"></div>
+        <div class="theme-dropdown" id="themeDropdown">
+            <div class="theme-dropdown-header">
+                <div class="theme-dropdown-title">
+                    <span>✨</span>
+                    <span>选择主题</span>
+                </div>
+            </div>
+            <div id="themeOptions"></div>
+        </div>
     </div>
 </header>
 
@@ -930,16 +1155,14 @@
             const logoContainer = document.getElementById('headerLogo');
             if (!logoContainer || typeof themeConfig === 'undefined') return;
 
-            const themeSelect = document.getElementById('themeSelect');
-            const currentThemeId = themeSelect ? themeSelect.value : 'material-rose';
-
+            // 从localStorage获取当前主题，与ThemeManager保持一致
+            const currentThemeId = localStorage.getItem('theme') || themeConfig.defaultTheme || 'material-rose';
             const currentTheme = themeConfig.themes.find(t => t.id === currentThemeId);
 
             if (currentTheme && currentTheme.logo) {
                 let logo = currentTheme.logo;
 
                 // 检测是否为纯 Base64 字符串（没有 data: 前缀）
-                // 纯 Base64 特征：只包含 A-Z, a-z, 0-9, +, /, =，且长度较长
                 const isPureBase64 = /^[A-Za-z0-9+/=]+$/.test(logo) && logo.length > 20;
 
                 // 检测是否为完整 Data URI
@@ -951,14 +1174,11 @@
                 let isImage = false;
 
                 if (isPureBase64) {
-                    // 纯 Base64，自动添加 PNG 前缀（最常见）
                     logo = 'data:image/png;base64,' + logo;
                     isImage = true;
                 } else if (isDataUri) {
-                    // 已经是完整的 Data URI
                     isImage = true;
                 } else if (isUrl) {
-                    // 是 URL 或文件路径
                     isImage = true;
                 }
 
@@ -966,7 +1186,6 @@
                     logoContainer.classList.add('is-image');
                     logoContainer.innerHTML = `<img src="${logo}" alt="Logo" onerror="this.parentElement.classList.remove('is-image'); this.parentElement.textContent='🧭'; console.error('Logo加载失败:', '${logo.substring(0, 50)}...');">`;
                 } else {
-                    // Emoji 或文本
                     logoContainer.classList.remove('is-image');
                     logoContainer.textContent = logo;
                 }
@@ -1017,16 +1236,10 @@
                 });
             }
 
-            const themeSelect = document.getElementById('themeSelect');
-            if (themeSelect) {
-                themeSelect.addEventListener('change', () => {
-                    setTimeout(() => this.updateHeaderLogo(), 50);
-                });
-
-                document.addEventListener('themeChanged', () => {
-                    this.updateHeaderLogo();
-                });
-            }
+            // 监听主题变化事件
+            document.addEventListener('themeChanged', () => {
+                this.updateHeaderLogo();
+            });
         }
 
         switchCategory(category) {
@@ -1336,6 +1549,193 @@
         }
     `;
     document.head.appendChild(style);
+
+
+    // ==================== 主题切换器优化 ====================
+
+    // 主题下拉菜单控制
+    function toggleThemeDropdown() {
+        const dropdown = document.getElementById('themeDropdown');
+        const overlay = document.getElementById('themeDropdownOverlay');
+        const btn = document.getElementById('themeToggleBtn');
+
+        if (!dropdown) return;
+
+        const isOpen = dropdown.classList.contains('show');
+
+        if (isOpen) {
+            dropdown.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
+            if (btn) btn.classList.remove('active');
+        } else {
+            dropdown.classList.add('show');
+            if (overlay) overlay.classList.add('show');
+            if (btn) btn.classList.add('active');
+
+            // 刷新主题列表
+            if (typeof renderThemeOptions === 'function') {
+                renderThemeOptions();
+            }
+        }
+    }
+
+    // 渲染主题选项
+    function renderThemeOptions() {
+        const container = document.getElementById('themeOptions');
+        if (!container || typeof themeConfig === 'undefined') return;
+
+        container.innerHTML = '';
+        const currentTheme = localStorage.getItem('theme') || themeConfig.defaultTheme || 'material-rose';
+
+        themeConfig.themes.forEach(theme => {
+            const option = document.createElement('div');
+            option.className = 'theme-option' + (theme.id === currentTheme ? ' active' : '');
+            option.onclick = () => selectTheme(theme.id);
+
+            const color = theme.colors && theme.colors['--md-sys-color-primary'] ? theme.colors['--md-sys-color-primary'] : '#B14A6B';
+
+            option.innerHTML = `
+                <div class="theme-color-dot" style="background: ${color}"></div>
+                <span class="theme-name">${theme.name}</span>
+            `;
+
+            container.appendChild(option);
+        });
+    }
+
+    // 选择主题
+    function selectTheme(themeId) {
+        // 应用主题
+        localStorage.setItem('theme', themeId);
+
+        if (typeof themeConfig !== 'undefined' && themeConfig.themes) {
+            const theme = themeConfig.themes.find(t => t.id === themeId);
+            if (theme && theme.colors) {
+                Object.entries(theme.colors).forEach(([key, value]) => {
+                    document.documentElement.style.setProperty(key, value);
+                });
+            }
+        }
+
+        // 触发自定义事件
+        document.dispatchEvent(new CustomEvent('themeChanged', { detail: { themeId } }));
+
+        // 关闭下拉菜单
+        toggleThemeDropdown();
+
+        // 显示提示
+        showThemeToast(themeId);
+    }
+
+    // 显示主题切换提示
+    function showThemeToast(themeId) {
+        if (typeof themeConfig === 'undefined') return;
+
+        const theme = themeConfig.themes.find(t => t.id === themeId);
+        const themeName = theme ? theme.name : '新主题';
+
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            background: var(--md-sys-color-inverse-surface);
+            color: var(--md-sys-color-inverse-on-surface);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            z-index: 1003;
+            animation: slideInRight 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        `;
+        toast.innerHTML = `<span>✨</span><span>已切换到 ${themeName}</span>`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+
+    // 点击外部关闭下拉菜单
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('themeDropdown');
+        const btn = document.getElementById('themeToggleBtn');
+
+        if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+            dropdown.classList.remove('show');
+            if (btn) btn.style.transform = '';
+        }
+    });
+
+    // 添加动画样式
+    const themeAnimStyle = document.createElement('style');
+    themeAnimStyle.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(themeAnimStyle);
+
+</script>
+
+<script>
+    // 主题下拉菜单渲染器
+    function renderThemeDropdown() {
+        if (typeof themeConfig === 'undefined') return;
+
+        const dropdown = document.getElementById('themeDropdown');
+        const themeSelect = document.getElementById('themeSelect');
+
+        if (!dropdown || !themeSelect) return;
+
+        dropdown.innerHTML = '';
+
+        themeConfig.themes.forEach(theme => {
+            const option = document.createElement('div');
+            option.className = 'theme-option';
+            option.dataset.themeId = theme.id;
+            if (theme.id === themeSelect.value) {
+                option.classList.add('active');
+                document.getElementById('currentThemeName').textContent = theme.name;
+            }
+
+            const primaryColor = theme.colors['--md-sys-color-primary'] || '#B14A6B';
+
+            option.innerHTML = `
+                <div class="theme-option-preview" style="background: ${primaryColor}"></div>
+                <span class="theme-option-name">${theme.name}</span>
+                <span class="theme-option-check">✓</span>
+            `;
+
+            option.addEventListener('click', () => {
+                themeSelect.value = theme.id;
+                themeSelect.dispatchEvent(new Event('change'));
+                document.dispatchEvent(new Event('themeChanged'));
+                toggleThemeDropdown();
+            });
+
+            dropdown.appendChild(option);
+        });
+    }
+
+    // 页面加载完成后渲染下拉菜单
+    document.addEventListener('DOMContentLoaded', () => {
+        // 等待ThemeManager初始化完成
+        setTimeout(renderThemeDropdown, 100);
+    });
+
+    // 监听主题配置加载完成事件
+    document.addEventListener('themeConfigLoaded', renderThemeDropdown);
 </script>
 </body>
 </html>
