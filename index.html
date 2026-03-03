@@ -8,6 +8,7 @@
     <script src="js/searchEngines.js"></script>
     <style>
         :root {
+            /* Material 3 动态颜色变量 */
             --md-sys-color-primary: #B14A6B;
             --md-sys-color-on-primary: #FFFFFF;
             --md-sys-color-primary-container: #FFD8E1;
@@ -34,6 +35,7 @@
             --md-sys-color-inverse-surface: #201A1A;
             --md-sys-color-inverse-on-surface: #F3DDE2;
 
+            /* RGB 版本用于半透明混合 */
             --md-sys-color-surface-rgb: 255, 248, 249;
             --md-sys-color-background-rgb: 255, 248, 249;
 
@@ -41,6 +43,7 @@
             --md-transition-fast: 0.15s;
             --md-transition-medium: 0.25s;
 
+            /* 侧边栏宽度变量 */
             --sidebar-width: 200px;
             --sidebar-collapsed-width: 56px;
             --header-height: 52px;
@@ -49,7 +52,11 @@
             --fab-right: 24px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Noto Sans SC', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -63,7 +70,7 @@
             padding-bottom: 100px;
         }
 
-        /* 深色模式优化 */
+        /* 深色模式优化 - 降低刺眼度 */
         body.dark-mode {
             --md-sys-color-outline: rgba(255, 255, 255, 0.06);
             --md-sys-color-outline-variant: rgba(255, 255, 255, 0.04);
@@ -102,6 +109,7 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
+        /* 深色模式搜索界面玻璃态遮罩 */
         body.dark-mode .search-container {
             background: rgba(30, 30, 30, 0.9);
             border-color: rgba(255, 255, 255, 0.1);
@@ -121,6 +129,10 @@
         body.dark-mode .fab-menu {
             background: rgba(40, 40, 40, 0.98);
             border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .fab-divider {
+            background: rgba(255, 255, 255, 0.1);
         }
 
         body.dark-mode .ui-lib-panel {
@@ -176,6 +188,7 @@
             transition: gap 0.2s ease;
         }
 
+        /* 折叠按钮 - 纯文字版 */
         .collapse-toggle-btn {
             margin-left: 6px;
             background: none;
@@ -192,10 +205,22 @@
             user-select: none;
         }
 
-        .collapse-toggle-btn::before { content: '<<'; }
-        body.sidebar-collapsed .collapse-toggle-btn::before { content: '>>'; }
-        .collapse-toggle-btn:hover { color: rgba(255, 255, 255, 1); transform: scale(1.1); }
-        .collapse-toggle-btn:active { transform: scale(0.95); }
+        .collapse-toggle-btn::before {
+            content: '<<';
+        }
+
+        body.sidebar-collapsed .collapse-toggle-btn::before {
+            content: '>>';
+        }
+
+        .collapse-toggle-btn:hover {
+            color: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+        }
+
+        .collapse-toggle-btn:active {
+            transform: scale(0.95);
+        }
 
         .brand-icon {
             width: 32px;
@@ -268,6 +293,7 @@
             line-height: 1.2;
         }
 
+        /* 移动端菜单按钮 */
         .menu-toggle {
             display: none;
             width: 32px;
@@ -284,8 +310,11 @@
             flex-shrink: 0;
         }
 
-        .menu-toggle:hover { background: rgba(255, 255, 255, 0.2); }
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
 
+        /* 个性化设置按钮 */
         .personalization-switcher {
             position: relative;
             flex-shrink: 0;
@@ -308,15 +337,25 @@
             font-family: inherit;
         }
 
-        .personalization-toggle-btn:hover { background: rgba(255, 255, 255, 0.2); }
-        .personalization-toggle-btn .personalization-icon { font-size: 16px; }
+        .personalization-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .personalization-toggle-btn .personalization-icon {
+            font-size: 16px;
+        }
+
         .personalization-toggle-btn .dropdown-arrow {
             font-size: 10px;
             opacity: 0.8;
             transition: transform 0.2s ease;
         }
-        .personalization-toggle-btn.active .dropdown-arrow { transform: rotate(180deg); }
 
+        .personalization-toggle-btn.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* 个性化下拉面板 - 使用CSS变量 */
         .personalization-dropdown {
             position: absolute;
             top: calc(100% + 6px);
@@ -360,7 +399,9 @@
             border-right: 1px solid var(--md-sys-color-outline-variant);
         }
 
-        .wallpaper-column { flex: 0 0 55%; }
+        .wallpaper-column {
+            flex: 0 0 55%;
+        }
 
         .panel-header {
             display: flex;
@@ -382,6 +423,7 @@
             gap: 6px;
         }
 
+        /* 主题选项 */
         .theme-options-list {
             display: flex;
             flex-direction: column;
@@ -399,7 +441,10 @@
             color: var(--md-sys-color-on-surface);
         }
 
-        .theme-option:hover { background: var(--md-sys-color-primary-container); }
+        .theme-option:hover {
+            background: var(--md-sys-color-primary-container);
+        }
+
         .theme-option.active {
             background: var(--md-sys-color-primary-container);
             color: var(--md-sys-color-primary);
@@ -414,7 +459,10 @@
             transition: transform 0.2s ease;
         }
 
-        .theme-option:hover .theme-option-preview { transform: scale(1.1); }
+        .theme-option:hover .theme-option-preview {
+            transform: scale(1.1);
+        }
+
         .theme-option.active .theme-option-preview {
             border-color: var(--md-sys-color-primary);
             box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
@@ -439,6 +487,7 @@
             transform: scale(1);
         }
 
+        /* 壁纸设置区域 */
         .wallpaper-presets-compact {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -472,7 +521,9 @@
             box-shadow: 0 0 0 3px var(--md-sys-color-primary-container);
         }
 
-        .wallpaper-input-group { margin-bottom: 12px; }
+        .wallpaper-input-group {
+            margin-bottom: 12px;
+        }
 
         .wallpaper-input {
             width: 100%;
@@ -541,7 +592,9 @@
             transition: transform 0.2s;
         }
 
-        .wallpaper-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        .wallpaper-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
 
         .wallpaper-actions {
             display: flex;
@@ -575,7 +628,9 @@
             color: var(--md-sys-color-on-surface);
         }
 
-        .wallpaper-btn-secondary:hover { background: var(--md-sys-color-outline-variant); }
+        .wallpaper-btn-secondary:hover {
+            background: var(--md-sys-color-outline-variant);
+        }
 
         .personalization-overlay {
             position: fixed;
@@ -588,7 +643,9 @@
             background: transparent;
         }
 
-        .personalization-overlay.show { display: block; }
+        .personalization-overlay.show {
+            display: block;
+        }
 
         /* 左侧导航栏 */
         .sidebar {
@@ -607,7 +664,9 @@
             flex-direction: column;
         }
 
-        .sidebar.collapsed { width: var(--sidebar-collapsed-width); }
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
 
         .sidebar.collapsed .nav-item {
             justify-content: center;
@@ -697,6 +756,7 @@
             pointer-events: none;
         }
 
+        /* 搜索按钮（在菜单底部） */
         .sidebar-footer {
             padding: 12px 8px;
             border-top: 1px solid var(--md-sys-color-outline-variant);
@@ -729,7 +789,9 @@
             padding: 10px;
         }
 
-        .sidebar.collapsed .search-nav-item .nav-text { display: none; }
+        .sidebar.collapsed .search-nav-item .nav-text {
+            display: none;
+        }
 
         .search-shortcut {
             margin-left: auto;
@@ -741,7 +803,9 @@
             font-family: monospace;
         }
 
-        .sidebar.collapsed .search-shortcut { display: none; }
+        .sidebar.collapsed .search-shortcut {
+            display: none;
+        }
 
         /* 主内容区域 */
         .main-content {
@@ -756,6 +820,7 @@
             margin-left: var(--sidebar-collapsed-width);
         }
 
+        /* 内容头部 */
         .content-header {
             margin-bottom: 24px;
             padding-bottom: 12px;
@@ -779,14 +844,21 @@
             font-weight: 600;
         }
 
+        /* 分类区域 */
         .category {
             margin-bottom: 32px;
             animation: fadeInUp 0.5s ease-out;
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .category-title {
@@ -806,6 +878,7 @@
             object-fit: contain;
         }
 
+        /* 应用网格 */
         .apps-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -849,7 +922,9 @@
             transition: opacity 0.2s;
         }
 
-        .app-card:hover .app-actions { opacity: 1; }
+        .app-card:hover .app-actions {
+            opacity: 1;
+        }
 
         .app-action-btn {
             width: 24px;
@@ -914,7 +989,9 @@
             line-height: 1.3;
         }
 
-        .app-card:hover .app-name { color: var(--md-sys-color-primary); }
+        .app-card:hover .app-name {
+            color: var(--md-sys-color-primary);
+        }
 
         .app-description {
             font-size: 0.75rem;
@@ -928,6 +1005,7 @@
             max-height: 2.1em;
         }
 
+        /* 空状态 */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -935,6 +1013,7 @@
             font-size: 0.9rem;
         }
 
+        /* 遮罩层 */
         .overlay {
             display: none;
             position: fixed;
@@ -949,14 +1028,18 @@
 
         /* 响应式 */
         @media (max-width: 768px) {
-            :root { --sidebar-width: 220px; }
+            :root {
+                --sidebar-width: 220px;
+            }
 
             .menu-toggle {
                 display: flex;
                 margin-right: 8px;
             }
 
-            .collapse-toggle-btn { display: none !important; }
+            .collapse-toggle-btn {
+                display: none !important;
+            }
 
             body.sidebar-collapsed .brand-text {
                 opacity: 1;
@@ -964,7 +1047,9 @@
                 pointer-events: auto;
             }
 
-            .brand-text p { display: none; }
+            .brand-text p {
+                display: none;
+            }
 
             .sidebar {
                 transform: translateX(-100%);
@@ -972,8 +1057,13 @@
                 width: var(--sidebar-width) !important;
             }
 
-            .sidebar.open { transform: translateX(0); }
-            .sidebar.collapsed { width: var(--sidebar-width) !important; }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar.collapsed {
+                width: var(--sidebar-width) !important;
+            }
 
             .sidebar.collapsed .nav-text {
                 opacity: 1;
@@ -991,9 +1081,14 @@
                 padding: 16px;
             }
 
-            body.sidebar-collapsed .main-content { margin-left: 0 !important; }
+            body.sidebar-collapsed .main-content {
+                margin-left: 0 !important;
+            }
 
-            .apps-grid { grid-template-columns: 1fr; gap: 10px; }
+            .apps-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
 
             .personalization-dropdown {
                 width: calc(100vw - 32px);
@@ -1012,10 +1107,50 @@
                 border-bottom: 1px solid var(--md-sys-color-outline-variant);
             }
 
-            .wallpaper-column { flex: 1; }
+            .wallpaper-column {
+                flex: 1;
+            }
 
             .personalization-toggle-btn .personalization-label,
-            .personalization-toggle-btn .dropdown-arrow { display: none; }
+            .personalization-toggle-btn .dropdown-arrow {
+                display: none;
+            }
+
+            /* 移动端搜索框调整 */
+            .search-modal {
+                padding-top: 15vh;
+                align-items: flex-start;
+            }
+
+            .search-container {
+                width: 92%;
+                border-radius: 12px;
+            }
+
+            .search-header {
+                height: 56px;
+            }
+
+            .engine-selector {
+                padding: 0 4px 0 8px;
+            }
+
+            .engine-dropdown-trigger span {
+                display: none;
+            }
+
+            .engine-dropdown-menu {
+                min-width: 160px;
+            }
+
+            .search-submit-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .search-close {
+                margin-right: 4px;
+            }
 
             .fab-menu {
                 right: 16px !important;
@@ -1091,7 +1226,9 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
         }
 
-        .fab-main.active { transform: rotate(45deg); }
+        .fab-main.active {
+            transform: rotate(45deg);
+        }
 
         .fab-menu {
             position: absolute;
@@ -1141,6 +1278,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .fab-divider {
+            height: 1px;
+            background: var(--md-sys-color-outline-variant);
+            margin: 8px 0;
+        }
+
+        .fab-section-title {
+            font-size: 11px;
+            color: var(--md-sys-color-on-surface-variant);
+            padding: 4px 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* 模态框 */
@@ -1385,7 +1537,9 @@
             transition: all 0.2s;
         }
 
-        .btn-text:hover { color: var(--md-sys-color-on-surface); }
+        .btn-text:hover {
+            color: var(--md-sys-color-on-surface);
+        }
 
         /* UI 库面板 */
         .ui-lib-panel {
@@ -1580,13 +1734,25 @@
 
         /* Toast */
         @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
 
         /* 空状态 */
@@ -1605,46 +1771,6 @@
         .empty-state-compact p {
             font-size: 14px;
             margin-bottom: 16px;
-        }
-
-        /* 导入导出按钮组 */
-        .data-actions {
-            position: fixed;
-            left: calc(var(--sidebar-width) + 24px);
-            bottom: 24px;
-            z-index: 50;
-            display: flex;
-            gap: 8px;
-        }
-
-        body.sidebar-collapsed .data-actions {
-            left: calc(var(--sidebar-collapsed-width) + 24px);
-        }
-
-        @media (max-width: 768px) {
-            .data-actions {
-                left: 16px;
-                bottom: 80px;
-            }
-        }
-
-        .data-action-btn {
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid var(--md-sys-color-outline);
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: all 0.2s;
-        }
-
-        .data-action-btn:hover {
-            background: var(--md-sys-color-primary-container);
-            border-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-primary);
         }
 
         /* 搜索模态框 */
@@ -1730,7 +1856,9 @@
             position: relative;
         }
 
-        .engine-select-wrapper:hover { background: var(--md-sys-color-surface-variant); }
+        .engine-select-wrapper:hover {
+            background: var(--md-sys-color-surface-variant);
+        }
 
         .engine-icon-img {
             width: 18px;
@@ -1762,7 +1890,9 @@
             transition: transform 0.2s;
         }
 
-        .engine-select-wrapper.open .engine-dropdown-arrow { transform: rotate(180deg); }
+        .engine-select-wrapper.open .engine-dropdown-arrow {
+            transform: rotate(180deg);
+        }
 
         .engine-dropdown-menu {
             position: fixed;
@@ -1800,8 +1930,13 @@
             border-bottom: 1px solid var(--md-sys-color-outline-variant);
         }
 
-        .engine-option:last-child { border-bottom: none; }
-        .engine-option:hover { background: var(--md-sys-color-primary-container); }
+        .engine-option:last-child {
+            border-bottom: none;
+        }
+
+        .engine-option:hover {
+            background: var(--md-sys-color-primary-container);
+        }
 
         .engine-option.active {
             background: var(--md-sys-color-primary-container);
@@ -1862,7 +1997,9 @@
             transform: scale(1.05);
         }
 
-        .search-submit-btn:active { transform: scale(0.95); }
+        .search-submit-btn:active {
+            transform: scale(0.95);
+        }
 
         .search-submit-btn svg {
             width: 20px;
@@ -1927,9 +2064,13 @@
             transition: all 0.2s;
         }
 
-        .clear-history-btn:hover { background: var(--md-sys-color-primary-container); }
+        .clear-history-btn:hover {
+            background: var(--md-sys-color-primary-container);
+        }
 
-        .history-list { padding: 4px; }
+        .history-list {
+            padding: 4px;
+        }
 
         .history-item {
             display: flex;
@@ -1944,7 +2085,9 @@
             margin-bottom: 2px;
         }
 
-        .history-item:hover { background: var(--md-sys-color-surface-variant); }
+        .history-item:hover {
+            background: var(--md-sys-color-surface-variant);
+        }
 
         .history-icon {
             width: 16px;
@@ -2009,7 +2152,12 @@
         }
 
         /* 标签输入 */
-        .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
         .tab {
             padding: 8px 16px;
             border-radius: 8px;
@@ -2020,12 +2168,19 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         .tab.active {
             background: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
         }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
     </style>
     <base target="_blank">
 </head>
@@ -2034,13 +2189,16 @@
 <div class="wallpaper-layer" id="wallpaperLayer"></div>
 <div class="wallpaper-overlay" id="wallpaperOverlay"></div>
 
-<!-- 引擎下拉菜单 -->
-<div class="engine-dropdown-menu" id="engineDropdownMenu"></div>
+<!-- 引擎下拉菜单（移动到body下避免截断） -->
+<div class="engine-dropdown-menu" id="engineDropdownMenu">
+    <!-- 动态生成 -->
+</div>
 
 <!-- 全局搜索模态框 -->
 <div class="search-modal" id="searchModal">
     <div class="search-container">
         <div class="search-header">
+            <!-- 引擎选择器 -->
             <div class="engine-selector" id="engineSelector">
                 <div class="engine-select-wrapper" id="engineSelectWrapper" onclick="toggleEngineDropdown(event)">
                     <img id="currentEngineIcon" src="" alt="" class="engine-icon-img">
@@ -2052,24 +2210,38 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 输入框 -->
             <div class="search-input-wrapper">
-                <input type="text" class="search-input" id="searchInput" placeholder="输入搜索内容..." autocomplete="off" onkeydown="onSearchInput(event)">
+                <input type="text" class="search-input" id="searchInput" placeholder="输入搜索内容..." autocomplete="off"
+                       onkeydown="onSearchInput(event)">
             </div>
+
+            <!-- 搜索按钮 -->
             <button class="search-submit-btn" onclick="doSearch()" title="搜索 (Enter)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                     stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
             </button>
+
+            <!-- 关闭按钮 -->
             <button class="search-close" onclick="closeSearchModal()" title="关闭 (ESC)">✕</button>
         </div>
+
+        <!-- 搜索历史 -->
         <div class="search-history" id="searchHistory" style="display: none;">
             <div class="search-history-header">
                 <span>最近搜索</span>
                 <button class="clear-history-btn" onclick="clearSearchHistory()">清空</button>
             </div>
-            <div class="history-list" id="historyList"></div>
+            <div class="history-list" id="historyList">
+                <!-- 动态生成 -->
+            </div>
         </div>
+
+        <!-- 底部提示 -->
         <div class="search-footer">
             <div class="search-hints">
                 <span><kbd>↵</kbd> 搜索</span>
@@ -2083,19 +2255,23 @@
 <!-- 顶部应用栏 -->
 <header class="app-header">
     <div class="header-brand">
+        <!-- 移动端菜单按钮 -->
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
         <div class="brand">
             <div class="brand-icon" id="headerLogo">🧭</div>
             <div class="brand-text" id="brandText">
                 <h1>应用导航中心</h1>
                 <p>统一应用管理平台</p>
             </div>
+            <!-- 纯文字折叠按钮 -->
             <button class="collapse-toggle-btn" onclick="toggleSidebarCollapse()" title="收起/展开侧边栏"></button>
         </div>
     </div>
 
     <div class="personalization-switcher">
-        <button class="personalization-toggle-btn" id="personalizationToggleBtn" onclick="togglePersonalizationPanel()" title="个性化设置">
+        <button class="personalization-toggle-btn" id="personalizationToggleBtn" onclick="togglePersonalizationPanel()"
+                title="个性化设置">
             <span class="personalization-icon">🎨</span>
             <span class="personalization-label">个性化</span>
             <span class="dropdown-arrow">▼</span>
@@ -2103,42 +2279,71 @@
         <div class="personalization-overlay" id="personalizationOverlay" onclick="togglePersonalizationPanel()"></div>
         <div class="personalization-dropdown" id="personalizationDropdown">
             <div class="personalization-panel">
+                <!-- 左侧：主题选择 -->
                 <div class="panel-column theme-column">
                     <div class="panel-header">
-                        <div class="panel-title"><span>✨</span><span>主题配色</span></div>
+                        <div class="panel-title">
+                            <span>✨</span>
+                            <span>主题配色</span>
+                        </div>
                     </div>
                     <div id="themeOptions" class="theme-options-list"></div>
                 </div>
+
+                <!-- 右侧：壁纸设置 -->
                 <div class="panel-column wallpaper-column">
                     <div class="panel-header">
-                        <div class="panel-title"><span>🖼️</span><span>壁纸背景</span></div>
+                        <div class="panel-title">
+                            <span>🖼️</span>
+                            <span>壁纸背景</span>
+                        </div>
                     </div>
+
+                    <!-- 预设壁纸 -->
                     <div class="wallpaper-presets-compact" id="wallpaperPresets">
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变"></div>
+                        <div class="wallpaper-preset"
+                             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                             data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变"></div>
+                        <div class="wallpaper-preset"
+                             style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                             data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变"></div>
+                        <div class="wallpaper-preset"
+                             style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+                             data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变"></div>
+                        <div class="wallpaper-preset"
+                             style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+                             data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变"></div>
                     </div>
+
+                    <!-- 自定义URL -->
                     <div class="wallpaper-input-group">
-                        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..." onchange="updateWallpaper()">
+                        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..."
+                               onchange="updateWallpaper()">
                     </div>
+
+                    <!-- 滑块组 -->
                     <div class="sliders-group">
                         <div class="slider-item">
                             <label>壁纸透明度 <span id="opacityValue">50%</span></label>
-                            <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50"
+                                   oninput="updateWallpaperSettings()">
                         </div>
                         <div class="slider-item">
                             <label>模糊程度 <span id="blurValue">0px</span></label>
-                            <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0"
+                                   oninput="updateWallpaperSettings()">
                         </div>
                         <div class="slider-item">
                             <label>背景遮罩 <span id="overlayValue">85%</span></label>
-                            <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="85" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="85"
+                                   oninput="updateWallpaperSettings()">
                         </div>
                     </div>
+
                     <div class="wallpaper-actions">
                         <button class="wallpaper-btn wallpaper-btn-secondary" onclick="resetWallpaper()">重置</button>
-                        <button class="wallpaper-btn wallpaper-btn-primary" onclick="saveWallpaperSettings()">应用</button>
+                        <button class="wallpaper-btn wallpaper-btn-primary" onclick="saveWallpaperSettings()">应用
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2146,12 +2351,16 @@
     </div>
 </header>
 
-<!-- 遮罩层 -->
+<!-- 遮罩层（移动端） -->
 <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
 <!-- 左侧导航栏 -->
 <aside class="sidebar" id="sidebar">
-    <nav class="nav-menu" id="navMenu"></nav>
+    <nav class="nav-menu" id="navMenu">
+        <!-- 导航菜单将动态生成 -->
+    </nav>
+
+    <!-- 搜索入口 -->
     <div class="sidebar-footer">
         <div class="search-nav-item" onclick="openSearchModal()" data-title="搜索">
             <span class="nav-icon">🔍</span>
@@ -2162,19 +2371,19 @@
 </aside>
 
 <!-- 主内容区域 -->
-<main class="main-content" id="contentArea"></main>
+<main class="main-content" id="contentArea">
+    <!-- 应用内容将通过JavaScript动态加载 -->
+</main>
 
-<!-- 数据操作按钮 -->
-<div class="data-actions">
-    <button class="data-action-btn" onclick="exportData()" title="导出数据备份">📥 导出</button>
-    <button class="data-action-btn" onclick="importData()" title="导入数据备份">📤 导入</button>
-    <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
-</div>
+<!-- 隐藏的文件输入用于导入 -->
+<input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
 
-<!-- FAB 按钮 -->
+<!-- FAB 按钮（已包含导入导出功能） -->
 <div class="fab-container">
     <button class="fab-main" id="fabMain" onclick="toggleFabMenu()">+</button>
     <div class="fab-menu" id="fabMenu">
+        <!-- 添加操作组 -->
+        <div class="fab-section-title">添加</div>
         <div class="fab-item" onclick="openAddAppModal()">
             <span class="fab-item-icon">🔗</span>
             <span>添加网站</span>
@@ -2186,6 +2395,18 @@
         <div class="fab-item" onclick="openManageCategoriesModal()">
             <span class="fab-item-icon">⚙️</span>
             <span>管理分类</span>
+        </div>
+
+        <!-- 数据操作组 -->
+        <div class="fab-divider"></div>
+        <div class="fab-section-title">数据</div>
+        <div class="fab-item" onclick="exportData()">
+            <span class="fab-item-icon">📥</span>
+            <span>导出备份</span>
+        </div>
+        <div class="fab-item" onclick="importData()">
+            <span class="fab-item-icon">📤</span>
+            <span>导入备份</span>
         </div>
     </div>
 </div>
@@ -2361,7 +2582,8 @@
                 { id: 'link', name: '外部链接', icon: '🔗' }
             ],
             apps: [
-                { id: '1', name: 'GitHub', description: '代码托管平台', icon: '🐙', url: 'https://github.com/', category: 'dev' }
+                { id: '1', name: 'JSON格式化', description: '在线JSON格式化工具', icon: '📋', url: 'https://www.json.cn/', category: 'dev' },
+                { id: '2', name: 'GitHub', description: '代码托管平台', icon: '🐙', url: 'https://github.com/', category: 'dev' }
             ]
         },
 
@@ -3271,7 +3493,7 @@
         renderUiItemsList();
     }
 
-    // 数据导入导出
+    // 数据导入导出（已移动到FAB菜单）
     function exportData() {
         const data = DataManager.export();
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -3618,6 +3840,7 @@
             <span class="theme-option-name">${theme.name}</span>
             <span class="theme-option-check">✓</span>
         `;
+
             container.appendChild(option);
         });
     }
