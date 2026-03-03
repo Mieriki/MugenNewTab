@@ -4,8 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>应用导航中心</title>
+    <meta name="description" content="统一应用管理平台">
+    <meta name="theme-color" content="#B14A6B">
+
+    <!-- 防止主题闪烁 - 在 CSS 加载前执行 -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('selectedTheme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme-loading', 'true');
+            }
+            if (prefersDark && !savedTheme) {
+                document.documentElement.classList.add('dark-mode-prefers');
+            }
+        })();
+    </script>
+
     <script src="js/themes.config.js"></script>
     <script src="js/searchEngines.js"></script>
+
     <style>
         :root {
             /* Material 3 动态颜色变量 */
@@ -39,6 +58,12 @@
             --md-sys-color-surface-rgb: 255, 248, 249;
             --md-sys-color-background-rgb: 255, 248, 249;
 
+            /* 组件颜色变量 - 支持深色模式覆盖 */
+            --card-bg: var(--md-sys-color-surface);
+            --card-border: var(--md-sys-color-outline-variant);
+            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --hover-bg: var(--md-sys-color-primary-container);
+
             --md-easing: cubic-bezier(0.4, 0, 0.2, 1);
             --md-transition-fast: 0.15s;
             --md-transition-medium: 0.25s;
@@ -52,10 +77,27 @@
             --fab-right: 24px;
         }
 
+        /* 深色模式优化 - 使用 CSS 变量统一覆盖 */
+        body.dark-mode {
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --card-border: rgba(255, 255, 255, 0.06);
+            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --hover-bg: rgba(255, 255, 255, 0.08);
+
+            --md-sys-color-outline: rgba(255, 255, 255, 0.06);
+            --md-sys-color-outline-variant: rgba(255, 255, 255, 0.04);
+            --md-sys-color-surface-rgb: 30, 30, 30;
+            --md-sys-color-background-rgb: 20, 20, 20;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
@@ -68,32 +110,19 @@
             color var(--md-transition-medium) var(--md-easing);
             font-size: 14px;
             padding-bottom: 100px;
+
+            /* 防止内容抖动 */
+            overflow-x: hidden;
         }
 
-        /* 深色模式优化 - 降低刺眼度 */
-        body.dark-mode {
-            --md-sys-color-outline: rgba(255, 255, 255, 0.06);
-            --md-sys-color-outline-variant: rgba(255, 255, 255, 0.04);
-        }
-
-        body.dark-mode .app-card {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.06);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
+        /* 深色模式特定覆盖 */
         body.dark-mode .sidebar {
             border-color: rgba(255, 255, 255, 0.05);
             background: var(--md-sys-color-primary-container);
         }
 
         body.dark-mode .nav-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        body.dark-mode .app-card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.12);
+            background: var(--hover-bg);
         }
 
         body.dark-mode .category-title {
@@ -106,51 +135,33 @@
         }
 
         body.dark-mode .history-item:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--hover-bg);
         }
 
-        /* 深色模式搜索界面玻璃态遮罩 */
         body.dark-mode .search-container {
-            background: rgba(30, 30, 30, 0.9);
+            background: rgba(30, 30, 30, 0.95);
             border-color: rgba(255, 255, 255, 0.1);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
         }
 
         body.dark-mode .engine-dropdown-menu {
-            background: rgba(40, 40, 40, 0.95);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        body.dark-mode .modal-content {
             background: rgba(40, 40, 40, 0.98);
             border-color: rgba(255, 255, 255, 0.1);
         }
 
-        body.dark-mode .fab-menu {
-            background: rgba(40, 40, 40, 0.98);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        body.dark-mode .fab-divider {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
+        body.dark-mode .modal-content,
+        body.dark-mode .fab-menu,
         body.dark-mode .ui-lib-panel {
             background: rgba(40, 40, 40, 0.98);
             border-color: rgba(255, 255, 255, 0.1);
         }
 
-        body.dark-mode .ui-lib-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-
+        body.dark-mode .ui-lib-item,
         body.dark-mode .form-input,
         body.dark-mode .form-textarea,
         body.dark-mode .form-select {
             background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.9);
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         /* 顶部应用栏 */
@@ -168,6 +179,7 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            /*contain: layout paint;*/
         }
 
         .header-brand {
@@ -374,6 +386,7 @@
             max-height: 70vh;
             overflow: hidden;
             backdrop-filter: blur(10px);
+            contain: layout paint;
         }
 
         .personalization-dropdown.show {
@@ -663,6 +676,8 @@
             display: flex;
             flex-direction: column;
             background: var(--md-sys-color-primary-container);
+            contain: layout;
+            will-change: width;
         }
 
         .sidebar.collapsed {
@@ -694,16 +709,18 @@
             font-size: 13px;
             position: relative;
             white-space: nowrap;
+            border: 1px solid transparent;
         }
 
         .nav-item:hover {
-            background: var(--md-sys-color-primary-container);
+            background: var(--hover-bg);
             color: var(--md-sys-color-primary);
         }
 
         .nav-item.active {
             background: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .nav-icon {
@@ -849,6 +866,7 @@
         .category {
             margin-bottom: 32px;
             animation: fadeInUp 0.5s ease-out;
+            contain: layout;
         }
 
         @keyframes fadeInUp {
@@ -879,7 +897,7 @@
             object-fit: contain;
         }
 
-        /* 应用网格 */
+        /* 应用网格 - 优化渲染性能 */
         .apps-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -887,10 +905,11 @@
         }
 
         .app-card {
-            background: var(--md-sys-color-surface);
+            background: var(--card-bg);
             border-radius: 12px;
             padding: 12px;
-            border: 1px solid var(--md-sys-color-outline-variant);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
             transition: all var(--md-transition-fast) var(--md-easing);
             cursor: pointer;
             text-decoration: none;
@@ -900,12 +919,20 @@
             align-items: center;
             gap: 12px;
             position: relative;
+            contain: layout style paint;
+            will-change: transform;
+            transform: translateZ(0);
         }
 
         .app-card:hover {
             transform: translateY(-2px);
             border-color: var(--md-sys-color-primary);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        body.dark-mode .app-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .app-card.editing {
@@ -1162,6 +1189,11 @@
                 width: 92% !important;
                 max-height: 80vh !important;
             }
+
+            /* 移动端禁用壁纸模糊提升性能 */
+            .wallpaper-layer {
+                filter: none !important;
+            }
         }
 
         /* 壁纸层 */
@@ -1178,6 +1210,7 @@
             transition: opacity var(--md-transition-medium) var(--md-easing),
             filter var(--md-transition-medium) var(--md-easing);
             pointer-events: none;
+            will-change: transform, opacity;
         }
 
         .wallpaper-overlay {
@@ -1966,10 +1999,23 @@
             background: transparent;
             font-size: 16px;
             color: var(--md-sys-color-on-surface);
-            outline: none;
+            outline: none;  /* 去掉默认轮廓 */
             font-family: inherit;
             font-weight: 400;
             padding: 0 12px;
+        }
+
+        /* 添加聚焦状态的明确样式，防止浏览器默认样式 */
+        .search-input:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+
+        /* 如果红色边框是父容器的，也加上这个 */
+        .search-container:focus-within {
+            outline: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);  /* 保持原有阴影，去掉可能的轮廓 */
         }
 
         .search-input::placeholder {
@@ -2182,6 +2228,28 @@
         .tab-content.active {
             display: block;
         }
+
+        /* 焦点可见性优化（无障碍） */
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible {
+            outline: 2px solid var(--md-sys-color-primary);
+            outline-offset: 2px;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
     </style>
     <base target="_blank">
 </head>
@@ -2191,40 +2259,40 @@
 <div class="wallpaper-overlay" id="wallpaperOverlay"></div>
 
 <!-- 引擎下拉菜单（移动到body下避免截断） -->
-<div class="engine-dropdown-menu" id="engineDropdownMenu"></div>
+<div class="engine-dropdown-menu" id="engineDropdownMenu" role="listbox" aria-label="选择搜索引擎"></div>
 
 <!-- 全局搜索模态框 -->
-<div class="search-modal" id="searchModal">
+<div class="search-modal" id="searchModal" role="dialog" aria-modal="true" aria-label="搜索">
     <div class="search-container">
         <div class="search-header">
             <div class="engine-selector" id="engineSelector">
-                <div class="engine-select-wrapper" id="engineSelectWrapper" onclick="toggleEngineDropdown(event)">
+                <div class="engine-select-wrapper" id="engineSelectWrapper" onclick="toggleEngineDropdown(event)" role="button" aria-haspopup="listbox" aria-expanded="false" tabindex="0">
                     <img id="currentEngineIcon" src="" alt="" class="engine-icon-img">
                     <div class="engine-dropdown">
                         <div class="engine-dropdown-trigger">
                             <span id="currentEngineName">Google</span>
-                            <span class="engine-dropdown-arrow">▼</span>
+                            <span class="engine-dropdown-arrow" aria-hidden="true">▼</span>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="search-input-wrapper">
-                <input type="text" class="search-input" id="searchInput" placeholder="输入搜索内容..." autocomplete="off" onkeydown="onSearchInput(event)">
+                <input type="text" class="search-input" id="searchInput" placeholder="输入搜索内容..." autocomplete="off" onkeydown="onSearchInput(event)" aria-label="搜索关键词">
             </div>
-            <button class="search-submit-btn" onclick="doSearch()" title="搜索 (Enter)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <button class="search-submit-btn" onclick="doSearch()" title="搜索 (Enter)" aria-label="搜索">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
             </button>
-            <button class="search-close" onclick="closeSearchModal()" title="关闭 (ESC)">✕</button>
+            <button class="search-close" onclick="closeSearchModal()" title="关闭 (ESC)" aria-label="关闭搜索">✕</button>
         </div>
         <div class="search-history" id="searchHistory" style="display: none;">
             <div class="search-history-header">
                 <span>最近搜索</span>
                 <button class="clear-history-btn" onclick="clearSearchHistory()">清空</button>
             </div>
-            <div class="history-list" id="historyList"></div>
+            <div class="history-list" id="historyList" role="list"></div>
         </div>
         <div class="search-footer">
             <div class="search-hints">
@@ -2239,63 +2307,63 @@
 <!-- 顶部应用栏 -->
 <header class="app-header">
     <div class="header-brand">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <button class="menu-toggle" onclick="toggleSidebar()" aria-label="切换菜单" aria-expanded="false" aria-controls="sidebar">☰</button>
         <div class="brand">
-            <div class="brand-icon" id="headerLogo">🧭</div>
+            <div class="brand-icon" id="headerLogo" aria-hidden="true">🧭</div>
             <div class="brand-text" id="brandText">
                 <h1>应用导航中心</h1>
                 <p>统一应用管理平台</p>
             </div>
-            <button class="collapse-toggle-btn" onclick="toggleSidebarCollapse()" title="收起/展开侧边栏"></button>
+            <button class="collapse-toggle-btn" onclick="toggleSidebarCollapse()" title="收起/展开侧边栏" aria-label="收起/展开侧边栏"></button>
         </div>
     </div>
 
     <div class="personalization-switcher">
-        <button class="personalization-toggle-btn" id="personalizationToggleBtn" onclick="togglePersonalizationPanel()" title="个性化设置">
-            <span class="personalization-icon">🎨</span>
+        <button class="personalization-toggle-btn" id="personalizationToggleBtn" onclick="togglePersonalizationPanel()" title="个性化设置" aria-haspopup="true" aria-expanded="false">
+            <span class="personalization-icon" aria-hidden="true">🎨</span>
             <span class="personalization-label">个性化</span>
-            <span class="dropdown-arrow">▼</span>
+            <span class="dropdown-arrow" aria-hidden="true">▼</span>
         </button>
-        <div class="personalization-overlay" id="personalizationOverlay" onclick="togglePersonalizationPanel()"></div>
-        <div class="personalization-dropdown" id="personalizationDropdown">
+        <div class="personalization-overlay" id="personalizationOverlay" onclick="togglePersonalizationPanel()" aria-hidden="true"></div>
+        <div class="personalization-dropdown" id="personalizationDropdown" role="dialog" aria-label="个性化设置">
             <div class="personalization-panel">
                 <div class="panel-column theme-column">
                     <div class="panel-header">
                         <div class="panel-title">
-                            <span>✨</span>
+                            <span aria-hidden="true">✨</span>
                             <span>主题配色</span>
                         </div>
                     </div>
-                    <div id="themeOptions" class="theme-options-list"></div>
+                    <div id="themeOptions" class="theme-options-list" role="radiogroup" aria-label="选择主题"></div>
                 </div>
                 <div class="panel-column wallpaper-column">
                     <div class="panel-header">
                         <div class="panel-title">
-                            <span>🖼️</span>
+                            <span aria-hidden="true">🖼️</span>
                             <span>壁纸背景</span>
                         </div>
                     </div>
                     <div class="wallpaper-presets-compact" id="wallpaperPresets">
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变"></div>
+                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变" role="button" tabindex="0"></div>
+                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变" role="button" tabindex="0"></div>
+                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变" role="button" tabindex="0"></div>
+                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变" role="button" tabindex="0"></div>
                     </div>
                     <div class="wallpaper-input-group">
-                        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..." onchange="updateWallpaper()">
+                        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..." onchange="updateWallpaper()" aria-label="壁纸URL">
                     </div>
                     <div class="sliders-group">
                         <div class="slider-item">
                             <label>壁纸透明度 <span id="opacityValue">50%</span></label>
-                            <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50" oninput="updateWallpaperSettings()" aria-label="壁纸透明度">
                         </div>
                         <div class="slider-item">
                             <label>模糊程度 <span id="blurValue">0px</span></label>
-                            <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0" oninput="updateWallpaperSettings()" aria-label="壁纸模糊程度">
                         </div>
                         <div class="slider-item">
                             <label>背景遮罩 <span id="overlayValue">85%</span></label>
-                            <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="85" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="85" oninput="updateWallpaperSettings()" aria-label="背景遮罩透明度">
                         </div>
                     </div>
                     <div class="wallpaper-actions">
@@ -2307,11 +2375,11 @@
         </div>
     </div>
     <script>
+        // 立即执行主题应用（防止闪烁）
         (function() {
             var savedThemeId = localStorage.getItem('selectedTheme');
             if (!savedThemeId) return;
 
-            // 轮询等待 themeConfig 加载完成（因为 themes.config.js 是外部文件）
             function applyTheme() {
                 if (typeof themeConfig === 'undefined' || !themeConfig.themes) {
                     setTimeout(applyTheme, 10);
@@ -2325,6 +2393,7 @@
                         document.documentElement.style.setProperty(entry[0], entry[1]);
                     });
                 }
+                document.documentElement.removeAttribute('data-theme-loading');
             }
             applyTheme();
         })();
@@ -2332,212 +2401,290 @@
 </header>
 
 <!-- 遮罩层（移动端） -->
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="overlay" id="overlay" onclick="toggleSidebar()" aria-hidden="true"></div>
 
 <!-- 左侧导航栏 -->
-<aside class="sidebar" id="sidebar">
-    <nav class="nav-menu" id="navMenu"></nav>
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="主导航">
+    <nav class="nav-menu" id="navMenu" role="menubar"></nav>
     <div class="sidebar-footer">
-        <div class="search-nav-item" onclick="openSearchModal()" data-title="搜索">
-            <span class="nav-icon">🔍</span>
+        <div class="search-nav-item" onclick="openSearchModal()" data-title="搜索" role="button" tabindex="0">
+            <span class="nav-icon" aria-hidden="true">🔍</span>
             <span class="nav-text">搜索</span>
-            <span class="search-shortcut">Ctrl K</span>
+            <span class="search-shortcut" aria-label="快捷键 Ctrl K">Ctrl K</span>
         </div>
     </div>
 </aside>
 
 <!-- 主内容区域 -->
-<main class="main-content" id="contentArea"></main>
+<main class="main-content" id="contentArea" role="main"></main>
 
 <!-- 隐藏的文件输入用于导入 -->
-<input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
+<input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)" aria-label="导入备份文件">
 
 <!-- FAB 按钮 -->
 <div class="fab-container">
-    <button class="fab-main" id="fabMain" onclick="toggleFabMenu()">+</button>
-    <div class="fab-menu" id="fabMenu">
-        <div class="fab-section-title">添加</div>
-        <div class="fab-item" onclick="openAddAppModal()">
-            <span class="fab-item-icon">🔗</span>
+    <button class="fab-main" id="fabMain" onclick="toggleFabMenu()" aria-label="添加菜单" aria-expanded="false" aria-controls="fabMenu">+</button>
+    <div class="fab-menu" id="fabMenu" role="menu" aria-label="添加选项">
+        <div class="fab-section-title" role="separator">添加</div>
+        <div class="fab-item" onclick="openAddAppModal()" role="menuitem" tabindex="0">
+            <span class="fab-item-icon" aria-hidden="true">🔗</span>
             <span>添加网站</span>
         </div>
-        <div class="fab-item" onclick="openAddCategoryModal()">
-            <span class="fab-item-icon">📁</span>
+        <div class="fab-item" onclick="openAddCategoryModal()" role="menuitem" tabindex="0">
+            <span class="fab-item-icon" aria-hidden="true">📁</span>
             <span>添加分类</span>
         </div>
-        <div class="fab-item" onclick="openManageCategoriesModal()">
-            <span class="fab-item-icon">⚙️</span>
+        <div class="fab-item" onclick="openManageCategoriesModal()" role="menuitem" tabindex="0">
+            <span class="fab-item-icon" aria-hidden="true">⚙️</span>
             <span>管理分类</span>
         </div>
-        <div class="fab-divider"></div>
-        <div class="fab-section-title">数据</div>
-        <div class="fab-item" onclick="exportData()">
-            <span class="fab-item-icon">📥</span>
+        <div class="fab-divider" role="separator"></div>
+        <div class="fab-section-title" role="separator">数据</div>
+        <div class="fab-item" onclick="exportData()" role="menuitem" tabindex="0">
+            <span class="fab-item-icon" aria-hidden="true">📥</span>
             <span>导出备份</span>
         </div>
-        <div class="fab-item" onclick="importData()">
-            <span class="fab-item-icon">📤</span>
+        <div class="fab-item" onclick="importData()" role="menuitem" tabindex="0">
+            <span class="fab-item-icon" aria-hidden="true">📤</span>
             <span>导入备份</span>
         </div>
     </div>
 </div>
 
 <!-- 添加/编辑应用模态框 -->
-<div class="modal-overlay" id="appModal">
-    <div class="modal-content">
+<div class="modal-overlay" id="appModal" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
+    <div class="modal-content" role="document">
         <div class="modal-header">
             <h3 class="modal-title" id="appModalTitle">添加网站</h3>
-            <button class="modal-close" onclick="closeModal('appModal')">✕</button>
+            <button class="modal-close" onclick="closeModal('appModal')" aria-label="关闭">✕</button>
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label class="form-label">网站名称 *</label>
-                <input type="text" class="form-input" id="appName" placeholder="例如：GitHub">
+                <label class="form-label" for="appName">网站名称 *</label>
+                <input type="text" class="form-input" id="appName" placeholder="例如：GitHub" required>
             </div>
             <div class="form-group">
-                <label class="form-label">网站链接 *</label>
-                <input type="url" class="form-input" id="appUrl" placeholder="https://..." onblur="autoFetchIcon()">
+                <label class="form-label" for="appUrl">网站链接 *</label>
+                <input type="url" class="form-input" id="appUrl" placeholder="https://..." onblur="autoFetchIcon()" required>
                 <div class="form-hint">输入URL后自动获取图标，或手动设置下方图标</div>
             </div>
             <div class="form-group">
-                <label class="form-label">所属分类 *</label>
-                <select class="form-select" id="appCategory"></select>
+                <label class="form-label" for="appCategory">所属分类 *</label>
+                <select class="form-select" id="appCategory" required></select>
             </div>
             <div class="form-group">
-                <label class="form-label">备注描述</label>
+                <label class="form-label" for="appDesc">备注描述</label>
                 <textarea class="form-textarea" id="appDesc" placeholder="简短描述网站用途..."></textarea>
             </div>
             <div class="form-group">
                 <label class="form-label">图标设置</label>
                 <div class="icon-selector">
-                    <div class="icon-preview" id="iconPreview">🌐</div>
+                    <div class="icon-preview" id="iconPreview" aria-hidden="true">🌐</div>
                     <div class="icon-input-group">
-                        <input type="text" class="form-input" id="appIcon" placeholder="图标URL或Emoji" oninput="updateIconPreview()">
-                        <button class="btn-secondary" onclick="openUiLib()" title="从UI库选择">🎨</button>
+                        <input type="text" class="form-input" id="appIcon" placeholder="图标URL或Emoji" oninput="updateIconPreview()" aria-label="图标">
+                        <button class="btn-secondary" onclick="openUiLib()" title="从UI库选择" aria-label="从UI库选择">🎨</button>
                     </div>
                 </div>
                 <div style="display:flex; gap:8px; margin-top:8px;">
-                    <button class="btn-secondary" onclick="autoFetchIcon()" style="flex:1; font-size:12px;">🔄 自动获取图标</button>
-                    <button class="btn-secondary" onclick="clearIcon()" style="font-size:12px;">清除</button>
+                    <button class="btn-secondary" onclick="autoFetchIcon()" style="flex:1; font-size:12px;" type="button">🔄 自动获取图标</button>
+                    <button class="btn-secondary" onclick="clearIcon()" style="font-size:12px;" type="button">清除</button>
                 </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-text" onclick="closeModal('appModal')">取消</button>
-            <button class="btn-primary" onclick="saveApp()">保存</button>
+            <button class="btn-text" onclick="closeModal('appModal')" type="button">取消</button>
+            <button class="btn-primary" onclick="saveApp()" type="button">保存</button>
         </div>
     </div>
 </div>
 
 <!-- 添加/编辑分类模态框 -->
-<div class="modal-overlay" id="categoryModal">
-    <div class="modal-content" style="max-width: 420px;">
+<div class="modal-overlay" id="categoryModal" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+    <div class="modal-content" style="max-width: 420px;" role="document">
         <div class="modal-header">
             <h3 class="modal-title" id="categoryModalTitle">添加分类</h3>
-            <button class="modal-close" onclick="closeModal('categoryModal')">✕</button>
+            <button class="modal-close" onclick="closeModal('categoryModal')" aria-label="关闭">✕</button>
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label class="form-label">分类名称 *</label>
-                <input type="text" class="form-input" id="catName" placeholder="例如：开发工具">
+                <label class="form-label" for="catName">分类名称 *</label>
+                <input type="text" class="form-input" id="catName" placeholder="例如：开发工具" required>
             </div>
             <div class="form-group">
                 <label class="form-label">分类图标</label>
                 <div class="icon-selector">
-                    <div class="icon-preview" id="catIconPreview">📁</div>
+                    <div class="icon-preview" id="catIconPreview" aria-hidden="true">📁</div>
                     <div class="icon-input-group">
-                        <input type="text" class="form-input" id="catIcon" placeholder="图标URL或Emoji" oninput="updateCatIconPreview()">
-                        <button class="btn-secondary" onclick="openUiLibForCategory()" title="从UI库选择">🎨</button>
+                        <input type="text" class="form-input" id="catIcon" placeholder="图标URL或Emoji" oninput="updateCatIconPreview()" aria-label="分类图标">
+                        <button class="btn-secondary" onclick="openUiLibForCategory()" title="从UI库选择" aria-label="从UI库选择">🎨</button>
                     </div>
                 </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-text" onclick="closeModal('categoryModal')">取消</button>
-            <button class="btn-primary" onclick="saveCategory()">保存</button>
+            <button class="btn-text" onclick="closeModal('categoryModal')" type="button">取消</button>
+            <button class="btn-primary" onclick="saveCategory()" type="button">保存</button>
         </div>
     </div>
 </div>
 
 <!-- 管理分类模态框 -->
-<div class="modal-overlay" id="manageCategoriesModal">
-    <div class="modal-content" style="max-width: 480px;">
+<div class="modal-overlay" id="manageCategoriesModal" role="dialog" aria-modal="true" aria-label="管理分类">
+    <div class="modal-content" style="max-width: 480px;" role="document">
         <div class="modal-header">
             <h3 class="modal-title">管理分类</h3>
-            <button class="modal-close" onclick="closeModal('manageCategoriesModal')">✕</button>
+            <button class="modal-close" onclick="closeModal('manageCategoriesModal')" aria-label="关闭">✕</button>
         </div>
         <div class="modal-body">
-            <div id="categoriesList" class="category-list"></div>
+            <div id="categoriesList" class="category-list" role="list"></div>
         </div>
         <div class="modal-footer">
-            <button class="btn-text" onclick="closeModal('manageCategoriesModal')">关闭</button>
-            <button class="btn-primary" onclick="closeModal('manageCategoriesModal'); openAddCategoryModal();">+ 新建分类</button>
+            <button class="btn-text" onclick="closeModal('manageCategoriesModal')" type="button">关闭</button>
+            <button class="btn-primary" onclick="closeModal('manageCategoriesModal'); openAddCategoryModal();" type="button">+ 新建分类</button>
         </div>
     </div>
 </div>
 
 <!-- UI 库面板 -->
-<div class="ui-lib-panel" id="uiLibPanel">
+<div class="ui-lib-panel" id="uiLibPanel" role="dialog" aria-modal="true" aria-label="UI图标库">
     <div class="ui-lib-header">
-        <h3 class="ui-lib-title">🎨 UI 图标库</h3>
+        <h3 class="ui-lib-title" id="uiLibTitle">🎨 UI 图标库</h3>
         <div style="display:flex; gap:8px; align-items:center;">
             <button class="ui-lib-manage-btn" onclick="openUiLibManager()">管理UI库</button>
-            <button class="modal-close" onclick="closeUiLib()">✕</button>
+            <button class="modal-close" onclick="closeUiLib()" aria-label="关闭">✕</button>
         </div>
     </div>
-    <div class="ui-lib-tabs" id="uiLibTabs"></div>
-    <div class="ui-lib-content" id="uiLibContent"></div>
+    <div class="ui-lib-tabs" id="uiLibTabs" role="tablist"></div>
+    <div class="ui-lib-content" id="uiLibContent" role="tabpanel"></div>
     <div class="ui-lib-actions">
-        <button class="btn-text" onclick="closeUiLib()">取消</button>
+        <button class="btn-text" onclick="closeUiLib()" type="button">取消</button>
     </div>
 </div>
 
 <!-- UI 库管理模态框 -->
-<div class="modal-overlay" id="uiLibManagerModal">
-    <div class="modal-content" style="max-width: 600px; max-height: 85vh;">
+<div class="modal-overlay" id="uiLibManagerModal" role="dialog" aria-modal="true" aria-label="管理UI库">
+    <div class="modal-content" style="max-width: 600px; max-height: 85vh;" role="document">
         <div class="modal-header">
             <h3 class="modal-title">管理 UI 库</h3>
-            <button class="modal-close" onclick="closeModal('uiLibManagerModal')">✕</button>
+            <button class="modal-close" onclick="closeModal('uiLibManagerModal')" aria-label="关闭">✕</button>
         </div>
         <div class="modal-body">
-            <div class="tabs">
-                <button class="tab active" onclick="switchUiTab('categories')">分类管理</button>
-                <button class="tab" onclick="switchUiTab('items')">图标管理</button>
+            <div class="tabs" role="tablist">
+                <button class="tab active" onclick="switchUiTab('categories', this)" role="tab" aria-selected="true" aria-controls="uiTabCategories" id="tab-categories">分类管理</button>
+                <button class="tab" onclick="switchUiTab('items', this)" role="tab" aria-selected="false" aria-controls="uiTabItems" id="tab-items">图标管理</button>
             </div>
-            <div id="uiTabCategories" class="tab-content active">
+            <div id="uiTabCategories" class="tab-content active" role="tabpanel" aria-labelledby="tab-categories">
                 <div class="form-group">
-                    <label class="form-label">新建UI分类</label>
+                    <label class="form-label" for="newUiCategoryName">新建UI分类</label>
                     <div style="display:flex; gap:8px;">
                         <input type="text" class="form-input" id="newUiCategoryName" placeholder="分类名称">
-                        <button class="btn-primary" onclick="addUiCategory()">添加</button>
+                        <button class="btn-primary" onclick="addUiCategory()" type="button">添加</button>
                     </div>
                 </div>
-                <div id="uiCategoriesList" class="category-list" style="margin-top:16px;"></div>
+                <div id="uiCategoriesList" class="category-list" style="margin-top:16px;" role="list"></div>
             </div>
-            <div id="uiTabItems" class="tab-content">
+            <div id="uiTabItems" class="tab-content" role="tabpanel" aria-labelledby="tab-items" hidden>
                 <div class="form-group">
-                    <label class="form-label">所属分类</label>
+                    <label class="form-label" for="uiItemCategory">所属分类</label>
                     <select class="form-select" id="uiItemCategory"></select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">图标名称</label>
+                    <label class="form-label" for="uiItemName">图标名称</label>
                     <input type="text" class="form-input" id="uiItemName" placeholder="例如：Vue">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">图标URL</label>
+                    <label class="form-label" for="uiItemUrl">图标URL</label>
                     <input type="text" class="form-input" id="uiItemUrl" placeholder="https://.../logo.png">
                 </div>
-                <button class="btn-primary" onclick="addUiItem()" style="width:100%;">添加图标</button>
-                <div id="uiItemsList" class="category-list" style="margin-top:20px;"></div>
+                <button class="btn-primary" onclick="addUiItem()" style="width:100%;" type="button">添加图标</button>
+                <div id="uiItemsList" class="category-list" style="margin-top:20px;" role="list"></div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-text" onclick="closeModal('uiLibManagerModal')">关闭</button>
+            <button class="btn-text" onclick="closeModal('uiLibManagerModal')" type="button">关闭</button>
         </div>
     </div>
 </div>
 
 <script>
+    // ==================== 工具函数 ====================
+    const Utils = {
+        // 防抖函数
+        debounce(fn, delay) {
+            let timer = null;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        },
+
+        // 节流函数
+        throttle(fn, limit) {
+            let inThrottle;
+            return function(...args) {
+                if (!inThrottle) {
+                    fn.apply(this, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        },
+
+        // DOM 缓存
+        domCache: new Map(),
+        get(id) {
+            if (!this.domCache.has(id)) {
+                const el = document.getElementById(id);
+                if (el) this.domCache.set(id, el);
+                return el;
+            }
+            return this.domCache.get(id);
+        },
+
+        // 清理缓存
+        clearCache() {
+            this.domCache.clear();
+        },
+
+        // 生成唯一ID
+        generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        },
+
+        // 转义HTML（防XSS）
+        escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+
+        // 格式化时间
+        formatTime(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return '刚刚';
+            if (minutes < 60) return `${minutes}分钟前`;
+            if (hours < 24) return `${hours}小时前`;
+            if (days < 30) return `${days}天前`;
+            return new Date(timestamp).toLocaleDateString();
+        },
+
+        // 图片加载错误处理
+        createImageWithFallback(src, alt, fallback = '🌐') {
+            return `<img src="${src}"
+                    alt="${this.escapeHtml(alt)}"
+                    loading="lazy"
+                    decoding="async"
+                    onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${fallback}';"
+                >`;
+        }
+    };
+
     // ==================== 存储管理器（适配 Chrome Storage）====================
     const StorageManager = {
         isExtension: typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local,
@@ -2573,8 +2720,13 @@
         }
     };
 
-    // ==================== 数据管理 ====================
+    // ==================== 数据管理（带内存缓存）====================
     const DataManager = {
+        _cache: null,
+        _uiLibCache: null,
+        _dirty: false,
+        _syncTimer: null,
+
         defaultData: {
             categories: [
                 { id: 'all', name: '全部应用', icon: '📱' },
@@ -2608,130 +2760,142 @@
         },
 
         async init() {
-            const data = await this.getData();
-            if (!data || !data.categories || data.categories.length === 0) {
-                await this.saveData(this.defaultData);
-            }
-            const uiLib = await this.getUiLib();
-            if (!uiLib || !uiLib.categories) {
-                await this.saveUiLib(this.defaultUiLib);
-            }
+            // 一次性加载到内存
+            this._cache = await StorageManager.get('appNavigator_data') || this.defaultData;
+            this._uiLibCache = await StorageManager.get('appNavigator_uiLib') || this.defaultUiLib;
+
+            // 页面卸载时同步
+            window.addEventListener('beforeunload', () => this.sync());
+
+            // 定期同步（每30秒）
+            setInterval(() => this.sync(), 30000);
         },
 
         async getData() {
-            const data = await StorageManager.get('appNavigator_data');
-            return data || this.defaultData;
-        },
-
-        async saveData(data) {
-            await StorageManager.set('appNavigator_data', data);
+            // 返回深拷贝防止直接修改
+            return JSON.parse(JSON.stringify(this._cache));
         },
 
         async getUiLib() {
-            const data = await StorageManager.get('appNavigator_uiLib');
-            return data || this.defaultUiLib;
+            return JSON.parse(JSON.stringify(this._uiLibCache));
+        },
+
+        async saveData(data) {
+            this._cache = data;
+            this._dirty = true;
+            // 防抖同步
+            if (this._syncTimer) clearTimeout(this._syncTimer);
+            this._syncTimer = setTimeout(() => this.sync(), 1000);
         },
 
         async saveUiLib(data) {
-            await StorageManager.set('appNavigator_uiLib', data);
+            this._uiLibCache = data;
+            this._dirty = true;
+            if (this._syncTimer) clearTimeout(this._syncTimer);
+            this._syncTimer = setTimeout(() => this.sync(), 1000);
         },
 
-        generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        async sync() {
+            if (!this._dirty) return;
+            try {
+                await StorageManager.set('appNavigator_data', this._cache);
+                await StorageManager.set('appNavigator_uiLib', this._uiLibCache);
+                this._dirty = false;
+            } catch (e) {
+                console.error('Sync failed:', e);
+            }
         },
 
         async addApp(app) {
-            const data = await this.getData();
-            app.id = this.generateId();
-            data.apps.push(app);
-            await this.saveData(data);
+            app.id = Utils.generateId();
+            this._cache.apps.push(app);
+            await this.saveData(this._cache);
             return app;
         },
 
         async updateApp(id, updates) {
-            const data = await this.getData();
-            const index = data.apps.findIndex(a => a.id === id);
+            const index = this._cache.apps.findIndex(a => a.id === id);
             if (index !== -1) {
-                data.apps[index] = { ...data.apps[index], ...updates };
-                await this.saveData(data);
-                return data.apps[index];
+                this._cache.apps[index] = { ...this._cache.apps[index], ...updates };
+                await this.saveData(this._cache);
+                return this._cache.apps[index];
             }
             return null;
         },
 
         async deleteApp(id) {
-            const data = await this.getData();
-            data.apps = data.apps.filter(a => a.id !== id);
-            await this.saveData(data);
+            this._cache.apps = this._cache.apps.filter(a => a.id !== id);
+            await this.saveData(this._cache);
         },
 
         async addCategory(category) {
-            const data = await this.getData();
-            category.id = this.generateId();
-            data.categories.push(category);
-            await this.saveData(data);
+            category.id = Utils.generateId();
+            this._cache.categories.push(category);
+            await this.saveData(this._cache);
             return category;
         },
 
         async updateCategory(id, updates) {
-            const data = await this.getData();
-            const index = data.categories.findIndex(c => c.id === id);
+            const index = this._cache.categories.findIndex(c => c.id === id);
             if (index !== -1) {
-                data.categories[index] = { ...data.categories[index], ...updates };
-                await this.saveData(data);
-                return data.categories[index];
+                this._cache.categories[index] = { ...this._cache.categories[index], ...updates };
+                await this.saveData(this._cache);
+                return this._cache.categories[index];
             }
             return null;
         },
 
         async deleteCategory(id) {
-            const data = await this.getData();
-            data.categories = data.categories.filter(c => c.id !== id);
-            data.apps = data.apps.filter(a => a.category !== id);
-            await this.saveData(data);
+            this._cache.categories = this._cache.categories.filter(c => c.id !== id);
+            this._cache.apps = this._cache.apps.filter(a => a.category !== id);
+            await this.saveData(this._cache);
         },
 
         async addUiCategory(name) {
-            const lib = await this.getUiLib();
-            const category = { id: this.generateId(), name: name };
-            lib.categories.push(category);
-            await this.saveUiLib(lib);
+            const category = { id: Utils.generateId(), name };
+            this._uiLibCache.categories.push(category);
+            await this.saveUiLib(this._uiLibCache);
             return category;
         },
 
         async deleteUiCategory(id) {
-            const lib = await this.getUiLib();
-            lib.categories = lib.categories.filter(c => c.id !== id);
-            lib.items = lib.items.filter(i => i.category !== id);
-            await this.saveUiLib(lib);
+            this._uiLibCache.categories = this._uiLibCache.categories.filter(c => c.id !== id);
+            this._uiLibCache.items = this._uiLibCache.items.filter(i => i.category !== id);
+            await this.saveUiLib(this._uiLibCache);
         },
 
         async addUiItem(item) {
-            const lib = await this.getUiLib();
-            item.id = this.generateId();
-            lib.items.push(item);
-            await this.saveUiLib(lib);
+            item.id = Utils.generateId();
+            this._uiLibCache.items.push(item);
+            await this.saveUiLib(this._uiLibCache);
             return item;
         },
 
         async deleteUiItem(id) {
-            const lib = await this.getUiLib();
-            lib.items = lib.items.filter(i => i.id !== id);
-            await this.saveUiLib(lib);
+            this._uiLibCache.items = this._uiLibCache.items.filter(i => i.id !== id);
+            await this.saveUiLib(this._uiLibCache);
         },
 
         async export() {
+            await this.sync(); // 确保数据已保存
             return {
-                data: await this.getData(),
-                uiLib: await this.getUiLib(),
+                data: this._cache,
+                uiLib: this._uiLibCache,
                 exportTime: new Date().toISOString(),
                 version: '1.0'
             };
         },
 
         async import(jsonData) {
-            if (jsonData.data) await this.saveData(jsonData.data);
-            if (jsonData.uiLib) await this.saveUiLib(jsonData.uiLib);
+            if (jsonData.data) {
+                this._cache = jsonData.data;
+                await StorageManager.set('appNavigator_data', this._cache);
+            }
+            if (jsonData.uiLib) {
+                this._uiLibCache = jsonData.uiLib;
+                await StorageManager.set('appNavigator_uiLib', this._uiLibCache);
+            }
+            this._dirty = false;
         }
     };
 
@@ -2743,6 +2907,8 @@
             this.editingAppId = null;
             this.editingCategoryId = null;
             this.iconSelectCallback = null;
+            this.eventListeners = [];
+            this.resizeObserver = null;
         }
 
         async init() {
@@ -2756,12 +2922,17 @@
             await this.renderNavigation();
             await this.renderApps();
             this.initSidebarState();
-            setTimeout(() => this.updateHeaderLogo(), 0);
+
+            // 使用 requestAnimationFrame 优化首次渲染
+            requestAnimationFrame(() => {
+                this.updateHeaderLogo();
+                detectDarkMode();
+            });
         }
 
         initSidebarState() {
             const body = document.body;
-            const sidebar = document.getElementById('sidebar');
+            const sidebar = Utils.get('sidebar');
 
             if (this.sidebarCollapsed) {
                 body.classList.add('sidebar-collapsed');
@@ -2774,7 +2945,7 @@
 
         async toggleSidebarCollapse() {
             const body = document.body;
-            const sidebar = document.getElementById('sidebar');
+            const sidebar = Utils.get('sidebar');
             this.sidebarCollapsed = !this.sidebarCollapsed;
 
             if (this.sidebarCollapsed) {
@@ -2789,7 +2960,7 @@
         }
 
         updateHeaderLogo() {
-            const logoContainer = document.getElementById('headerLogo');
+            const logoContainer = Utils.get('headerLogo');
             if (!logoContainer || typeof themeConfig === 'undefined') return;
 
             const currentThemeId = localStorage.getItem('selectedTheme') || themeConfig.defaultTheme || 'material-rose';
@@ -2811,7 +2982,7 @@
 
                 if (isImage) {
                     logoContainer.classList.add('is-image');
-                    logoContainer.innerHTML = `<img src="${logo}" alt="Logo" onerror="this.parentElement.classList.remove('is-image'); this.parentElement.textContent='🧭';">`;
+                    logoContainer.innerHTML = Utils.createImageWithFallback(logo, 'Logo', '🧭');
                 } else {
                     logoContainer.classList.remove('is-image');
                     logoContainer.textContent = logo;
@@ -2823,11 +2994,13 @@
         }
 
         async renderNavigation() {
-            const navMenu = document.getElementById('navMenu');
+            const navMenu = Utils.get('navMenu');
             if (!navMenu) return;
 
             const data = await DataManager.getData();
-            navMenu.innerHTML = '';
+
+            // 使用 DocumentFragment 优化 DOM 操作
+            const fragment = document.createDocumentFragment();
 
             data.categories.forEach(category => {
                 const navItem = document.createElement('a');
@@ -2835,43 +3008,60 @@
                 navItem.className = 'nav-item';
                 navItem.dataset.category = category.id;
                 navItem.dataset.title = category.name;
+                navItem.setAttribute('role', 'menuitem');
                 if (category.id === this.currentCategory) navItem.classList.add('active');
 
                 const isImage = this.isImageIcon(category.icon);
-                const iconHtml = isImage ? `<img src="${category.icon}" alt="${category.name}">` : category.icon;
+                const iconHtml = isImage ? Utils.createImageWithFallback(category.icon, category.name) : Utils.escapeHtml(category.icon);
 
                 navItem.innerHTML = `
-                    <span class="nav-icon">${iconHtml}</span>
-                    <span class="nav-text">${category.name}</span>
-                `;
-                navMenu.appendChild(navItem);
+                        <span class="nav-icon">${iconHtml}</span>
+                        <span class="nav-text">${Utils.escapeHtml(category.name)}</span>
+                    `;
+
+                // 添加键盘支持
+                navItem.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.switchCategory(category.id);
+                        this.updateActiveNav(navItem);
+                    }
+                });
+
+                fragment.appendChild(navItem);
             });
+
+            navMenu.innerHTML = '';
+            navMenu.appendChild(fragment);
         }
 
         async renderApps() {
-            const contentArea = document.getElementById('contentArea');
+            const contentArea = Utils.get('contentArea');
             if (!contentArea) return;
 
             const data = await DataManager.getData();
             let html = '';
 
             if (this.currentCategory === 'all') {
-                data.categories
+                const categoriesWithApps = data.categories
                     .filter(cat => cat.id !== 'all')
-                    .forEach((category, index) => {
+                    .map((category, index) => {
                         const appsInCategory = data.apps.filter(app => app.category === category.id);
-                        if (appsInCategory.length > 0) {
-                            html += `<div style="animation-delay: ${index * 0.08}s" class="category">
-                                ${this.createCategoryHTML(category, appsInCategory)}
-                            </div>`;
-                        }
-                    });
+                        return { category, appsInCategory, index };
+                    })
+                    .filter(item => item.appsInCategory.length > 0);
 
-                if (!html) {
+                if (categoriesWithApps.length === 0) {
                     html = `<div class="empty-state">
-                        <div style="font-size:48px; margin-bottom:16px;">📭</div>
-                        <p>暂无应用，点击右下角 + 按钮添加</p>
-                    </div>`;
+                            <div style="font-size:48px; margin-bottom:16px;">📭</div>
+                            <p>暂无应用，点击右下角 + 按钮添加</p>
+                        </div>`;
+                } else {
+                    html = categoriesWithApps.map(({ category, appsInCategory, index }) => `
+                            <div style="animation-delay: ${index * 0.08}s" class="category">
+                                ${this.createCategoryHTML(category, appsInCategory)}
+                            </div>
+                        `).join('');
                 }
             } else {
                 const category = data.categories.find(cat => cat.id === this.currentCategory);
@@ -2879,19 +3069,19 @@
 
                 if (category && appsInCategory.length > 0) {
                     html = `<div class="category">
-                        <div class="content-header">
-                            <h2 class="content-title">${category.name}</h2>
-                        </div>
-                        <div class="apps-grid">
-                            ${appsInCategory.map(app => this.createAppCardHTML(app)).join('')}
-                        </div>
-                    </div>`;
+                            <div class="content-header">
+                                <h2 class="content-title">${Utils.escapeHtml(category.name)}</h2>
+                            </div>
+                            <div class="apps-grid">
+                                ${appsInCategory.map(app => this.createAppCardHTML(app)).join('')}
+                            </div>
+                        </div>`;
                 } else {
                     html = `<div class="empty-state">
-                        <div style="font-size:48px; margin-bottom:16px;">📭</div>
-                        <p>该分类下暂无应用</p>
-                        <button class="btn-primary" onclick="openAddAppModal('${this.currentCategory}')" style="margin-top:12px;">+ 添加应用</button>
-                    </div>`;
+                            <div style="font-size:48px; margin-bottom:16px;">📭</div>
+                            <p>该分类下暂无应用</p>
+                            <button class="btn-primary" onclick="openAddAppModal('${this.currentCategory}')" style="margin-top:12px;" type="button">+ 添加应用</button>
+                        </div>`;
                 }
             }
 
@@ -2900,33 +3090,35 @@
 
         createCategoryHTML(category, apps) {
             const isImage = this.isImageIcon(category.icon);
-            const iconHtml = isImage ? `<img src="${category.icon}" alt="${category.name}">` : category.icon;
+            const iconHtml = isImage ? Utils.createImageWithFallback(category.icon, category.name) : Utils.escapeHtml(category.icon);
 
             return `
-                <h3 class="category-title">${iconHtml} ${category.name}</h3>
-                <div class="apps-grid">
-                    ${apps.map(app => this.createAppCardHTML(app)).join('')}
-                </div>
-            `;
+                    <h3 class="category-title">${iconHtml} ${Utils.escapeHtml(category.name)}</h3>
+                    <div class="apps-grid">
+                        ${apps.map(app => this.createAppCardHTML(app)).join('')}
+                    </div>
+                `;
         }
 
         createAppCardHTML(app) {
             const isImage = this.isImageIcon(app.icon);
-            const iconHtml = isImage ? `<img src="${app.icon}" alt="${app.name}">` : (app.icon || '🌐');
+            const iconHtml = isImage ?
+                Utils.createImageWithFallback(app.icon, app.name, '🌐') :
+                Utils.escapeHtml(app.icon || '🌐');
 
             return `
-                <div class="app-card" data-app-id="${app.id}">
-                    <div class="app-icon">${iconHtml}</div>
-                    <div class="app-content">
-                        <h3 class="app-name">${app.name}</h3>
-                        <p class="app-description">${app.description || ''}</p>
+                    <div class="app-card" data-app-id="${app.id}" tabindex="0" role="link" aria-label="${Utils.escapeHtml(app.name)}">
+                        <div class="app-icon">${iconHtml}</div>
+                        <div class="app-content">
+                            <h3 class="app-name">${Utils.escapeHtml(app.name)}</h3>
+                            <p class="app-description">${Utils.escapeHtml(app.description || '')}</p>
+                        </div>
+                        <div class="app-actions">
+                            <button class="app-action-btn" onclick="event.stopPropagation(); editApp('${app.id}')" title="编辑" aria-label="编辑 ${Utils.escapeHtml(app.name)}">✏️</button>
+                            <button class="app-action-btn delete" onclick="event.stopPropagation(); deleteApp('${app.id}')" title="删除" aria-label="删除 ${Utils.escapeHtml(app.name)}">🗑️</button>
+                        </div>
                     </div>
-                    <div class="app-actions">
-                        <button class="app-action-btn" onclick="event.stopPropagation(); editApp('${app.id}')" title="编辑">✏️</button>
-                        <button class="app-action-btn delete" onclick="event.stopPropagation(); deleteApp('${app.id}')" title="删除">🗑️</button>
-                    </div>
-                </div>
-            `;
+                `;
         }
 
         isImageIcon(icon) {
@@ -2935,9 +3127,9 @@
         }
 
         bindEvents() {
-            const navMenu = document.getElementById('navMenu');
+            const navMenu = Utils.get('navMenu');
             if (navMenu) {
-                navMenu.addEventListener('click', (e) => {
+                const clickHandler = (e) => {
                     const navItem = e.target.closest('.nav-item');
                     if (navItem) {
                         e.preventDefault();
@@ -2949,33 +3141,74 @@
                             toggleSidebar();
                         }
                     }
-                });
+                };
+                navMenu.addEventListener('click', clickHandler);
+                this.eventListeners.push({ element: navMenu, event: 'click', handler: clickHandler });
             }
 
-            document.addEventListener('themeChanged', () => {
+            // 主题变更监听
+            const themeHandler = () => {
                 this.updateHeaderLogo();
-            });
+            };
+            document.addEventListener('themeChanged', themeHandler);
+            this.eventListeners.push({ element: document, event: 'themeChanged', handler: themeHandler });
 
-            document.getElementById('contentArea').addEventListener('click', async (e) => {
-                const card = e.target.closest('.app-card');
-                if (card && !e.target.closest('.app-actions')) {
-                    const appId = card.dataset.appId;
-                    const data = await DataManager.getData();
-                    const app = data.apps.find(a => a.id === appId);
-                    if (app) {
-                        window.open(app.url, '_blank');
+            // 内容区域点击
+            const contentArea = Utils.get('contentArea');
+            if (contentArea) {
+                const clickHandler = async (e) => {
+                    const card = e.target.closest('.app-card');
+                    if (card && !e.target.closest('.app-actions')) {
+                        const appId = card.dataset.appId;
+                        const data = await DataManager.getData();
+                        const app = data.apps.find(a => a.id === appId);
+                        if (app) {
+                            window.open(app.url, '_blank');
+                        }
                     }
-                }
-            });
+                };
 
-            document.addEventListener('click', (e) => {
-                const fab = document.getElementById('fabMain');
-                const menu = document.getElementById('fabMenu');
+                // 键盘支持
+                const keyHandler = async (e) => {
+                    if (e.key === 'Enter') {
+                        const card = e.target.closest('.app-card');
+                        if (card) {
+                            const appId = card.dataset.appId;
+                            const data = await DataManager.getData();
+                            const app = data.apps.find(a => a.id === appId);
+                            if (app) window.open(app.url, '_blank');
+                        }
+                    }
+                };
+
+                contentArea.addEventListener('click', clickHandler);
+                contentArea.addEventListener('keydown', keyHandler);
+                this.eventListeners.push(
+                    { element: contentArea, event: 'click', handler: clickHandler },
+                    { element: contentArea, event: 'keydown', handler: keyHandler }
+                );
+            }
+
+            // FAB 外部点击关闭
+            const docClickHandler = (e) => {
+                const fab = Utils.get('fabMain');
+                const menu = Utils.get('fabMenu');
                 if (fab && menu && !fab.contains(e.target) && !menu.contains(e.target)) {
                     menu.classList.remove('show');
                     fab.classList.remove('active');
+                    fab.setAttribute('aria-expanded', 'false');
                 }
-            });
+            };
+            document.addEventListener('click', docClickHandler);
+            this.eventListeners.push({ element: document, event: 'click', handler: docClickHandler });
+
+            // 窗口大小变化监听（节流）
+            const resizeHandler = Utils.throttle(() => {
+                Utils.clearCache();
+                closeEngineDropdown();
+            }, 250);
+            window.addEventListener('resize', resizeHandler);
+            this.eventListeners.push({ element: window, event: 'resize', handler: resizeHandler });
         }
 
         switchCategory(category) {
@@ -2984,8 +3217,19 @@
         }
 
         updateActiveNav(activeItem) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                item.setAttribute('aria-current', 'false');
+            });
             activeItem.classList.add('active');
+            activeItem.setAttribute('aria-current', 'true');
+        }
+
+        destroy() {
+            this.eventListeners.forEach(({ element, event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+            this.eventListeners = [];
         }
     }
 
@@ -2996,9 +3240,16 @@
     let engineDropdownOpen = false;
 
     function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        if (sidebar) sidebar.classList.toggle('open');
+        const sidebar = Utils.get('sidebar');
+        const overlay = Utils.get('overlay');
+        const menuToggle = document.querySelector('.menu-toggle');
+
+        if (sidebar) {
+            const isOpen = sidebar.classList.toggle('open');
+            if (menuToggle) {
+                menuToggle.setAttribute('aria-expanded', isOpen);
+            }
+        }
         if (overlay) overlay.classList.toggle('show');
     }
 
@@ -3009,58 +3260,67 @@
     }
 
     function toggleFabMenu() {
-        const fab = document.getElementById('fabMain');
-        const menu = document.getElementById('fabMenu');
+        const fab = Utils.get('fabMain');
+        const menu = Utils.get('fabMenu');
         if (fab && menu) {
-            fab.classList.toggle('active');
+            const isActive = fab.classList.toggle('active');
             menu.classList.toggle('show');
+            fab.setAttribute('aria-expanded', isActive);
         }
     }
 
     function closeFabMenu() {
-        const fab = document.getElementById('fabMain');
-        const menu = document.getElementById('fabMenu');
-        if (fab) fab.classList.remove('active');
+        const fab = Utils.get('fabMain');
+        const menu = Utils.get('fabMenu');
+        if (fab) {
+            fab.classList.remove('active');
+            fab.setAttribute('aria-expanded', 'false');
+        }
         if (menu) menu.classList.remove('show');
     }
 
     function openModal(modalId) {
-        const modal = document.getElementById(modalId);
+        const modal = Utils.get(modalId);
         if (modal) {
             modal.classList.add('show');
+            // 焦点管理
+            const focusable = modal.querySelector('input, select, textarea, button:not(.modal-close)');
+            if (focusable) setTimeout(() => focusable.focus(), 100);
             closeFabMenu();
         }
     }
 
     function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
+        const modal = Utils.get(modalId);
         if (modal) {
             modal.classList.remove('show');
         }
+
+        // 重置表单
         if (modalId === 'appModal') {
             window.appNavigator.editingAppId = null;
-            document.getElementById('appModalTitle').textContent = '添加网站';
-            document.getElementById('appName').value = '';
-            document.getElementById('appUrl').value = '';
-            document.getElementById('appDesc').value = '';
-            document.getElementById('appIcon').value = '';
-            document.getElementById('iconPreview').innerHTML = '🌐';
+            Utils.get('appModalTitle').textContent = '添加网站';
+            Utils.get('appName').value = '';
+            Utils.get('appUrl').value = '';
+            Utils.get('appDesc').value = '';
+            Utils.get('appIcon').value = '';
+            Utils.get('iconPreview').innerHTML = '🌐';
         } else if (modalId === 'categoryModal') {
             window.appNavigator.editingCategoryId = null;
-            document.getElementById('categoryModalTitle').textContent = '添加分类';
-            document.getElementById('catName').value = '';
-            document.getElementById('catIcon').value = '';
-            document.getElementById('catIconPreview').textContent = '📁';
+            Utils.get('categoryModalTitle').textContent = '添加分类';
+            Utils.get('catName').value = '';
+            Utils.get('catIcon').value = '';
+            Utils.get('catIconPreview').textContent = '📁';
         }
     }
 
     async function openAddAppModal(categoryId) {
         const data = await DataManager.getData();
-        const select = document.getElementById('appCategory');
+        const select = Utils.get('appCategory');
         if (select) {
             select.innerHTML = data.categories
                 .filter(c => c.id !== 'all')
-                .map(c => `<option value="${c.id}" ${c.id === categoryId ? 'selected' : ''}>${c.name}</option>`)
+                .map(c => `<option value="${c.id}" ${c.id === categoryId ? 'selected' : ''}>${Utils.escapeHtml(c.name)}</option>`)
                 .join('');
         }
         openModal('appModal');
@@ -3072,28 +3332,28 @@
         if (!app) return;
 
         window.appNavigator.editingAppId = appId;
-        document.getElementById('appModalTitle').textContent = '编辑网站';
-        document.getElementById('appName').value = app.name;
-        document.getElementById('appUrl').value = app.url;
-        document.getElementById('appDesc').value = app.description || '';
-        document.getElementById('appIcon').value = app.icon || '';
+        Utils.get('appModalTitle').textContent = '编辑网站';
+        Utils.get('appName').value = app.name;
+        Utils.get('appUrl').value = app.url;
+        Utils.get('appDesc').value = app.description || '';
+        Utils.get('appIcon').value = app.icon || '';
         updateIconPreview();
 
-        const select = document.getElementById('appCategory');
+        const select = Utils.get('appCategory');
         select.innerHTML = data.categories
             .filter(c => c.id !== 'all')
-            .map(c => `<option value="${c.id}" ${c.id === app.category ? 'selected' : ''}>${c.name}</option>`)
+            .map(c => `<option value="${c.id}" ${c.id === app.category ? 'selected' : ''}>${Utils.escapeHtml(c.name)}</option>`)
             .join('');
 
         openModal('appModal');
     }
 
     async function saveApp() {
-        const name = document.getElementById('appName').value.trim();
-        const url = document.getElementById('appUrl').value.trim();
-        const category = document.getElementById('appCategory').value;
-        const description = document.getElementById('appDesc').value.trim();
-        const icon = document.getElementById('appIcon').value.trim();
+        const name = Utils.get('appName').value.trim();
+        const url = Utils.get('appUrl').value.trim();
+        const category = Utils.get('appCategory').value;
+        const description = Utils.get('appDesc').value.trim();
+        const icon = Utils.get('appIcon').value.trim();
 
         if (!name || !url || !category) {
             showToast('请填写必填项', 'error');
@@ -3142,9 +3402,9 @@
         if (!cat || cat.id === 'all') return;
 
         window.appNavigator.editingCategoryId = catId;
-        document.getElementById('categoryModalTitle').textContent = '编辑分类';
-        document.getElementById('catName').value = cat.name;
-        document.getElementById('catIcon').value = cat.icon || '';
+        Utils.get('categoryModalTitle').textContent = '编辑分类';
+        Utils.get('catName').value = cat.name;
+        Utils.get('catIcon').value = cat.icon || '';
         updateCatIconPreview();
 
         closeModal('manageCategoriesModal');
@@ -3152,8 +3412,8 @@
     }
 
     async function saveCategory() {
-        const name = document.getElementById('catName').value.trim();
-        const icon = document.getElementById('catIcon').value.trim();
+        const name = Utils.get('catName').value.trim();
+        const icon = Utils.get('catIcon').value.trim();
 
         if (!name) {
             showToast('请输入分类名称', 'error');
@@ -3196,7 +3456,7 @@
 
     async function renderCategoriesList() {
         const data = await DataManager.getData();
-        const container = document.getElementById('categoriesList');
+        const container = Utils.get('categoriesList');
         if (!container) return;
 
         container.innerHTML = data.categories
@@ -3204,27 +3464,29 @@
             .map(cat => {
                 const count = data.apps.filter(a => a.category === cat.id).length;
                 const isImage = cat.icon && (cat.icon.includes('.') || cat.icon.startsWith('http'));
-                const iconHtml = isImage ? `<img src="${cat.icon}" style="width:20px;height:20px;">` : (cat.icon || '📁');
+                const iconHtml = isImage ?
+                    Utils.createImageWithFallback(cat.icon, cat.name) :
+                    Utils.escapeHtml(cat.icon || '📁');
 
                 return `
-                    <div class="category-list-item">
-                        <div class="cat-icon">${iconHtml}</div>
-                        <div class="cat-info">
-                            <div class="cat-name">${cat.name}</div>
-                            <div class="cat-count">${count} 个网站</div>
+                        <div class="category-list-item">
+                            <div class="cat-icon">${iconHtml}</div>
+                            <div class="cat-info">
+                                <div class="cat-name">${Utils.escapeHtml(cat.name)}</div>
+                                <div class="cat-count">${count} 个网站</div>
+                            </div>
+                            <div class="cat-actions">
+                                <button class="app-action-btn" onclick="editCategory('${cat.id}')" title="编辑" aria-label="编辑分类">✏️</button>
+                                <button class="app-action-btn delete" onclick="deleteCategory('${cat.id}')" title="删除" aria-label="删除分类">🗑️</button>
+                            </div>
                         </div>
-                        <div class="cat-actions">
-                            <button class="app-action-btn" onclick="editCategory('${cat.id}')" title="编辑">✏️</button>
-                            <button class="app-action-btn delete" onclick="deleteCategory('${cat.id}')" title="删除">🗑️</button>
-                        </div>
-                    </div>
-                `;
+                    `;
             }).join('');
     }
 
     function updateIconPreview() {
-        const icon = document.getElementById('appIcon').value.trim();
-        const preview = document.getElementById('iconPreview');
+        const icon = Utils.get('appIcon').value.trim();
+        const preview = Utils.get('iconPreview');
 
         if (!icon) {
             preview.innerHTML = '🌐';
@@ -3232,15 +3494,15 @@
         }
 
         if (icon.startsWith('http') || icon.startsWith('data:') || icon.startsWith('//')) {
-            preview.innerHTML = `<img src="${icon}" onerror="this.parentElement.innerHTML='❓'">`;
+            preview.innerHTML = Utils.createImageWithFallback(icon, '预览', '❓');
         } else {
             preview.textContent = icon;
         }
     }
 
     function updateCatIconPreview() {
-        const icon = document.getElementById('catIcon').value.trim();
-        const preview = document.getElementById('catIconPreview');
+        const icon = Utils.get('catIcon').value.trim();
+        const preview = Utils.get('catIconPreview');
 
         if (!icon) {
             preview.textContent = '📁';
@@ -3248,22 +3510,22 @@
         }
 
         if (icon.startsWith('http') || icon.startsWith('data:') || icon.startsWith('//')) {
-            preview.innerHTML = `<img src="${icon}" style="width:24px;height:24px;" onerror="this.parentElement.innerHTML='📁'">`;
+            preview.innerHTML = Utils.createImageWithFallback(icon, '预览', '📁');
         } else {
             preview.textContent = icon;
         }
     }
 
     function autoFetchIcon() {
-        const url = document.getElementById('appUrl').value.trim();
+        const url = Utils.get('appUrl').value.trim();
         if (!url) return;
 
         try {
             const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
             const domain = urlObj.hostname;
-            const faviconUrl = `https://favicon.im/${domain}`;
+            const faviconUrl = `https://favicon.im/${domain}?l=${Date.now()}`; // 添加时间戳防止缓存
 
-            document.getElementById('appIcon').value = faviconUrl;
+            Utils.get('appIcon').value = faviconUrl;
             updateIconPreview();
             showToast('已自动获取图标');
         } catch(e) {
@@ -3272,44 +3534,51 @@
     }
 
     function clearIcon() {
-        document.getElementById('appIcon').value = '';
+        Utils.get('appIcon').value = '';
         updateIconPreview();
     }
 
     function openUiLib() {
         window.appNavigator.iconSelectCallback = (icon) => {
-            document.getElementById('appIcon').value = icon;
+            Utils.get('appIcon').value = icon;
             updateIconPreview();
             closeUiLib();
         };
         renderUiLib();
-        document.getElementById('uiLibPanel').classList.add('show');
+        Utils.get('uiLibPanel').classList.add('show');
     }
 
     function openUiLibForCategory() {
         window.appNavigator.iconSelectCallback = (icon) => {
-            document.getElementById('catIcon').value = icon;
+            Utils.get('catIcon').value = icon;
             updateCatIconPreview();
             closeUiLib();
         };
         renderUiLib();
-        document.getElementById('uiLibPanel').classList.add('show');
+        Utils.get('uiLibPanel').classList.add('show');
     }
 
     function closeUiLib() {
-        document.getElementById('uiLibPanel').classList.remove('show');
+        Utils.get('uiLibPanel').classList.remove('show');
         window.appNavigator.iconSelectCallback = null;
     }
 
     async function renderUiLib() {
         const lib = await DataManager.getUiLib();
-        const tabsContainer = document.getElementById('uiLibTabs');
-        const contentContainer = document.getElementById('uiLibContent');
+        const tabsContainer = Utils.get('uiLibTabs');
+        const contentContainer = Utils.get('uiLibContent');
 
         if (tabsContainer) {
             tabsContainer.innerHTML = lib.categories.map((cat, index) => `
-                <button class="ui-lib-tab ${index === 0 ? 'active' : ''}" onclick="switchUiLibTab('${cat.id}')">${cat.name}</button>
-            `).join('');
+                    <button class="ui-lib-tab ${index === 0 ? 'active' : ''}"
+                            onclick="switchUiLibTab('${cat.id}')"
+                            role="tab"
+                            aria-selected="${index === 0}"
+                            aria-controls="uiLibContent"
+                            id="ui-tab-${cat.id}">
+                        ${Utils.escapeHtml(cat.name)}
+                    </button>
+                `).join('');
         }
 
         if (lib.categories.length > 0) {
@@ -3319,7 +3588,7 @@
 
     async function renderUiLibItems(categoryId) {
         const lib = await DataManager.getUiLib();
-        const container = document.getElementById('uiLibContent');
+        const container = Utils.get('uiLibContent');
         const items = lib.items.filter(i => i.category === categoryId);
 
         if (!container) return;
@@ -3330,17 +3599,23 @@
         }
 
         container.innerHTML = `<div class="ui-lib-grid">
-            ${items.map(item => {
+                ${items.map(item => {
             const isImage = item.url.startsWith('http') || item.url.startsWith('data:');
-            const content = isImage ? `<img src="${item.url}" onerror="this.src='❓'">` : `<span style="font-size:28px;">${item.url}</span>`;
+            const content = isImage ?
+                Utils.createImageWithFallback(item.url, item.name) :
+                `<span style="font-size:28px;">${Utils.escapeHtml(item.url)}</span>`;
             return `
-                    <div class="ui-lib-item" onclick="selectUiIcon('${item.url}')" title="${item.name}">
-                        ${content}
-                        <span>${item.name}</span>
-                    </div>
-                `;
+                        <div class="ui-lib-item" onclick="selectUiIcon('${Utils.escapeHtml(item.url)}')"
+                             title="${Utils.escapeHtml(item.name)}"
+                             tabindex="0"
+                             role="button"
+                             onkeydown="if(event.key==='Enter') selectUiIcon('${Utils.escapeHtml(item.url)}')">
+                            ${content}
+                            <span>${Utils.escapeHtml(item.name)}</span>
+                        </div>
+                    `;
         }).join('')}
-        </div>`;
+            </div>`;
     }
 
     function selectUiIcon(icon) {
@@ -3358,44 +3633,60 @@
     async function renderUiLibManager() {
         const lib = await DataManager.getUiLib();
 
-        const catList = document.getElementById('uiCategoriesList');
+        const catList = Utils.get('uiCategoriesList');
         if (catList) {
             catList.innerHTML = lib.categories.map(cat => `
-                <div class="category-list-item">
-                    <div class="cat-info">
-                        <div class="cat-name">${cat.name}</div>
+                    <div class="category-list-item">
+                        <div class="cat-info">
+                            <div class="cat-name">${Utils.escapeHtml(cat.name)}</div>
+                        </div>
+                        <div class="cat-actions">
+                            <button class="app-action-btn delete" onclick="deleteUiCategory('${cat.id}')" title="删除" aria-label="删除分类">🗑️</button>
+                        </div>
                     </div>
-                    <div class="cat-actions">
-                        <button class="app-action-btn delete" onclick="deleteUiCategory('${cat.id}')" title="删除">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
+                `).join('');
         }
 
-        const select = document.getElementById('uiItemCategory');
+        const select = Utils.get('uiItemCategory');
         if (select) {
-            select.innerHTML = lib.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            select.innerHTML = lib.categories.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.name)}</option>`).join('');
         }
 
         await renderUiItemsList();
     }
 
-    function switchUiTab(tab) {
-        document.querySelectorAll('#uiLibManagerModal .tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('#uiLibManagerModal .tab-content').forEach(t => t.classList.remove('active'));
+    // 修复：正确传递 event target
+    function switchUiTab(tab, clickedBtn) {
+        document.querySelectorAll('#uiLibManagerModal .tab').forEach(t => {
+            t.classList.remove('active');
+            t.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('#uiLibManagerModal .tab-content').forEach(t => {
+            t.classList.remove('active');
+            t.hidden = true;
+        });
 
-        event.target.classList.add('active');
-        document.getElementById('uiTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+        if (clickedBtn) {
+            clickedBtn.classList.add('active');
+            clickedBtn.setAttribute('aria-selected', 'true');
+        }
+
+        const tabId = 'uiTab' + tab.charAt(0).toUpperCase() + tab.slice(1);
+        const tabContent = Utils.get(tabId);
+        if (tabContent) {
+            tabContent.classList.add('active');
+            tabContent.hidden = false;
+        }
     }
 
     async function addUiCategory() {
-        const name = document.getElementById('newUiCategoryName').value.trim();
+        const name = Utils.get('newUiCategoryName').value.trim();
         if (!name) {
             showToast('请输入分类名称', 'error');
             return;
         }
         await DataManager.addUiCategory(name);
-        document.getElementById('newUiCategoryName').value = '';
+        Utils.get('newUiCategoryName').value = '';
         await renderUiLibManager();
         showToast('UI分类已添加');
     }
@@ -3408,9 +3699,9 @@
     }
 
     async function addUiItem() {
-        const category = document.getElementById('uiItemCategory').value;
-        const name = document.getElementById('uiItemName').value.trim();
-        const url = document.getElementById('uiItemUrl').value.trim();
+        const category = Utils.get('uiItemCategory').value;
+        const name = Utils.get('uiItemName').value.trim();
+        const url = Utils.get('uiItemUrl').value.trim();
 
         if (!name || !url) {
             showToast('请填写完整信息', 'error');
@@ -3418,33 +3709,35 @@
         }
 
         await DataManager.addUiItem({ category, name, url });
-        document.getElementById('uiItemName').value = '';
-        document.getElementById('uiItemUrl').value = '';
+        Utils.get('uiItemName').value = '';
+        Utils.get('uiItemUrl').value = '';
         await renderUiItemsList();
         showToast('图标已添加');
     }
 
     async function renderUiItemsList() {
         const lib = await DataManager.getUiLib();
-        const container = document.getElementById('uiItemsList');
+        const container = Utils.get('uiItemsList');
         if (!container) return;
 
         container.innerHTML = lib.items.map(item => {
             const cat = lib.categories.find(c => c.id === item.category);
             return `
-                <div class="category-list-item">
-                    <div class="cat-icon" style="font-size:20px;">
-                        ${item.url.startsWith('http') ? `<img src="${item.url}" style="width:20px;height:20px;">` : item.url}
+                    <div class="category-list-item">
+                        <div class="cat-icon" style="font-size:20px;">
+                            ${item.url.startsWith('http') ?
+                Utils.createImageWithFallback(item.url, item.name) :
+                Utils.escapeHtml(item.url)}
+                        </div>
+                        <div class="cat-info">
+                            <div class="cat-name">${Utils.escapeHtml(item.name)}</div>
+                            <div class="cat-count">${cat ? Utils.escapeHtml(cat.name) : '未分类'}</div>
+                        </div>
+                        <div class="cat-actions">
+                            <button class="app-action-btn delete" onclick="deleteUiItem('${item.id}')" title="删除" aria-label="删除图标">🗑️</button>
+                        </div>
                     </div>
-                    <div class="cat-info">
-                        <div class="cat-name">${item.name}</div>
-                        <div class="cat-count">${cat ? cat.name : '未分类'}</div>
-                    </div>
-                    <div class="cat-actions">
-                        <button class="app-action-btn delete" onclick="deleteUiItem('${item.id}')" title="删除">🗑️</button>
-                    </div>
-                </div>
-            `;
+                `;
         }).join('');
     }
 
@@ -3460,13 +3753,15 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = `app-navigator-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
         showToast('数据已导出');
     }
 
     function importData() {
-        document.getElementById('importFile').click();
+        Utils.get('importFile').click();
     }
 
     async function handleImport(event) {
@@ -3499,24 +3794,24 @@
         toast.className = 'toast-notification';
         const icon = type === 'error' ? '❌' : '✨';
         toast.style.cssText = `
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            background: var(--md-sys-color-inverse-surface);
-            color: var(--md-sys-color-inverse-on-surface);
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 3000;
-            animation: slideInRight 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid var(--md-sys-color-outline-variant);
-        `;
-        toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+                position: fixed;
+                top: 70px;
+                right: 20px;
+                background: var(--md-sys-color-inverse-surface);
+                color: var(--md-sys-color-inverse-on-surface);
+                padding: 12px 20px;
+                border-radius: 12px;
+                font-size: 13px;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 3000;
+                animation: slideInRight 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                border: 1px solid var(--md-sys-color-outline-variant);
+            `;
+        toast.innerHTML = `<span aria-hidden="true">${icon}</span><span>${Utils.escapeHtml(message)}</span>`;
         document.body.appendChild(toast);
 
         setTimeout(() => {
@@ -3527,42 +3822,63 @@
 
     // ==================== 搜索功能 ====================
     function openSearchModal() {
-        const modal = document.getElementById('searchModal');
-        const input = document.getElementById('searchInput');
+        const modal = Utils.get('searchModal');
+        const input = Utils.get('searchInput');
         searchModalOpen = true;
-        if (modal) modal.classList.add('show');
+        if (modal) {
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+        }
         if (input) {
             input.value = '';
             renderSearchHistory();
             setTimeout(() => input.focus(), 100);
         }
+        // 更新下拉菜单位置
+        requestAnimationFrame(updateEngineDropdownPosition);
     }
 
     function closeSearchModal() {
-        const modal = document.getElementById('searchModal');
+        const modal = Utils.get('searchModal');
         searchModalOpen = false;
-        if (modal) modal.classList.remove('show');
+        if (modal) {
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+        }
         closeEngineDropdown();
     }
 
+    // 优化：防止下拉菜单超出视口
     function updateEngineDropdownPosition() {
-        const wrapper = document.getElementById('engineSelectWrapper');
-        const menu = document.getElementById('engineDropdownMenu');
+        const wrapper = Utils.get('engineSelectWrapper');
+        const menu = Utils.get('engineDropdownMenu');
         if (!wrapper || !menu) return;
+
         const rect = wrapper.getBoundingClientRect();
-        menu.style.left = rect.left + 'px';
+        const menuRect = menu.getBoundingClientRect();
+
+        // 检查右边界
+        let left = rect.left;
+        if (left + 180 > window.innerWidth) { // 180 是 min-width
+            left = window.innerWidth - 190;
+        }
+
+        menu.style.left = Math.max(10, left) + 'px';
         menu.style.top = rect.bottom + 4 + 'px';
     }
 
     function toggleEngineDropdown(event) {
-        event.stopPropagation();
-        const wrapper = document.getElementById('engineSelectWrapper');
-        const menu = document.getElementById('engineDropdownMenu');
+        if (event) event.stopPropagation();
+        const wrapper = Utils.get('engineSelectWrapper');
+        const menu = Utils.get('engineDropdownMenu');
         engineDropdownOpen = !engineDropdownOpen;
 
         if (engineDropdownOpen) {
             updateEngineDropdownPosition();
-            if (wrapper) wrapper.classList.add('open');
+            if (wrapper) {
+                wrapper.classList.add('open');
+                wrapper.setAttribute('aria-expanded', 'true');
+            }
             if (menu) menu.classList.add('show');
         } else {
             closeEngineDropdown();
@@ -3571,9 +3887,12 @@
 
     function closeEngineDropdown() {
         engineDropdownOpen = false;
-        const wrapper = document.getElementById('engineSelectWrapper');
-        const menu = document.getElementById('engineDropdownMenu');
-        if (wrapper) wrapper.classList.remove('open');
+        const wrapper = Utils.get('engineSelectWrapper');
+        const menu = Utils.get('engineDropdownMenu');
+        if (wrapper) {
+            wrapper.classList.remove('open');
+            wrapper.setAttribute('aria-expanded', 'false');
+        }
         if (menu) menu.classList.remove('show');
     }
 
@@ -3582,31 +3901,35 @@
         renderEngineDropdown();
         updateEngineDisplay();
         closeEngineDropdown();
-        const input = document.getElementById('searchInput');
+        const input = Utils.get('searchInput');
         if (input) input.focus();
     }
 
     function renderEngineDropdown() {
-        const menu = document.getElementById('engineDropdownMenu');
+        const menu = Utils.get('engineDropdownMenu');
         if (!menu || typeof searchEngines === 'undefined') return;
+
         menu.innerHTML = searchEngines.map((engine, index) => `
-            <div class="engine-option ${index === currentEngineIndex ? 'active' : ''}" onclick="selectEngine(${index})">
-                <img src="${engine.iconUrl}" alt="${engine.name}">
-                <span>${engine.name}</span>
-            </div>
-        `).join('');
+                <div class="engine-option ${index === currentEngineIndex ? 'active' : ''}"
+                     onclick="selectEngine(${index})"
+                     role="option"
+                     aria-selected="${index === currentEngineIndex}">
+                    <img src="${engine.iconUrl}" alt="" loading="lazy">
+                    <span>${Utils.escapeHtml(engine.name)}</span>
+                </div>
+            `).join('');
     }
 
     function updateEngineDisplay() {
         if (typeof searchEngines === 'undefined') return;
         const engine = searchEngines[currentEngineIndex];
-        const iconImg = document.getElementById('currentEngineIcon');
-        const nameSpan = document.getElementById('currentEngineName');
-        const footerName = document.getElementById('footerEngineName');
+        const iconImg = Utils.get('currentEngineIcon');
+        const nameSpan = Utils.get('currentEngineName');
+        const footerName = Utils.get('footerEngineName');
 
         if (iconImg) {
             iconImg.src = engine.iconUrl;
-            iconImg.alt = engine.name;
+            iconImg.alt = '';
         }
         if (nameSpan) nameSpan.textContent = engine.name;
         if (footerName) footerName.textContent = engine.name;
@@ -3619,7 +3942,7 @@
     }
 
     function doSearch() {
-        const input = document.getElementById('searchInput');
+        const input = Utils.get('searchInput');
         const query = input ? input.value.trim() : '';
         if (!query || typeof searchEngines === 'undefined') return;
 
@@ -3630,7 +3953,8 @@
         closeSearchModal();
     }
 
-    async function saveSearchHistory(query) {
+    // 防抖保存历史记录
+    const debouncedSaveHistory = Utils.debounce(async (query) => {
         try {
             let history = await StorageManager.get('searchHistory') || [];
             history = history.filter(item => item.query !== query);
@@ -3640,6 +3964,10 @@
         } catch (e) {
             console.error('Failed to save search history:', e);
         }
+    }, 500);
+
+    async function saveSearchHistory(query) {
+        debouncedSaveHistory(query);
     }
 
     async function getSearchHistory() {
@@ -3650,23 +3978,9 @@
         }
     }
 
-    function formatTime(timestamp) {
-        const now = Date.now();
-        const diff = now - timestamp;
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
-
-        if (minutes < 1) return '刚刚';
-        if (minutes < 60) return `${minutes}分钟前`;
-        if (hours < 24) return `${hours}小时前`;
-        if (days < 30) return `${days}天前`;
-        return new Date(timestamp).toLocaleDateString();
-    }
-
     async function renderSearchHistory() {
-        const historyDiv = document.getElementById('searchHistory');
-        const listDiv = document.getElementById('historyList');
+        const historyDiv = Utils.get('searchHistory');
+        const listDiv = Utils.get('historyList');
         const history = await getSearchHistory();
 
         if (!historyDiv || !listDiv) return;
@@ -3678,12 +3992,12 @@
         }
 
         listDiv.innerHTML = history.map((item, index) => `
-            <div class="history-item" onclick="useHistoryItem(${index})">
-                <div class="history-icon">🕐</div>
-                <div class="history-text">${escapeHtml(item.query)}</div>
-                <div class="history-time">${formatTime(item.time)}</div>
-            </div>
-        `).join('');
+                <div class="history-item" onclick="useHistoryItem(${index})" role="listitem" tabindex="0" onkeydown="if(event.key==='Enter') useHistoryItem(${index})">
+                    <div class="history-icon" aria-hidden="true">🕐</div>
+                    <div class="history-text">${Utils.escapeHtml(item.query)}</div>
+                    <div class="history-time">${Utils.formatTime(item.time)}</div>
+                </div>
+            `).join('');
 
         historyDiv.style.display = 'block';
     }
@@ -3693,9 +4007,10 @@
         const item = history[historyIndex];
         if (!item) return;
 
-        const input = document.getElementById('searchInput');
+        const input = Utils.get('searchInput');
         if (input) {
             input.value = item.query;
+            // 使用当前选择的引擎搜索，而不是历史引擎
             doSearch();
         }
     }
@@ -3705,26 +4020,22 @@
         renderSearchHistory();
     }
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     // ==================== 主题和壁纸 ====================
     function detectDarkMode() {
         const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--md-sys-color-background').trim();
-        const surfaceColor = getComputedStyle(document.documentElement).getPropertyValue('--md-sys-color-surface').trim();
 
-        const isDark = isColorDark(bgColor) || isColorDark(surfaceColor);
+        const isDark = isColorDark(bgColor);
         document.body.classList.toggle('dark-mode', isDark);
 
+        // 更新 RGB 变量
         if (isDark) {
-            document.documentElement.style.setProperty('--md-sys-color-surface-rgb', '30, 30, 30');
-            document.documentElement.style.setProperty('--md-sys-color-background-rgb', '20, 20, 20');
+            document.documentElement.style.setProperty('--md-sys-color-surface-rgb', '40, 40, 40');
+            document.documentElement.style.setProperty('--md-sys-color-background-rgb', '30, 30, 30');
+            document.documentElement.style.setProperty('--md-sys-color-surface-variant-rgb', '50, 50, 50');
         } else {
             document.documentElement.style.setProperty('--md-sys-color-surface-rgb', '255, 248, 249');
             document.documentElement.style.setProperty('--md-sys-color-background-rgb', '255, 248, 249');
+            document.documentElement.style.setProperty('--md-sys-color-surface-variant-rgb', '243, 221, 226');
         }
     }
 
@@ -3756,48 +4067,76 @@
     }
 
     function togglePersonalizationPanel() {
+        // 使用原生方法获取元素，避免缓存问题
         const dropdown = document.getElementById('personalizationDropdown');
         const overlay = document.getElementById('personalizationOverlay');
         const btn = document.getElementById('personalizationToggleBtn');
 
-        if (!dropdown) return;
+        if (!dropdown) {
+            console.error('找不到个性化下拉菜单元素');
+            return;
+        }
+
         const isOpen = dropdown.classList.contains('show');
 
         if (isOpen) {
+            // 关闭
             dropdown.classList.remove('show');
             if (overlay) overlay.classList.remove('show');
-            if (btn) btn.classList.remove('active');
+            if (btn) {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-expanded', 'false');
+            }
         } else {
+            // 打开
             dropdown.classList.add('show');
             if (overlay) overlay.classList.add('show');
-            if (btn) btn.classList.add('active');
-            renderThemeOptions();
+            if (btn) {
+                btn.classList.add('active');
+                btn.setAttribute('aria-expanded', 'true');
+            }
+
+            // 安全地渲染主题选项
+            try {
+                if (typeof themeConfig !== 'undefined' && themeConfig.themes) {
+                    renderThemeOptions();
+                } else {
+                    console.warn('themeConfig 未加载，跳过主题渲染');
+                    // 如果主题配置没加载，至少清空选项避免报错
+                    const container = document.getElementById('themeOptions');
+                    if (container) container.innerHTML = '<div style="padding:10px;color:#999">主题加载中...</div>';
+                }
+            } catch (e) {
+                console.error('渲染主题选项失败:', e);
+            }
         }
     }
 
+
     function renderThemeOptions() {
-        const container = document.getElementById('themeOptions');
+        const container = Utils.get('themeOptions');
         if (!container || typeof themeConfig === 'undefined') return;
 
-        container.innerHTML = '';
         const currentTheme = localStorage.getItem('selectedTheme') || themeConfig.defaultTheme || 'material-rose';
 
-        themeConfig.themes.forEach(theme => {
-            const option = document.createElement('div');
-            option.className = 'theme-option' + (theme.id === currentTheme ? ' active' : '');
-            option.dataset.themeId = theme.id;
-            option.onclick = () => selectTheme(theme.id);
-
+        container.innerHTML = themeConfig.themes.map(theme => {
             const color = theme.colors && theme.colors['--md-sys-color-primary'] ? theme.colors['--md-sys-color-primary'] : '#B14A6B';
+            const isActive = theme.id === currentTheme;
 
-            option.innerHTML = `
-                <div class="theme-option-preview" style="background: ${color}"></div>
-                <span class="theme-option-name">${theme.name}</span>
-                <span class="theme-option-check">✓</span>
-            `;
-
-            container.appendChild(option);
-        });
+            return `
+                    <div class="theme-option ${isActive ? 'active' : ''}"
+                         data-theme-id="${theme.id}"
+                         onclick="selectTheme('${theme.id}')"
+                         role="radio"
+                         aria-checked="${isActive}"
+                         tabindex="0"
+                         onkeydown="if(event.key==='Enter'||event.key===' ') selectTheme('${theme.id}')">
+                        <div class="theme-option-preview" style="background: ${color}"></div>
+                        <span class="theme-option-name">${Utils.escapeHtml(theme.name)}</span>
+                        <span class="theme-option-check" aria-hidden="true">✓</span>
+                    </div>
+                `;
+        }).join('');
     }
 
     function selectTheme(themeId) {
@@ -3812,44 +4151,47 @@
             }
         }
 
-        setTimeout(detectDarkMode, 50);
+        requestAnimationFrame(detectDarkMode);
         document.dispatchEvent(new CustomEvent('themeChanged', { detail: { themeId } }));
 
+        // 更新 UI
         document.querySelectorAll('.theme-option').forEach(opt => {
-            opt.classList.remove('active');
-            if (opt.dataset.themeId === themeId) opt.classList.add('active');
+            const isSelected = opt.dataset.themeId === themeId;
+            opt.classList.toggle('active', isSelected);
+            opt.setAttribute('aria-checked', isSelected);
         });
 
-        showToast(`已切换到 ${themeConfig.themes.find(t => t.id === themeId)?.name || '新主题'}`);
+        const themeName = themeConfig.themes.find(t => t.id === themeId)?.name || '新主题';
+        showToast(`已切换到 ${themeName}`);
     }
 
     class WallpaperManager {
         constructor() {
             this.defaults = { url: '', opacity: 50, blur: 0, overlayOpacity: 85 };
-            this.settings = this.loadSettings();
+            this.settings = { ...this.defaults };
             this.init();
         }
 
-        async loadSettings() {
+        async init() {
             try {
                 const saved = await StorageManager.get('appNavigator_wallpaper');
-                return saved || { ...this.defaults };
+                if (saved) {
+                    this.settings = { ...this.defaults, ...saved };
+                }
             } catch (e) {
-                return { ...this.defaults };
+                console.error('Failed to load wallpaper settings:', e);
             }
-        }
-
-        async saveSettings() {
-            await StorageManager.set('appNavigator_wallpaper', this.settings);
+            this.applySettings();
+            this.bindPresetEvents();
         }
 
         applySettings() {
-            const layer = document.getElementById('wallpaperLayer');
-            const overlay = document.getElementById('wallpaperOverlay');
-            const urlInput = document.getElementById('wallpaperUrl');
-            const opacitySlider = document.getElementById('opacitySlider');
-            const blurSlider = document.getElementById('blurSlider');
-            const overlaySlider = document.getElementById('overlaySlider');
+            const layer = Utils.get('wallpaperLayer');
+            const overlay = Utils.get('wallpaperOverlay');
+            const urlInput = Utils.get('wallpaperUrl');
+            const opacitySlider = Utils.get('opacitySlider');
+            const blurSlider = Utils.get('blurSlider');
+            const overlaySlider = Utils.get('overlaySlider');
 
             if (!layer || !overlay) return;
 
@@ -3877,39 +4219,39 @@
         }
 
         updateDisplayValues() {
-            const opacityValue = document.getElementById('opacityValue');
-            const blurValue = document.getElementById('blurValue');
-            const overlayValue = document.getElementById('overlayValue');
+            const opacityValue = Utils.get('opacityValue');
+            const blurValue = Utils.get('blurValue');
+            const overlayValue = Utils.get('overlayValue');
 
             if (opacityValue) opacityValue.textContent = this.settings.opacity + '%';
             if (blurValue) blurValue.textContent = this.settings.blur + 'px';
             if (overlayValue) overlayValue.textContent = this.settings.overlayOpacity + '%';
         }
 
-        init() {
-            this.applySettings();
-            this.bindPresetEvents();
-        }
-
         bindPresetEvents() {
             const presets = document.querySelectorAll('.wallpaper-preset');
             presets.forEach(preset => {
-                preset.addEventListener('click', (e) => {
+                const clickHandler = (e) => {
                     presets.forEach(p => p.classList.remove('active'));
                     e.target.classList.add('active');
                     const url = e.target.dataset.url;
-                    const urlInput = document.getElementById('wallpaperUrl');
+                    const urlInput = Utils.get('wallpaperUrl');
                     if (urlInput) urlInput.value = url;
                     this.updateFromInputs();
+                };
+                preset.addEventListener('click', clickHandler);
+                // 键盘支持
+                preset.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') clickHandler(e);
                 });
             });
         }
 
         updateFromInputs() {
-            const urlInput = document.getElementById('wallpaperUrl');
-            const opacitySlider = document.getElementById('opacitySlider');
-            const blurSlider = document.getElementById('blurSlider');
-            const overlaySlider = document.getElementById('overlaySlider');
+            const urlInput = Utils.get('wallpaperUrl');
+            const opacitySlider = Utils.get('opacitySlider');
+            const blurSlider = Utils.get('blurSlider');
+            const overlaySlider = Utils.get('overlaySlider');
 
             this.settings = {
                 url: urlInput ? urlInput.value : '',
@@ -3925,8 +4267,12 @@
             this.settings = { ...this.defaults };
             document.querySelectorAll('.wallpaper-preset').forEach(p => p.classList.remove('active'));
             this.applySettings();
-            await this.saveSettings();
+            await this.save();
             showToast('已恢复默认设置');
+        }
+
+        async save() {
+            await StorageManager.set('appNavigator_wallpaper', this.settings);
         }
     }
 
@@ -3946,9 +4292,65 @@
 
     async function saveWallpaperSettings() {
         if (wallpaperManager) {
-            await wallpaperManager.saveSettings();
+            await wallpaperManager.save();
             togglePersonalizationPanel();
             showToast('壁纸设置已保存');
+        }
+    }
+
+    // ==================== 键盘导航支持 ====================
+    function setupKeyboardNavigation() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + K 打开搜索
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                openSearchModal();
+            }
+
+            // ESC 关闭模态框
+            if (e.key === 'Escape') {
+                if (searchModalOpen) {
+                    closeSearchModal();
+                } else {
+                    // 关闭其他模态框
+                    const openModal = document.querySelector('.modal-overlay.show, .ui-lib-panel.show');
+                    if (openModal) {
+                        if (openModal.classList.contains('ui-lib-panel')) closeUiLib();
+                        else closeModal(openModal.id);
+                    }
+                }
+            }
+
+            // Tab 循环捕获在模态框内
+            if (e.key === 'Tab') {
+                const modal = document.querySelector('.modal-overlay.show, .search-modal.show');
+                if (modal) {
+                    const focusable = modal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])');
+                    if (focusable.length) {
+                        const first = focusable[0];
+                        const last = focusable[focusable.length - 1];
+
+                        if (e.shiftKey && document.activeElement === first) {
+                            last.focus();
+                            e.preventDefault();
+                        } else if (!e.shiftKey && document.activeElement === last) {
+                            first.focus();
+                            e.preventDefault();
+                        }
+                    }
+                }
+            }
+        });
+
+        // 侧边栏键盘支持
+        const sidebar = Utils.get('sidebar');
+        if (sidebar) {
+            sidebar.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    const navItem = e.target.closest('.nav-item');
+                    if (navItem) navItem.click();
+                }
+            });
         }
     }
 
@@ -3964,40 +4366,49 @@
         renderEngineDropdown();
         updateEngineDisplay();
 
-        setTimeout(detectDarkMode, 100);
+        // 延迟检测深色模式确保 CSS 已应用
+        setTimeout(detectDarkMode, 50);
 
+        // 点击外部关闭下拉菜单
         document.addEventListener('click', (e) => {
-            const wrapper = document.getElementById('engineSelectWrapper');
-            const menu = document.getElementById('engineDropdownMenu');
+            const wrapper = Utils.get('engineSelectWrapper');
+            const menu = Utils.get('engineDropdownMenu');
             if (wrapper && menu && !wrapper.contains(e.target) && !menu.contains(e.target)) {
                 closeEngineDropdown();
             }
         });
 
+        // 个性化面板外部点击
         document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('personalizationDropdown');
-            const btn = document.getElementById('personalizationToggleBtn');
+            const dropdown = Utils.get('personalizationDropdown');
+            const btn = Utils.get('personalizationToggleBtn');
             if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
                 dropdown.classList.remove('show');
                 btn.classList.remove('active');
-                const overlay = document.getElementById('personalizationOverlay');
+                btn.setAttribute('aria-expanded', 'false');
+                const overlay = Utils.get('personalizationOverlay');
                 if (overlay) overlay.classList.remove('show');
             }
         });
 
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                openSearchModal();
-            }
-            if (e.key === 'Escape' && searchModalOpen) {
-                closeSearchModal();
-            }
-        });
+        // 设置键盘导航
+        setupKeyboardNavigation();
 
-        window.addEventListener('resize', () => {
-            closeEngineDropdown();
+        // 清理 DOM 缓存
+        window.addEventListener('beforeunload', () => {
+            Utils.clearCache();
+            if (appNavigator) appNavigator.destroy();
         });
+    });
+
+    // 全局错误处理
+    window.addEventListener('error', (e) => {
+        console.error('Global error:', e.error);
+        // 可以在这里添加错误上报逻辑
+    });
+
+    window.addEventListener('unhandledrejection', (e) => {
+        console.error('Unhandled promise rejection:', e.reason);
     });
 </script>
 </body>
