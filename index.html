@@ -84,7 +84,7 @@
 
         body.dark-mode .sidebar {
             border-color: rgba(255, 255, 255, 0.05);
-            background: rgba(40, 40, 40, 0.98);
+            background: var(--md-sys-color-primary-container);
         }
 
         body.dark-mode .nav-item:hover {
@@ -662,6 +662,7 @@
             transition: width var(--md-transition-medium) var(--md-easing);
             display: flex;
             flex-direction: column;
+            background: var(--md-sys-color-primary-container);
         }
 
         .sidebar.collapsed {
@@ -2500,7 +2501,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn-text" onclick="closeModal('manageCategoriesModal')">关闭</button>
-            <button class="btn-primary" onclick="openAddCategoryModal()">+ 新建分类</button>
+            <button class="btn-primary" onclick="closeModal('manageCategoriesModal'); openAddCategoryModal();">+ 新建分类</button>
         </div>
     </div>
 </div>
@@ -3292,8 +3293,8 @@
             const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
             const domain = urlObj.hostname;
 
-            // 尝试获取favicon
-            const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+            // 使用 favicon.im 获取图标
+            const faviconUrl = `https://favicon.im/${domain}`;
 
             document.getElementById('appIcon').value = faviconUrl;
             updateIconPreview();
