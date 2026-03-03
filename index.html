@@ -35,6 +35,10 @@
             --md-sys-color-inverse-surface: #201A1A;
             --md-sys-color-inverse-on-surface: #F3DDE2;
 
+            /* RGB 版本用于半透明混合 */
+            --md-sys-color-surface-rgb: 255, 248, 249;
+            --md-sys-color-background-rgb: 255, 248, 249;
+
             --md-easing: cubic-bezier(0.4, 0, 0.2, 1);
             --md-transition-fast: 0.15s;
             --md-transition-medium: 0.25s;
@@ -60,6 +64,121 @@
             transition: background-color var(--md-transition-medium) var(--md-easing),
             color var(--md-transition-medium) var(--md-easing);
             font-size: 14px;
+        }
+
+        /* 深色模式优化 - 降低刺眼度 */
+        body.dark-mode {
+            --md-sys-color-outline: rgba(255, 255, 255, 0.06);
+            --md-sys-color-outline-variant: rgba(255, 255, 255, 0.04);
+        }
+
+        body.dark-mode .app-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        body.dark-mode .sidebar {
+            border-color: rgba(255, 255, 255, 0.05);
+            background: rgba(40, 40, 40, 0.98);
+        }
+
+        body.dark-mode .nav-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .app-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .category-title {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        body.dark-mode .search-nav-item {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .history-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* 深色模式搜索界面玻璃态遮罩 */
+        body.dark-mode .search-container {
+            background: rgba(30, 30, 30, 0.85);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+        }
+
+        body.dark-mode .search-header {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .search-history {
+            background: transparent;
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        body.dark-mode .search-footer {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        body.dark-mode .engine-dropdown-menu {
+            background: rgba(40, 40, 40, 0.95);
+            border-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+        }
+
+        body.dark-mode .engine-option {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        body.dark-mode .engine-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .engine-option.active {
+            background: rgba(177, 74, 107, 0.3);
+        }
+
+        body.dark-mode .search-input {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        body.dark-mode .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        body.dark-mode .panel-header {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .theme-column {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .theme-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .sliders-group {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        body.dark-mode .wallpaper-input {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        body.dark-mode .wallpaper-slider {
+            background: rgba(255, 255, 255, 0.12);
         }
 
         /* 顶部应用栏 */
@@ -264,12 +383,12 @@
             transform: rotate(180deg);
         }
 
-        /* 个性化下拉面板 */
+        /* 个性化下拉面板 - 使用CSS变量 */
         .personalization-dropdown {
             position: absolute;
             top: calc(100% + 6px);
             right: 0;
-            background: var(--md-sys-color-surface);
+            background: rgba(var(--md-sys-color-surface-rgb), 0.98);
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.12);
             border: 1px solid var(--md-sys-color-outline-variant);
@@ -282,6 +401,7 @@
             width: 520px;
             max-height: 70vh;
             overflow: hidden;
+            backdrop-filter: blur(10px);
         }
 
         .personalization-dropdown.show {
@@ -715,14 +835,14 @@
             display: none;
         }
 
-        /* 全局搜索模态框 - 现代简洁风格 */
+        /* 全局搜索模态框 - CSS变量驱动 */
         .search-modal {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(var(--md-sys-color-background-rgb), 0.5);
             backdrop-filter: blur(12px);
             z-index: 2000;
             display: none;
@@ -741,7 +861,7 @@
         .search-container {
             width: 90%;
             max-width: 640px;
-            background: var(--md-sys-color-surface);
+            background: rgba(var(--md-sys-color-surface-rgb), 0.98);
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05);
             border: 1px solid var(--md-sys-color-outline-variant);
@@ -749,6 +869,7 @@
             flex-direction: column;
             max-height: 70vh;
             position: relative;
+            backdrop-filter: blur(10px);
         }
 
         .search-modal.show .search-container {
@@ -769,7 +890,7 @@
             position: relative;
         }
 
-        /* 搜索引擎选择器 - 左侧窄宽度 */
+        /* 搜索引擎选择器 */
         .engine-selector {
             position: relative;
             flex-shrink: 0;
@@ -831,10 +952,10 @@
             transform: rotate(180deg);
         }
 
-        /* 引擎下拉菜单面板 - Fixed定位防止截断 */
+        /* 引擎下拉菜单面板 - CSS变量驱动 */
         .engine-dropdown-menu {
             position: fixed;
-            background: var(--md-sys-color-surface);
+            background: rgba(var(--md-sys-color-surface-rgb), 0.98);
             border-radius: 12px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             border: 1px solid var(--md-sys-color-outline-variant);
@@ -847,6 +968,7 @@
             overflow: hidden;
             max-height: 400px;
             overflow-y: auto;
+            backdrop-filter: blur(10px);
         }
 
         .engine-dropdown-menu.show {
@@ -972,7 +1094,7 @@
         .search-history {
             max-height: 300px;
             overflow-y: auto;
-            background: var(--md-sys-color-surface);
+            background: rgba(var(--md-sys-color-surface-rgb), 0.5);
             border-bottom: 1px solid var(--md-sys-color-outline-variant);
         }
 
@@ -988,8 +1110,9 @@
             letter-spacing: 0.5px;
             position: sticky;
             top: 0;
-            background: var(--md-sys-color-surface);
+            background: rgba(var(--md-sys-color-surface-rgb), 0.8);
             z-index: 5;
+            backdrop-filter: blur(8px);
         }
 
         .clear-history-btn {
@@ -1065,7 +1188,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 10px 16px;
-            background: var(--md-sys-color-surface-variant);
+            background: rgba(var(--md-sys-color-surface-variant-rgb, 243, 221, 226), 0.5);
             font-size: 12px;
             color: var(--md-sys-color-on-surface-variant);
             border-radius: 0 0 16px 16px;
@@ -1083,7 +1206,7 @@
         }
 
         kbd {
-            background: var(--md-sys-color-surface);
+            background: rgba(var(--md-sys-color-surface-rgb), 0.8);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: monospace;
@@ -1255,8 +1378,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.2);
+            background: rgba(var(--md-sys-color-background-rgb), 0.5);
             z-index: 998;
+            backdrop-filter: blur(4px);
         }
 
         /* 响应式 */
@@ -1369,7 +1493,7 @@
             }
 
             .engine-dropdown-trigger span {
-                display: none; /* 移动端隐藏引擎名称 */
+                display: none;
             }
 
             .engine-dropdown-menu {
@@ -1436,11 +1560,11 @@
     <!-- 动态生成 -->
 </div>
 
-<!-- 全局搜索模态框 - 现代简洁版 -->
+<!-- 全局搜索模态框 -->
 <div class="search-modal" id="searchModal">
     <div class="search-container">
         <div class="search-header">
-            <!-- 引擎选择器 - 窄宽度 -->
+            <!-- 引擎选择器 -->
             <div class="engine-selector" id="engineSelector">
                 <div class="engine-select-wrapper" id="engineSelectWrapper" onclick="toggleEngineDropdown(event)">
                     <img id="currentEngineIcon" src="" alt="" class="engine-icon-img">
@@ -2126,6 +2250,9 @@
 
         const appNavigator = new AppNavigator();
         window.appNavigator = appNavigator;
+
+        // 初始化深色模式检测
+        setTimeout(detectDarkMode, 100);
     });
 </script>
 
@@ -2244,6 +2371,64 @@
 
     let wallpaperManager;
 
+    // 检测颜色是否为深色
+    function isColorDark(color) {
+        if (!color) return false;
+
+        // 处理 hex 颜色
+        let r, g, b;
+        if (color.startsWith('#')) {
+            const hex = color.replace('#', '');
+            if (hex.length === 3) {
+                r = parseInt(hex[0] + hex[0], 16);
+                g = parseInt(hex[1] + hex[1], 16);
+                b = parseInt(hex[2] + hex[2], 16);
+            } else {
+                r = parseInt(hex.substr(0, 2), 16);
+                g = parseInt(hex.substr(2, 2), 16);
+                b = parseInt(hex.substr(4, 2), 16);
+            }
+        } else if (color.startsWith('rgb')) {
+            // 处理 rgb/rgba
+            const match = color.match(/\d+/g);
+            if (match) {
+                r = parseInt(match[0]);
+                g = parseInt(match[1]);
+                b = parseInt(match[2]);
+            }
+        } else if (color.startsWith('var(')) {
+            // 获取计算后的样式
+            const computedStyle = getComputedStyle(document.documentElement);
+            const value = computedStyle.getPropertyValue(color.slice(4, -1)).trim();
+            return isColorDark(value);
+        }
+
+        if (r === undefined || isNaN(r)) return false;
+
+        // 计算亮度 (YIQ公式)
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness < 128;
+    }
+
+    // 检测并应用深色模式类，同时更新RGB变量
+    function detectDarkMode() {
+        const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--md-sys-color-background').trim();
+        const surfaceColor = getComputedStyle(document.documentElement).getPropertyValue('--md-sys-color-surface').trim();
+
+        // 检测背景色或surface色是否为深色
+        const isDark = isColorDark(bgColor) || isColorDark(surfaceColor);
+        document.body.classList.toggle('dark-mode', isDark);
+
+        // 更新 RGB 变量用于半透明混合
+        if (isDark) {
+            document.documentElement.style.setProperty('--md-sys-color-surface-rgb', '30, 30, 30');
+            document.documentElement.style.setProperty('--md-sys-color-background-rgb', '20, 20, 20');
+        } else {
+            document.documentElement.style.setProperty('--md-sys-color-surface-rgb', '255, 248, 249');
+            document.documentElement.style.setProperty('--md-sys-color-background-rgb', '255, 248, 249');
+        }
+    }
+
     function togglePersonalizationPanel() {
         const dropdown = document.getElementById('personalizationDropdown');
         const overlay = document.getElementById('personalizationOverlay');
@@ -2301,6 +2486,9 @@
                 });
             }
         }
+
+        // 检测深色模式并应用优化
+        setTimeout(detectDarkMode, 50);
 
         document.dispatchEvent(new CustomEvent('themeChanged', { detail: { themeId } }));
 
