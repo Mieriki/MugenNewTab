@@ -6,6 +6,7 @@
     <title>应用导航中心</title>
     <script src="js/themes.config.js"></script>
     <script src="js/apps.config.js"></script>
+    <script src="js/searchEngines.js"></script>
     <style>
         :root {
             /* Material 3 动态颜色变量 */
@@ -195,7 +196,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .header-brand {
@@ -284,7 +285,7 @@
 
         .brand-icon.is-image img {
             padding: 0;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
         }
 
         .brand-text {
@@ -326,8 +327,8 @@
             display: none;
             width: 32px;
             height: 32px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
             color: white;
             font-size: 16px;
@@ -339,7 +340,7 @@
         }
 
         .menu-toggle:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* 个性化设置按钮 */
@@ -390,7 +391,7 @@
             right: 0;
             background: rgba(var(--md-sys-color-surface-rgb), 0.98);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
             border: 1px solid var(--md-sys-color-outline-variant);
             opacity: 0;
             visibility: hidden;
@@ -616,7 +617,7 @@
             border-radius: 50%;
             background: var(--md-sys-color-primary);
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s;
         }
 
@@ -780,7 +781,7 @@
             font-size: 12px;
             white-space: nowrap;
             z-index: 1003;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             pointer-events: none;
         }
 
@@ -825,7 +826,7 @@
             margin-left: auto;
             font-size: 11px;
             opacity: 0.6;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: monospace;
@@ -863,7 +864,7 @@
             max-width: 640px;
             background: rgba(var(--md-sys-color-surface-rgb), 0.98);
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
             border: 1px solid var(--md-sys-color-outline-variant);
             display: flex;
             flex-direction: column;
@@ -877,8 +878,14 @@
         }
 
         @keyframes searchSlideIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .search-header {
@@ -957,7 +964,7 @@
             position: fixed;
             background: rgba(var(--md-sys-color-surface-rgb), 0.98);
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--md-sys-color-outline-variant);
             min-width: 180px;
             z-index: 3000;
@@ -1212,7 +1219,7 @@
             font-family: monospace;
             font-size: 11px;
             border: 1px solid var(--md-sys-color-outline);
-            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
         }
 
         /* 主内容区域 */
@@ -1259,8 +1266,14 @@
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .category-title {
@@ -1305,7 +1318,7 @@
         .app-card:hover {
             transform: translateY(-2px);
             border-color: var(--md-sys-color-primary);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
         }
 
         .app-icon {
@@ -1410,7 +1423,7 @@
 
             .sidebar {
                 transform: translateX(-100%);
-                box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+                box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
                 width: var(--sidebar-width) !important;
             }
 
@@ -1540,12 +1553,25 @@
 
         /* Toast 动画 */
         @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
+
         @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 1; }
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 1;
+            }
         }
     </style>
     <base target="_blank">
@@ -1579,12 +1605,14 @@
 
             <!-- 输入框 -->
             <div class="search-input-wrapper">
-                <input type="text" class="search-input" id="searchInput" placeholder="输入搜索内容..." autocomplete="off" onkeydown="onSearchInput(event)">
+                <input type="text" class="search-input" id="searchInput" placeholder="输入搜索内容..." autocomplete="off"
+                       onkeydown="onSearchInput(event)">
             </div>
 
             <!-- 搜索按钮 -->
             <button class="search-submit-btn" onclick="doSearch()" title="搜索 (Enter)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                     stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
@@ -1634,7 +1662,8 @@
     </div>
 
     <div class="personalization-switcher">
-        <button class="personalization-toggle-btn" id="personalizationToggleBtn" onclick="togglePersonalizationPanel()" title="个性化设置">
+        <button class="personalization-toggle-btn" id="personalizationToggleBtn" onclick="togglePersonalizationPanel()"
+                title="个性化设置">
             <span class="personalization-icon">🎨</span>
             <span class="personalization-label">个性化</span>
             <span class="dropdown-arrow">▼</span>
@@ -1664,36 +1693,49 @@
 
                     <!-- 预设壁纸 -->
                     <div class="wallpaper-presets-compact" id="wallpaperPresets">
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变"></div>
+                        <div class="wallpaper-preset"
+                             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                             data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变"></div>
+                        <div class="wallpaper-preset"
+                             style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+                             data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变"></div>
+                        <div class="wallpaper-preset"
+                             style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+                             data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变"></div>
+                        <div class="wallpaper-preset"
+                             style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+                             data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变"></div>
                     </div>
 
                     <!-- 自定义URL -->
                     <div class="wallpaper-input-group">
-                        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..." onchange="updateWallpaper()">
+                        <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..."
+                               onchange="updateWallpaper()">
                     </div>
 
                     <!-- 滑块组 -->
                     <div class="sliders-group">
                         <div class="slider-item">
                             <label>壁纸透明度 <span id="opacityValue">50%</span></label>
-                            <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="opacitySlider" min="0" max="100" value="50"
+                                   oninput="updateWallpaperSettings()">
                         </div>
                         <div class="slider-item">
                             <label>模糊程度 <span id="blurValue">0px</span></label>
-                            <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="blurSlider" min="0" max="20" value="0"
+                                   oninput="updateWallpaperSettings()">
                         </div>
                         <div class="slider-item">
                             <label>背景遮罩 <span id="overlayValue">85%</span></label>
-                            <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="85" oninput="updateWallpaperSettings()">
+                            <input type="range" class="wallpaper-slider" id="overlaySlider" min="0" max="100" value="85"
+                                   oninput="updateWallpaperSettings()">
                         </div>
                     </div>
 
                     <div class="wallpaper-actions">
                         <button class="wallpaper-btn wallpaper-btn-secondary" onclick="resetWallpaper()">重置</button>
-                        <button class="wallpaper-btn wallpaper-btn-primary" onclick="saveWallpaperSettings()">应用</button>
+                        <button class="wallpaper-btn wallpaper-btn-primary" onclick="saveWallpaperSettings()">应用
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1727,45 +1769,7 @@
 
 <script src="js/ThemeManager.js"></script>
 <script>
-    // 搜索引擎配置 - 使用网络图标
-    const searchEngines = [
-        {
-            id: 'google',
-            name: 'Google',
-            iconUrl: 'https://www.google.com/favicon.ico',
-            url: 'https://www.google.com/search?q={q}'
-        },
-        {
-            id: 'bing',
-            name: 'Bing',
-            iconUrl: 'https://www.bing.com/favicon.ico',
-            url: 'https://www.bing.com/search?q={q}'
-        },
-        {
-            id: 'baidu',
-            name: '百度',
-            iconUrl: 'https://www.baidu.com/favicon.ico',
-            url: 'https://www.baidu.com/s?wd={q}'
-        },
-        {
-            id: 'duckduckgo',
-            name: 'DuckDuckGo',
-            iconUrl: 'https://duckduckgo.com/favicon.ico',
-            url: 'https://duckduckgo.com/?q={q}'
-        },
-        {
-            id: 'github',
-            name: 'GitHub',
-            iconUrl: 'https://github.com/favicon.ico',
-            url: 'https://github.com/search?q={q}'
-        },
-        {
-            id: 'stackoverflow',
-            name: 'Stack Overflow',
-            iconUrl: 'https://stackoverflow.com/favicon.ico',
-            url: 'https://stackoverflow.com/search?q={q}'
-        }
-    ];
+
 
     let currentEngineIndex = 0;
     let searchModalOpen = false;
@@ -2278,9 +2282,9 @@
         loadSettings() {
             try {
                 const saved = localStorage.getItem('appNavigator_wallpaper');
-                return saved ? JSON.parse(saved) : { ...this.defaults };
+                return saved ? JSON.parse(saved) : {...this.defaults};
             } catch (e) {
-                return { ...this.defaults };
+                return {...this.defaults};
             }
         }
 
@@ -2361,7 +2365,7 @@
         }
 
         reset() {
-            this.settings = { ...this.defaults };
+            this.settings = {...this.defaults};
             document.querySelectorAll('.wallpaper-preset').forEach(p => p.classList.remove('active'));
             this.applySettings();
             this.saveSettings();
@@ -2490,7 +2494,7 @@
         // 检测深色模式并应用优化
         setTimeout(detectDarkMode, 50);
 
-        document.dispatchEvent(new CustomEvent('themeChanged', { detail: { themeId } }));
+        document.dispatchEvent(new CustomEvent('themeChanged', {detail: {themeId}}));
 
         document.querySelectorAll('.theme-option').forEach(opt => {
             opt.classList.remove('active');

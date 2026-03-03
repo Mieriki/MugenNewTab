@@ -42,6 +42,14 @@ const appConfig = {
             url: './view/cron.html',
             category: 'productivity'
         },
+        {
+            id: 'MugenCron',
+            name: 'Cron生成',
+            description: 'Cron生成',
+            icon: './image/json.svg',
+            url: './view/cron.html',
+            category: 'productivity'
+        },
 		{
             id: 'JsonCn',
             name: 'Json格式化',

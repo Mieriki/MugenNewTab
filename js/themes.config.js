@@ -2,7 +2,7 @@ const themeConfig = {
     themes: [
         {
             id: 'material-rose',
-            name: 'Material 3 玫瑰粉',
+            name: 'Mugen娘经典配色',
             logo: 'image/白猫.svg',
             colors: {
                 '--md-sys-color-primary': '#B14A6B',
@@ -63,7 +63,8 @@ const themeConfig = {
         {
             id: 'jigoku-shoujo',
             name: '地狱少女·阎魔爱',
-            logo: '🌺',
+            logo: 'image/logo/enmaai_01.png',
+            isDark: true,
             colors: {
                 '--md-sys-color-primary': '#B71C1C',
                 '--md-sys-color-on-primary': '#FFFFFF',
@@ -71,23 +72,23 @@ const themeConfig = {
                 '--md-sys-color-on-primary-container': '#410002',
                 '--md-sys-color-secondary': '#2C2C2C',
                 '--md-sys-color-on-secondary': '#FFFFFF',
-                '--md-sys-color-secondary-container': '#E6E0E0',
-                '--md-sys-color-on-secondary-container': '#1B1B1B',
-                '--md-sys-color-tertiary': '#4A148C',
-                '--md-sys-color-on-tertiary': '#FFFFFF',
-                '--md-sys-color-tertiary-container': '#EADDFF',
-                '--md-sys-color-on-tertiary-container': '#21005D',
-                '--md-sys-color-surface': '#0D0D0D',
-                '--md-sys-color-surface-variant': '#1F1F1F',
-                '--md-sys-color-on-surface': '#E0E0E0',
-                '--md-sys-color-on-surface-variant': '#A0A0A0',
-                '--md-sys-color-background': '#0D0D0D',
-                '--md-sys-color-on-background': '#E0E0E0',
-                '--md-sys-color-outline': '#5C5C5C',
-                '--md-sys-color-error': '#8B0000',
+                '--md-sys-color-secondary-container': '#2A0000',
+                '--md-sys-color-on-secondary-container': '#EF9A9A',
+                '--md-sys-color-tertiary': '#D4AF37',       // 暗金色（字符串，替代紫色）
+                '--md-sys-color-on-tertiary': '#1A1A1A',
+                '--md-sys-color-tertiary-container': '#3D3000',
+                '--md-sys-color-on-tertiary-container': '#FFE082',
+                '--md-sys-color-surface': '#0A0A0A',        // 极黑（输入输出背景）
+                '--md-sys-color-surface-variant': '#141414', // 面板背景
+                '--md-sys-color-on-surface': '#F5F5F5',     // 接近纯白（主文字）
+                '--md-sys-color-on-surface-variant': '#9E9E9E', // 中灰（注释）
+                '--md-sys-color-background': '#050505',     // 背景
+                '--md-sys-color-on-background': '#F5F5F5',
+                '--md-sys-color-outline': '#424242',        // 深灰边框
+                '--md-sys-color-error': '#FF1744',
                 '--md-sys-color-success': '#D4AF37',
-                '--md-sys-color-inverse-surface': '#E0E0E0',
-                '--md-sys-color-inverse-on-surface': '#0D0D0D'
+                '--md-sys-color-inverse-surface': '#F5F5F5',
+                '--md-sys-color-inverse-on-surface': '#0A0A0A'
             }
         },
         {
@@ -301,66 +302,6 @@ const themeConfig = {
             }
         },
         {
-            id: 'graphite-gray',
-            name: '石墨灰',
-            logo: '⚙️',
-            colors: {
-                '--md-sys-color-primary': '#5B626A',
-                '--md-sys-color-on-primary': '#FFFFFF',
-                '--md-sys-color-primary-container': '#E3E6EA',
-                '--md-sys-color-on-primary-container': '#181A1E',
-                '--md-sys-color-secondary': '#787E85',
-                '--md-sys-color-on-secondary': '#FFFFFF',
-                '--md-sys-color-secondary-container': '#EDEDF0',
-                '--md-sys-color-on-secondary-container': '#212428',
-                '--md-sys-color-tertiary': '#8B9096',
-                '--md-sys-color-on-tertiary': '#FFFFFF',
-                '--md-sys-color-tertiary-container': '#F2F2F4',
-                '--md-sys-color-on-tertiary-container': '#2A2D30',
-                '--md-sys-color-surface': '#FAFAFB',
-                '--md-sys-color-surface-variant': '#F0F1F3',
-                '--md-sys-color-on-surface': '#1C1E21',
-                '--md-sys-color-on-surface-variant': '#5A5D61',
-                '--md-sys-color-background': '#FAFAFB',
-                '--md-sys-color-on-background': '#1C1E21',
-                '--md-sys-color-outline': '#C5C7CA',
-                '--md-sys-color-error': '#B3261E',
-                '--md-sys-color-success': '#1E6B2F',
-                '--md-sys-color-inverse-surface': '#1C1E21',
-                '--md-sys-color-inverse-on-surface': '#F0F1F3'
-            }
-        },
-        {
-            id: 'autumn-leaf',
-            name: '秋叶黄',
-            logo: '🍂',
-            colors: {
-                '--md-sys-color-primary': '#D97706',
-                '--md-sys-color-on-primary': '#FFFFFF',
-                '--md-sys-color-primary-container': '#FFE4B5',
-                '--md-sys-color-on-primary-container': '#3D2E00',
-                '--md-sys-color-secondary': '#A16207',
-                '--md-sys-color-on-secondary': '#FFFFFF',
-                '--md-sys-color-secondary-container': '#FEF3C7',
-                '--md-sys-color-on-secondary-container': '#3D2E00',
-                '--md-sys-color-tertiary': '#92400E',
-                '--md-sys-color-on-tertiary': '#FFFFFF',
-                '--md-sys-color-tertiary-container': '#FFEDD5',
-                '--md-sys-color-on-tertiary-container': '#3D1800',
-                '--md-sys-color-surface': '#FFFBF5',
-                '--md-sys-color-surface-variant': '#FEF3E2',
-                '--md-sys-color-on-surface': '#292524',
-                '--md-sys-color-on-surface-variant': '#78716C',
-                '--md-sys-color-background': '#FFFBF5',
-                '--md-sys-color-on-background': '#292524',
-                '--md-sys-color-outline': '#D6D3D1',
-                '--md-sys-color-error': '#991B1B',
-                '--md-sys-color-success': '#14532D',
-                '--md-sys-color-inverse-surface': '#292524',
-                '--md-sys-color-inverse-on-surface': '#F5F5F4'
-            }
-        },
-        {
             id: 'cherry-blossom',
             name: '樱花粉',
             logo: '🌸',
@@ -388,66 +329,6 @@ const themeConfig = {
                 '--md-sys-color-success': '#22C55E',
                 '--md-sys-color-inverse-surface': '#312E2E',
                 '--md-sys-color-inverse-on-surface': '#FCE7F3'
-            }
-        },
-        {
-            id: 'midnight-navy',
-            name: '午夜蓝',
-            logo: '🌌',
-            colors: {
-                '--md-sys-color-primary': '#3B82F6',
-                '--md-sys-color-on-primary': '#FFFFFF',
-                '--md-sys-color-primary-container': '#DBEAFE',
-                '--md-sys-color-on-primary-container': '#1E3A8A',
-                '--md-sys-color-secondary': '#60A5FA',
-                '--md-sys-color-on-secondary': '#FFFFFF',
-                '--md-sys-color-secondary-container': '#EFF6FF',
-                '--md-sys-color-on-secondary-container': '#1E40AF',
-                '--md-sys-color-tertiary': '#1D4ED8',
-                '--md-sys-color-on-tertiary': '#FFFFFF',
-                '--md-sys-color-tertiary-container': '#DBEAFE',
-                '--md-sys-color-on-tertiary-container': '#1E3A8A',
-                '--md-sys-color-surface': '#F8FAFC',
-                '--md-sys-color-surface-variant': '#EFF6FF',
-                '--md-sys-color-on-surface': '#0F172A',
-                '--md-sys-color-on-surface-variant': '#475569',
-                '--md-sys-color-background': '#F8FAFC',
-                '--md-sys-color-on-background': '#0F172A',
-                '--md-sys-color-outline': '#CBD5E1',
-                '--md-sys-color-error': '#DC2626',
-                '--md-sys-color-success': '#15803D',
-                '--md-sys-color-inverse-surface': '#1E293B',
-                '--md-sys-color-inverse-on-surface': '#F1F5F9'
-            }
-        },
-        {
-            id: 'coffee-brown',
-            name: '拿铁棕',
-            logo: '☕',
-            colors: {
-                '--md-sys-color-primary': '#8D6E63',
-                '--md-sys-color-on-primary': '#FFFFFF',
-                '--md-sys-color-primary-container': '#EDC',
-                '--md-sys-color-on-primary-container': '#3E2723',
-                '--md-sys-color-secondary': '#A1887F',
-                '--md-sys-color-on-secondary': '#FFFFFF',
-                '--md-sys-color-secondary-container': '#F5F5DC',
-                '--md-sys-color-on-secondary-container': '#4E342E',
-                '--md-sys-color-tertiary': '#6D4C41',
-                '--md-sys-color-on-tertiary': '#FFFFFF',
-                '--md-sys-color-tertiary-container': '#D7CCC8',
-                '--md-sys-color-on-tertiary-container': '#3E2723',
-                '--md-sys-color-surface': '#F5F5DC',
-                '--md-sys-color-surface-variant': '#EFEBE9',
-                '--md-sys-color-on-surface': '#3E2723',
-                '--md-sys-color-on-surface-variant': '#5D4037',
-                '--md-sys-color-background': '#F5F5DC',
-                '--md-sys-color-on-background': '#3E2723',
-                '--md-sys-color-outline': '#A1887F',
-                '--md-sys-color-error': '#B71C1C',
-                '--md-sys-color-success': '#1B5E20',
-                '--md-sys-color-inverse-surface': '#3E2723',
-                '--md-sys-color-inverse-on-surface': '#D7CCC8'
             }
         },
         {
