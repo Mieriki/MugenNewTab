@@ -68,7 +68,7 @@ const themeConfig = {
             colors: {
                 '--md-sys-color-primary': '#B71C1C',
                 '--md-sys-color-on-primary': '#FFFFFF',
-                '--md-sys-color-primary-container': '#FFDAD6',
+                '--md-sys-color-primary-container': '#2A0000',
                 '--md-sys-color-on-primary-container': '#410002',
                 '--md-sys-color-secondary': '#2C2C2C',
                 '--md-sys-color-on-secondary': '#FFFFFF',

@@ -3,7 +3,7 @@ const searchEngines = [
     {
         id: 'google',
         name: 'Google',
-        iconUrl: 'https://www.google.com/favicon.ico',
+        iconUrl: 'https://favicon.im/google.com',
         url: 'https://www.google.com/search?q={q}'
     },
     {
@@ -21,7 +21,7 @@ const searchEngines = [
     {
         id: 'duckduckgo',
         name: 'DuckDuckGo',
-        iconUrl: 'https://duckduckgo.com/favicon.ico',
+        iconUrl: 'https://favicon.im/duckduckgo.com',
         url: 'https://duckduckgo.com/?q={q}'
     },
     {

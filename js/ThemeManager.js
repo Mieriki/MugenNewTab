@@ -81,6 +81,11 @@ class ThemeManager {
             }
         }
 
+        getCurrentTheme() {
+            const themeId = localStorage.getItem('selectedTheme') || 'material-rose';
+            return themeConfig.themes.find(t => t.id === themeId);
+        }
+
         /**
          * 调整颜色亮度（正数为变亮，负数为变暗）
          */
