@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加网站 - MugenUtil</title>
+    <script src="../js/themes.config.js"></script>
+    <style>
+        :root {
+            --md-sys-color-primary: #B14A6B;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #FFD8E1;
+            --md-sys-color-on-primary-container: #3D001F;
+            --md-sys-color-surface: #FFF8F9;
+            --md-sys-color-surface-variant: #F3DDE2;
+            --md-sys-color-on-surface: #201A1A;
+            --md-sys-color-on-surface-variant: #534345;
+            --md-sys-color-background: #FFF8F9;
+            --md-sys-color-outline: #E0D0D3;
+            --md-sys-color-outline-variant: #F0E5E7;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-success: #376B2F;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-surface);
+            width: 380px;
+            min-height: 480px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-top: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            margin-bottom: 6px;
+        }
+
+        .form-label .required {
+            color: var(--md-sys-color-error);
+            margin-left: 2px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 12px;
+            font-size: 14px;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .form-hint {
+            font-size: 11px;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-top: 4px;
+        }
+
+        .icon-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .icon-preview {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--md-sys-color-surface-variant);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .icon-input-group {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-input-group .form-input {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline);
+        }
+
+        .btn-secondary:hover {
+            background: var(--md-sys-color-outline-variant);
+        }
+
+        .btn-text {
+            background: transparent;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .btn-text:hover {
+            color: var(--md-sys-color-on-surface);
+            background: var(--md-sys-color-surface-variant);
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .actions .btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        .actions .btn-primary {
+            flex: 2;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: white;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--md-sys-color-success);
+        }
+
+        .toast.error {
+            background: var(--md-sys-color-error);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .open-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .open-home:hover {
+            opacity: 0.9;
+        }
+
+        .open-home svg {
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="../image/logo/enmaai_01.png" alt="Logo" class="logo">
+        <div>
+            <div class="title">添加网站</div>
+            <div class="subtitle">快速保存到 MugenUtil</div>
+        </div>
+    </div>
+
+    <a href="../index.html" target="_blank" class="open-home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        打开 MugenUtil 主页
+    </a>
+
+    <form id="addAppForm">
+        <div class="form-group">
+            <label class="form-label">网站名称 <span class="required">*</span></label>
+            <input type="text" class="form-input" id="appName" placeholder="例如：GitHub" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">网站链接 <span class="required">*</span></label>
+            <input type="url" class="form-input" id="appUrl" placeholder="https://..." required>
+            <div class="form-hint">输入完整 URL，包含 https://</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">所属分类 <span class="required">*</span></label>
+            <select class="form-select" id="appCategory" required>
+                <option value="">选择分类...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">备注描述</label>
+            <textarea class="form-textarea" id="appDesc" placeholder="简短描述网站用途..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">图标设置</label>
+            <div class="icon-selector">
+                <div class="icon-preview" id="iconPreview">🌐</div>
+                <div class="icon-input-group">
+                    <input type="text" class="form-input" id="appIcon" placeholder="图标URL或Emoji">
+                    <button type="button" class="btn btn-secondary btn-small" id="btnAutoIcon">🔄</button>
+                </div>
+            </div>
+            <div class="quick-actions">
+                <button type="button" class="btn btn-secondary btn-small" id="btnFetchIcon">自动获取</button>
+                <button type="button" class="btn btn-secondary btn-small" id="btnClearIcon">清除</button>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button type="button" class="btn btn-text" id="btnReset">重置</button>
+            <button type="submit" class="btn btn-primary">💾 保存网站</button>
+        </div>
+    </form>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- 外部脚本，避免 CSP 问题 -->
+    <script src="../js/ExtensionStorage.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>

@@ -543,6 +543,19 @@
             box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.08);
         }
 
+        .wallpaper-local-file {
+            margin-bottom: 12px;
+        }
+
+        .wallpaper-local-file .wallpaper-btn {
+            width: 100%;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
         .sliders-group {
             display: flex;
             flex-direction: column;
@@ -2338,6 +2351,13 @@
                     </div>
                     <div class="wallpaper-input-group">
                         <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..." data-action="update-wallpaper" aria-label="壁纸URL">
+                    </div>
+                    <div class="wallpaper-local-file" style="margin-bottom: 12px;">
+                        <input type="file" id="wallpaperFileInput" accept="image/*" style="display: none;">
+                        <button class="wallpaper-btn wallpaper-btn-secondary" id="btnSelectLocalImage" type="button" style="width: 100%; font-size: 13px;">
+                            📁 选择本地图片
+                        </button>
+                        <div id="localImageName" style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 4px; display: none;"></div>
                     </div>
                     <div class="sliders-group">
                         <div class="slider-item">
