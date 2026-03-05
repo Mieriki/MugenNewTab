@@ -4,59 +4,48 @@ const appConfig = {
         {
             id: 'all',
             name: '全部应用',
-            icon: './image/黑猫.svg'
+            icon: './image/icons/view.svg'
+        },
+        {
+            id: 'media',
+            name: '娱乐媒体',
+            icon: './image/icons/heart.svg'
         },
         {
             id: 'productivity',
-            name: '图片处理',
-            icon: './image/白猫.svg'
+            name: '效率工具',
+            icon: './image/icons/star.svg'
         },
         {
-            id: 'link',
-            name: '外部链接',
-            icon: './image/波斯猫.svg'  
+            id: 'dev',
+            name: '开发工具',
+            icon: './image/icons/setting.svg'
         }
     ],
     apps: [
         {
-            id: 'MugenImageBaseRY',
-            name: '图片转换base64',
-            description: '图片转换base64',
-            icon: './image/图片.svg',
-            url: './view/image-base64.html',
+            id: 'bilibili',
+            name: 'Bilibili',
+            description: '哔哩哔哩弹幕视频网',
+            icon: 'https://favicon.im/www.bilibili.com',
+            url: 'https://www.bilibili.com/',
+            category: 'media'
+        },
+        {
+            id: 'kimi',
+            name: 'Kimi AI',
+            description: 'Kimi 智能助手',
+            icon: 'https://favicon.im/kimi.moonshot.cn',
+            url: 'https://kimi.moonshot.cn/',
             category: 'productivity'
         },
         {
-            id: 'MugenJson',
-            name: 'Json格式化',
-            description: 'Json格式化',
-            icon: './image/json.svg',
-            url: './view/json.html',
-            category: 'productivity'
-        },
-		{
-            id: 'MugenCron',
-            name: 'Cron生成',
-            description: 'Cron生成',
-            icon: './image/json.svg',
-            url: './view/cron.html',
-            category: 'productivity'
-        },
-        {
-            id: 'MugenCron',
-            name: 'Cron生成',
-            description: 'Cron生成',
-            icon: './image/json.svg',
-            url: './view/cron.html',
-            category: 'productivity'
-        },
-		{
-            id: 'JsonCn',
-            name: 'Json格式化',
-            description: 'Json格式化',
-            icon: './image/json.svg',
-            url: 'https://www.json.cn/',
-            category: 'link'
+            id: 'github',
+            name: 'GitHub',
+            description: '代码托管平台',
+            icon: 'https://favicon.im/github.com',
+            url: 'https://github.com/',
+            category: 'dev'
         }
     ]
 };

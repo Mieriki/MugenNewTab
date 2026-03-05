@@ -1,5 +1,5 @@
 // =====================================================
-// MugenUtil 内联脚本外置 - Manifest V3 CSP 兼容
+// MugenNewTab 内联脚本外置 - Manifest V3 CSP 兼容
 // =====================================================
 
 // 防止主题闪烁 - 在 CSS 渲染前执行
@@ -94,7 +94,14 @@ window.toggleSidebar = function() {
     }
 };
 
-window.toggleSidebarCollapse = function() {
+window.toggleSidebarCollapse = async function() {
+    // 如果 AppNavigator 已加载，使用它的方法（支持 Chrome Storage）
+    if (window.appNavigator) {
+        await window.appNavigator.toggleSidebarCollapse();
+        return;
+    }
+    
+    // 否则使用本地实现（仅 localStorage）
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
     
@@ -160,7 +167,7 @@ window.toggleEngineDropdown = function(event) {
 };
 
 // 应用模态框
-window.openAddAppModal = function(categoryId) {
+window.openAddAppModal = async function(categoryId) {
     const modal = document.getElementById('appModal');
     const select = document.getElementById('appCategory');
     if (!modal) return;
@@ -179,16 +186,16 @@ window.openAddAppModal = function(categoryId) {
     }
     
     // 加载分类选项
-    loadCategoryOptions(select, categoryId);
+    await loadCategoryOptions(select, categoryId);
     
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 };
 
-window.editApp = function(appId) {
+window.editApp = async function(appId) {
     if (!window.appNavigator) return;
     
-    const data = window.appNavigator.data;
+    const data = await DataManager.getData();
     const app = data.apps.find(a => a.id === appId);
     if (!app) return;
     
@@ -202,7 +209,7 @@ window.editApp = function(appId) {
     updateIconPreview();
     
     const select = document.getElementById('appCategory');
-    loadCategoryOptions(select, app.category);
+    await loadCategoryOptions(select, app.category);
     
     document.getElementById('appModal').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -228,10 +235,10 @@ window.saveApp = async function() {
     const appData = { name, url: finalUrl, category, description, icon };
     
     if (window.appNavigator?.editingAppId) {
-        await window.appNavigator.updateApp(window.appNavigator.editingAppId, appData);
+        await DataManager.updateApp(window.appNavigator.editingAppId, appData);
         showToast('网站已更新');
     } else {
-        await window.appNavigator?.addApp?.(appData) || await window.appNavigator?.dataManager?.addApp?.(appData);
+        await DataManager.addApp(appData);
         showToast('网站已添加');
     }
 
@@ -241,8 +248,10 @@ window.saveApp = async function() {
 };
 
 window.deleteApp = async function(appId) {
-    if (!confirm('确定要删除这个网站吗？')) return;
-    await window.appNavigator?.deleteApp?.(appId);
+    const confirmed = await showConfirm('确定要删除这个网站吗？', { isDanger: true, title: '删除网站' });
+    if (!confirmed) return;
+    await DataManager.deleteApp(appId);
+    await window.appNavigator?.renderNavigation();
     await window.appNavigator?.renderApps();
     showToast('网站已删除');
 };
@@ -272,10 +281,10 @@ window.openManageCategoriesModal = async function() {
     document.body.style.overflow = 'hidden';
 };
 
-window.editCategory = function(catId) {
+window.editCategory = async function(catId) {
     if (!window.appNavigator) return;
     
-    const data = window.appNavigator.data;
+    const data = await DataManager.getData();
     const cat = data.categories.find(c => c.id === catId);
     if (!cat || cat.id === 'all') return;
 
@@ -299,13 +308,13 @@ window.saveCategory = async function() {
         return;
     }
 
-    const catData = { name, icon: icon || '📁' };
+    const catData = { name, icon: icon || './image/icons/folder.svg' };
 
     if (window.appNavigator?.editingCategoryId) {
-        await window.appNavigator?.updateCategory?.(window.appNavigator.editingCategoryId, catData);
+        await DataManager.updateCategory(window.appNavigator.editingCategoryId, catData);
         showToast('分类已更新');
     } else {
-        await window.appNavigator?.addCategory?.(catData);
+        await DataManager.addCategory(catData);
         showToast('分类已添加');
     }
 
@@ -320,11 +329,12 @@ window.deleteCategory = async function(catId) {
         return;
     }
     
-    const data = window.appNavigator?.data;
-    const cat = data?.categories.find(c => c.id === catId);
-    if (!confirm(`确定要删除分类"${cat?.name || ''}"吗？该分类下的所有网站也会被删除。`)) return;
+    const data = await DataManager.getData();
+    const cat = data.categories.find(c => c.id === catId);
+    const confirmed = await showConfirm(`确定要删除分类"${cat?.name || ''}"吗？该分类下的所有网站也会被删除。`, { isDanger: true, title: '删除分类' });
+    if (!confirmed) return;
 
-    await window.appNavigator?.deleteCategory?.(catId);
+    await DataManager.deleteCategory(catId);
     if (window.appNavigator?.currentCategory === catId) {
         window.appNavigator.switchCategory('all');
     }
@@ -377,15 +387,16 @@ window.closeModal = function(modalId) {
 };
 
 // 数据导入导出
-window.exportData = function() {
-    const data = window.appNavigator?.data;
-    if (!data) return;
+window.exportData = async function() {
+    // 使用 DataManager.export() 获取完整数据（包含 apps、categories 和 uiLib）
+    const exportData = await DataManager.export();
+    if (!exportData || !exportData.data) return;
     
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mugenutil_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `mugennewtab_backup_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('数据已导出');
@@ -404,8 +415,9 @@ window.handleImport = async function(event) {
         const data = JSON.parse(text);
         
         if (data.categories && data.apps) {
-            if (confirm('导入将覆盖现有数据，是否继续？')) {
-                await window.appNavigator?.importData?.(data);
+            const confirmed = await showConfirm('导入将覆盖现有数据，是否继续？', { title: '导入数据', okText: '继续', isDanger: true });
+            if (confirmed) {
+                await DataManager.import(data);
                 await window.appNavigator?.renderNavigation();
                 await window.appNavigator?.renderApps();
                 showToast('数据导入成功');
@@ -423,12 +435,12 @@ window.handleImport = async function(event) {
 // 图标相关
 window.updateIconPreview = function() {
     const iconInput = document.getElementById('appIcon');
-    const icon = iconInput?.value || '🌐';
+    const icon = iconInput?.value || '';
     const preview = document.getElementById('iconPreview');
     if (!preview) return;
     
     if (icon.includes('.') || icon.startsWith('http')) {
-        preview.innerHTML = `<img src="${icon}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentElement.textContent='🌐'">`;
+        preview.innerHTML = `<img src="${icon}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<img src=\'./image/icons/picture.svg\' width=\'28\' height=\'28\'>'">`;
     } else {
         preview.textContent = icon;
     }
@@ -436,12 +448,12 @@ window.updateIconPreview = function() {
 
 window.updateCatIconPreview = function() {
     const iconInput = document.getElementById('catIcon');
-    const icon = iconInput?.value || '📁';
+    const icon = iconInput?.value || '';
     const preview = document.getElementById('catIconPreview');
     if (!preview) return;
     
     if (icon.includes('.') || icon.startsWith('http')) {
-        preview.innerHTML = `<img src="${icon}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentElement.textContent='📁'">`;
+        preview.innerHTML = `<img src="${icon}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<img src=\'./image/icons/folder.svg\' width=\'28\' height=\'28\'>'">`;
     } else {
         preview.textContent = icon;
     }
@@ -457,7 +469,7 @@ window.autoFetchIcon = async function() {
     
     try {
         const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
-        const faviconUrl = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`;
+        const faviconUrl = `https://favicon.im/${urlObj.hostname}`;
         
         document.getElementById('appIcon').value = faviconUrl;
         updateIconPreview();
@@ -659,8 +671,21 @@ window.saveWallpaperSettings = function() {
 };
 
 // UI 库管理
-window.openUiLibManager = function() {
-    document.getElementById('uiLibManagerModal')?.classList.add('active');
+window.openUiLibManager = async function() {
+    // 关闭其他模态框
+    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    
+    // 打开 UI 库管理模态框
+    const modal = document.getElementById('uiLibManagerModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // 如果有 renderUiLibManager 函数，调用它来渲染列表
+        if (typeof renderUiLibManager === 'function') {
+            await renderUiLibManager();
+        }
+    }
 };
 
 window.switchUiTab = function(tab, btn) {
@@ -690,6 +715,121 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// 美化的确认对话框（替代原生 confirm）
+let confirmResolve = null;
+
+window.showConfirm = async function(message, options = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const messageEl = document.getElementById('confirmModalMessage');
+        const titleEl = document.getElementById('confirmModalTitle');
+        const okBtn = document.getElementById('confirmOkBtn');
+        const cancelBtn = document.getElementById('confirmCancelBtn');
+        const iconEl = modal.querySelector('.confirm-icon');
+        
+        if (!modal || !messageEl) {
+            // 如果模态桃不存在，回退到原生 confirm
+            resolve(confirm(message));
+            return;
+        }
+        
+        // 设置内容
+        messageEl.textContent = message;
+        titleEl.textContent = options.title || '提示';
+        
+        // 设置按钮文字
+        okBtn.textContent = options.okText || '确定';
+        cancelBtn.textContent = options.cancelText || '取消';
+        
+        // 设置按钮样式（危险操作 vs 普通操作）
+        if (options.isDanger) {
+            okBtn.classList.remove('confirm-ok-btn-primary');
+            // 使用 error 颜色变量
+            iconEl.style.background = 'var(--md-sys-color-error-container, rgba(186, 26, 26, 0.12))';
+            iconEl.style.color = 'var(--md-sys-color-error, #BA1A1A)';
+            // 使用警告图标
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>`;
+        } else {
+            okBtn.classList.add('confirm-ok-btn-primary');
+            // 使用 primary 颜色变量
+            iconEl.style.background = 'var(--md-sys-color-primary-container, rgba(177, 74, 107, 0.12))';
+            iconEl.style.color = 'var(--md-sys-color-primary, #B14A6B)';
+            // 使用问号图标
+            iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>`;
+        }
+        
+        // 显示模态桃
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // 定义处理函数
+        const handleOk = () => {
+            cleanup();
+            resolve(true);
+        };
+        
+        const handleCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+        
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') {
+                cleanup();
+                resolve(false);
+            } else if (e.key === 'Enter') {
+                cleanup();
+                resolve(true);
+            }
+        };
+        
+        const handleOverlayClick = (e) => {
+            if (e.target === modal) {
+                cleanup();
+                resolve(false);
+            }
+        };
+        
+        // 清理函数
+        const cleanup = () => {
+            modal.classList.remove('active');
+            const anyActive = document.querySelector('.modal-overlay.active');
+            if (!anyActive) {
+                document.body.style.overflow = '';
+            }
+            okBtn.removeEventListener('click', handleOk);
+            cancelBtn.removeEventListener('click', handleCancel);
+            modal.removeEventListener('click', handleOverlayClick);
+            document.removeEventListener('keydown', handleKeydown);
+        };
+        
+        // 绑定事件
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+        modal.addEventListener('click', handleOverlayClick);
+        document.addEventListener('keydown', handleKeydown);
+    });
+}
+
+window.closeConfirmModal = function() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+        const anyActive = document.querySelector('.modal-overlay.active');
+        if (!anyActive) {
+            document.body.style.overflow = '';
+        }
+    }
+}
+
 function showToast(message, type = 'success') {
     // 复用 index.html 中的 showToast 或创建新的
     if (typeof window.showToast === 'function' && window.showToast !== showToast) {
@@ -705,10 +845,11 @@ function showToast(message, type = 'success') {
     }
 }
 
-function loadCategoryOptions(select, selectedId) {
-    if (!select || !window.appNavigator?.data) return;
+async function loadCategoryOptions(select, selectedId) {
+    if (!select) return;
     
-    const categories = window.appNavigator.data.categories.filter(c => c.id !== 'all');
+    const data = await DataManager.getData();
+    const categories = data.categories.filter(c => c.id !== 'all');
     select.innerHTML = categories.map(c => 
         `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
     ).join('');
@@ -716,17 +857,17 @@ function loadCategoryOptions(select, selectedId) {
 
 async function renderCategoriesList() {
     const container = document.getElementById('categoriesList');
-    if (!container || !window.appNavigator?.data) return;
+    if (!container) return;
     
-    const data = window.appNavigator.data;
+    const data = await DataManager.getData();
     container.innerHTML = data.categories
         .filter(c => c.id !== 'all')
         .map(cat => {
             const count = data.apps.filter(a => a.category === cat.id).length;
             const isImage = cat.icon && (cat.icon.includes('.') || cat.icon.startsWith('http'));
             const iconHtml = isImage 
-                ? `<img src="${cat.icon}" style="width:24px;height:24px;" onerror="this.style.display='none';this.parentElement.innerHTML='📁'">`
-                : (cat.icon || '📁');
+                ? `<img src="${cat.icon}" style="width:24px;height:24px;" onerror="this.style.display='none';this.parentElement.innerHTML='<img src=\'./image/icons/folder.svg\' width=\'24\' height=\'24\'>'">`
+                : (cat.icon || '<img src=\'./image/icons/folder.svg\' width=\'24\' height=\'24\'>');
             
             return `
                 <div class="category-item">
@@ -832,7 +973,7 @@ function initEventDelegation() {
     });
 }
 
-function handleDataAction(action, element, event) {
+async function handleDataAction(action, element, event) {
     switch (action) {
         // 搜索
         case 'search':
@@ -890,6 +1031,10 @@ function handleDataAction(action, element, event) {
         case 'manage-cats':
             openManageCategoriesModal();
             break;
+        case 'open-uilib-manager':
+            if (typeof openUiLibManager === 'function') openUiLibManager();
+            else showToast('图标库功能加载中...');
+            break;
         case 'export':
             exportData();
             break;
@@ -911,7 +1056,8 @@ function handleDataAction(action, element, event) {
             saveCategory();
             break;
         case 'auto-icon':
-            // onblur 事件
+            // URL 输入框失去焦点时自动获取图标
+            if (typeof autoFetchIcon === 'function') autoFetchIcon();
             break;
         case 'preview-icon':
             updateIconPreview();

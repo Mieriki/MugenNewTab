@@ -161,7 +161,7 @@ async function tryGetCurrentTabInfo() {
             } else if (tab.url) {
                 try {
                     const urlObj = new URL(tab.url);
-                    const favicon = `https://favicon.im/${urlObj.hostname}`;
+                    const favicon = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`;
                     if (iconInput) {
                         iconInput.value = favicon;
                         updateIconPreview(favicon);
@@ -181,10 +181,10 @@ async function tryGetCurrentTabInfo() {
 // 更新图标预览
 function updateIconPreview(value) {
     const preview = document.getElementById('iconPreview');
-    const iconValue = value || document.getElementById('appIcon').value || '';
+    const iconValue = value || document.getElementById('appIcon').value || '🌐';
     
     if (iconValue.includes('.') || iconValue.startsWith('http') || iconValue.startsWith('data:')) {
-        preview.innerHTML = `<img src="${iconValue}" style="width:28px;height:28px;border-radius:6px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<img src=\'../image/icons/picture.svg\' width=\'28\' height=\'28\'>'">`;
+        preview.innerHTML = `<img src="${iconValue}" style="width:28px;height:28px;border-radius:6px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.textContent='🌐'">`;
     } else {
         preview.textContent = iconValue;
     }
@@ -202,11 +202,11 @@ async function autoFetchIcon() {
         const urlObj = new URL(url);
         const faviconUrl = `${urlObj.origin}/favicon.ico`;
         
-        // 使用 favicon.im 获取图标
-        const favicon = `https://favicon.im/${urlObj.hostname}`;
+        // 尝试获取 Google Favicon 服务
+        const googleFavicon = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`;
         
-        document.getElementById('appIcon').value = favicon;
-        updateIconPreview(favicon);
+        document.getElementById('appIcon').value = googleFavicon;
+        updateIconPreview(googleFavicon);
         showToast('图标已获取');
     } catch (error) {
         showToast('无法自动获取图标', 'error');
@@ -216,7 +216,7 @@ async function autoFetchIcon() {
 // 清除图标
 function clearIcon() {
     document.getElementById('appIcon').value = '';
-    document.getElementById('iconPreview').innerHTML = '<img src="../image/icons/picture.svg" width="28" height="28">';
+    document.getElementById('iconPreview').textContent = '🌐';
 }
 
 // 保存应用
@@ -245,15 +245,17 @@ async function saveApp(e) {
             url: finalUrl,
             category,
             description,
-            icon: icon || ''
+            icon: icon || '🌐'
         });
         
         showToast('网站已添加成功！', 'success');
         
-        // 延迟关闭 popup 窗口
+        // 延迟关闭或重置表单
         setTimeout(() => {
-            window.close();
-        }, 800);
+            document.getElementById('addAppForm').reset();
+            document.getElementById('iconPreview').textContent = '🌐';
+            tryGetCurrentTabInfo();
+        }, 1000);
     } catch (error) {
         console.error('保存失败:', error);
         showToast('保存失败，请重试', 'error');
@@ -280,6 +282,6 @@ function setupEventListeners() {
     document.getElementById('btnClearIcon').addEventListener('click', clearIcon);
     document.getElementById('btnReset').addEventListener('click', () => {
         document.getElementById('addAppForm').reset();
-        document.getElementById('iconPreview').innerHTML = '<img src="../image/icons/picture.svg" width="28" height="28">';
+        document.getElementById('iconPreview').textContent = '🌐';
     });
 }

@@ -121,6 +121,12 @@
             border-color: rgba(255, 255, 255, 0.08);
         }
 
+        body.dark-mode .fab-item img,
+        body.dark-mode .search-nav-item img,
+        body.dark-mode .nav-icon img {
+            filter: brightness(0) invert(1);
+        }
+
         body.dark-mode .history-item:hover {
             background: var(--hover-bg);
         }
@@ -323,31 +329,67 @@
         .personalization-toggle-btn {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            color: white;
-            font-size: 13px;
-            font-weight: 500;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--md-sys-color-primary);
+            border: none;
+            border-radius: 24px;
+            color: var(--md-sys-color-on-primary);
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             font-family: inherit;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .personalization-toggle-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 50%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
         }
 
         .personalization-toggle-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .personalization-toggle-btn:hover::before {
+            opacity: 1;
+        }
+
+        .personalization-toggle-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
 
         .personalization-toggle-btn .personalization-icon {
-            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+        }
+
+        .personalization-toggle-btn .personalization-icon img {
+            width: 100%;
+            height: 100%;
+            filter: brightness(0) invert(1);
         }
 
         .personalization-toggle-btn .dropdown-arrow {
             font-size: 10px;
-            opacity: 0.8;
-            transition: transform 0.2s ease;
+            opacity: 0.9;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-left: 2px;
         }
 
         .personalization-toggle-btn.active .dropdown-arrow {
@@ -1144,6 +1186,16 @@
                 display: none;
             }
 
+            .personalization-toggle-btn {
+                padding: 10px;
+                border-radius: 50%;
+            }
+
+            .personalization-toggle-btn .personalization-icon {
+                width: 20px;
+                height: 20px;
+            }
+
             /* 移动端搜索框调整 */
             .search-modal {
                 padding-top: 15vh;
@@ -1346,7 +1398,8 @@
             transition: opacity 0.3s;
         }
 
-        .modal-overlay.show {
+        .modal-overlay.show,
+        .modal-overlay.active {
             display: flex;
             opacity: 1;
         }
@@ -1366,7 +1419,8 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .modal-overlay.show .modal-content {
+        .modal-overlay.show .modal-content,
+        .modal-overlay.active .modal-content {
             transform: scale(1) translateY(0);
         }
 
@@ -1416,6 +1470,103 @@
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+        }
+
+        /* 美化的确认对话框 - Material Design 3 风格 */
+        .confirm-modal-content {
+            max-width: 320px !important;
+            border-radius: 16px !important;
+            background: var(--md-sys-color-surface) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+            overflow: hidden;
+        }
+
+        .confirm-modal-body {
+            padding: 32px 24px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .confirm-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-bottom: 4px;
+        }
+
+        .confirm-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+        }
+
+        .confirm-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
+        .confirm-message {
+            font-size: 0.9rem;
+            color: var(--md-sys-color-on-surface-variant);
+            line-height: 1.4;
+            margin: 0;
+            padding: 0 4px;
+        }
+
+        .confirm-modal-footer {
+            padding: 12px 16px 20px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .confirm-cancel-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .confirm-cancel-btn:hover {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .confirm-ok-btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: var(--md-sys-color-error);
+            color: var(--md-sys-color-on-error);
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .confirm-ok-btn:hover {
+            opacity: 0.9;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .confirm-ok-btn.confirm-ok-btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
         }
 
         /* 表单样式 */
@@ -2320,7 +2471,7 @@
 
     <div class="personalization-switcher">
         <button class="personalization-toggle-btn" id="personalizationToggleBtn" data-action="toggle-panel" title="个性化设置" aria-haspopup="true" aria-expanded="false">
-            <span class="personalization-icon" aria-hidden="true">🎨</span>
+            <span class="personalization-icon" aria-hidden="true"><img src="./image/icons/setting.svg" width="18" height="18"></span>
             <span class="personalization-label">个性化</span>
             <span class="dropdown-arrow" aria-hidden="true">▼</span>
         </button>
@@ -2391,7 +2542,7 @@
     <nav class="nav-menu" id="navMenu" role="menubar"></nav>
     <div class="sidebar-footer">
         <div class="search-nav-item" data-action="open-search" data-title="搜索" role="button" tabindex="0">
-            <span class="nav-icon" aria-hidden="true">🔍</span>
+            <span class="nav-icon" aria-hidden="true"><img src="./image/icons/search.svg" width="20" height="20"></span>
             <span class="nav-text">搜索</span>
             <span class="search-shortcut" aria-label="快捷键 Ctrl K">Ctrl K</span>
         </div>
@@ -2410,25 +2561,31 @@
     <div class="fab-menu" id="fabMenu" role="menu" aria-label="添加选项">
         <div class="fab-section-title" role="separator">添加</div>
         <div class="fab-item" data-action="open-add-app" role="menuitem" tabindex="0">
-            <span class="fab-item-icon" aria-hidden="true">🔗</span>
+            <span class="fab-item-icon" aria-hidden="true"><img src="./image/icons/plus.svg" width="18" height="18" style="filter: var(--icon-filter, none);"></span>
             <span>添加网站</span>
         </div>
         <div class="fab-item" data-action="open-add-cat" role="menuitem" tabindex="0">
-            <span class="fab-item-icon" aria-hidden="true">📁</span>
+            <span class="fab-item-icon" aria-hidden="true"><img src="./image/icons/folder.svg" width="18" height="18" style="filter: var(--icon-filter, none);"></span>
             <span>添加分类</span>
         </div>
         <div class="fab-item" data-action="manage-cats" role="menuitem" tabindex="0">
-            <span class="fab-item-icon" aria-hidden="true">⚙️</span>
+            <span class="fab-item-icon" aria-hidden="true"><img src="./image/icons/setting.svg" width="18" height="18" style="filter: var(--icon-filter, none);"></span>
             <span>管理分类</span>
+        </div>
+        <div class="fab-divider" role="separator"></div>
+        <div class="fab-section-title" role="separator">工具</div>
+        <div class="fab-item" data-action="open-uilib-manager" role="menuitem" tabindex="0">
+            <span class="fab-item-icon" aria-hidden="true"><img src="./image/icons/picture.svg" width="18" height="18" style="filter: var(--icon-filter, none);"></span>
+            <span>图标库</span>
         </div>
         <div class="fab-divider" role="separator"></div>
         <div class="fab-section-title" role="separator">数据</div>
         <div class="fab-item" data-action="export" role="menuitem" tabindex="0">
-            <span class="fab-item-icon" aria-hidden="true">📥</span>
+            <span class="fab-item-icon" aria-hidden="true"><img src="./image/icons/download.svg" width="18" height="18" style="filter: var(--icon-filter, none);"></span>
             <span>导出备份</span>
         </div>
         <div class="fab-item" data-action="import" role="menuitem" tabindex="0">
-            <span class="fab-item-icon" aria-hidden="true">📤</span>
+            <span class="fab-item-icon" aria-hidden="true"><img src="./image/icons/upload.svg" width="18" height="18" style="filter: var(--icon-filter, none);"></span>
             <span>导入备份</span>
         </div>
     </div>
@@ -2462,14 +2619,14 @@
             <div class="form-group">
                 <label class="form-label">图标设置</label>
                 <div class="icon-selector">
-                    <div class="icon-preview" id="iconPreview" aria-hidden="true">🌐</div>
+                    <div class="icon-preview" id="iconPreview" aria-hidden="true"><img src="./image/icons/picture.svg" width="28" height="28"></div>
                     <div class="icon-input-group">
                         <input type="text" class="form-input" id="appIcon" placeholder="图标URL或Emoji" data-action="preview-icon" aria-label="图标">
-                        <button class="btn-secondary" data-action="open-uilib" title="从UI库选择" aria-label="从UI库选择">🎨</button>
+                        <button class="btn-secondary" data-action="open-uilib" title="从UI库选择" aria-label="从UI库选择"><img src="./image/icons/picture.svg" width="18" height="18"></button>
                     </div>
                 </div>
                 <div style="display:flex; gap:8px; margin-top:8px;">
-                    <button class="btn-secondary" data-action="fetch-icon" style="flex:1; font-size:12px;" type="button">🔄 自动获取图标</button>
+                    <button class="btn-secondary" data-action="fetch-icon" style="flex:1; font-size:12px;" type="button"><img src="./image/icons/refresh.svg" width="14" height="14" style="vertical-align:middle; margin-right:4px;"> 自动获取图标</button>
                     <button class="btn-secondary" data-action="clear-icon" style="font-size:12px;" type="button">清除</button>
                 </div>
             </div>
@@ -2499,7 +2656,7 @@
                     <div class="icon-preview" id="catIconPreview" aria-hidden="true">📁</div>
                     <div class="icon-input-group">
                         <input type="text" class="form-input" id="catIcon" placeholder="图标URL或Emoji" data-action="preview-cat-icon" aria-label="分类图标">
-                        <button class="btn-secondary" data-action="open-uilib-cat" title="从UI库选择" aria-label="从UI库选择">🎨</button>
+                        <button class="btn-secondary" data-action="open-uilib-cat" title="从UI库选择" aria-label="从UI库选择"><img src="./image/icons/picture.svg" width="18" height="18"></button>
                     </div>
                 </div>
             </div>
@@ -2531,7 +2688,7 @@
 <!-- UI 库面板 -->
 <div class="ui-lib-panel" id="uiLibPanel" role="dialog" aria-modal="true" aria-label="UI图标库">
     <div class="ui-lib-header">
-        <h3 class="ui-lib-title" id="uiLibTitle">🎨 UI 图标库</h3>
+        <h3 class="ui-lib-title" id="uiLibTitle"><img src="./image/icons/picture.svg" width="20" height="20" style="vertical-align:middle; margin-right:6px;"> UI 图标库</h3>
         <div style="display:flex; gap:8px; align-items:center;">
             <button class="ui-lib-manage-btn" data-action="open-uilib-manager">管理UI库</button>
             <button class="modal-close" data-action="close-uilib" aria-label="关闭">✕</button>
@@ -2575,16 +2732,49 @@
                     <label class="form-label" for="uiItemName">图标名称</label>
                     <input type="text" class="form-input" id="uiItemName" placeholder="例如：Vue">
                 </div>
+                
+                <!-- SVG 文件上传 -->
                 <div class="form-group">
-                    <label class="form-label" for="uiItemUrl">图标URL</label>
-                    <input type="text" class="form-input" id="uiItemUrl" placeholder="https://.../logo.png">
+                    <label class="form-label">图标文件（优兆）</label>
+                    <input type="file" id="uiItemFileInput" accept=".svg,image/svg+xml" style="display: none;">
+                    <button type="button" class="btn-secondary" id="btnSelectSvgFile" style="width: 100%; margin-bottom: 8px;">
+                        📁 选择 SVG 文件
+                    </button>
+                    <div id="svgFileName" style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); display: none;"></div>
                 </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="uiItemUrl">或输入图标 URL</label>
+                    <input type="text" class="form-input" id="uiItemUrl" placeholder="https://.../logo.svg 或 ./image/icons/xxx.svg">
+                </div>
+                
                 <button class="btn-primary" data-action="add-ui-item" style="width:100%;" type="button">添加图标</button>
                 <div id="uiItemsList" class="category-list" style="margin-top:20px;" role="list"></div>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn-text" data-action="close-modal" data-modal="uiLibManagerModal" type="button">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 美化的确认对话框 -->
+<div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" style="z-index: 3000;">
+    <div class="modal-content confirm-modal-content" role="document">
+        <div class="confirm-modal-body">
+            <div class="confirm-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <h3 class="confirm-title" id="confirmModalTitle">提示</h3>
+            <p class="confirm-message" id="confirmModalMessage"></p>
+        </div>
+        <div class="confirm-modal-footer">
+            <button class="btn-text confirm-cancel-btn" id="confirmCancelBtn" type="button">取消</button>
+            <button class="btn-filled confirm-ok-btn" id="confirmOkBtn" type="button">确定</button>
         </div>
     </div>
 </div>

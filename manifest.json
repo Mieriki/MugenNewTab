@@ -1,10 +1,10 @@
 {
     "manifest_version": 3,
-    "name": "MugenUtil - 应用导航中心",
+    "name": "MugenNewTab - 新标签页导航",
     "version": "1.0.0",
     "description": "统一管理和快速访问各类开发者工具和外部链接的应用导航中心",
-    "author": "MugenUtil",
-    "homepage_url": "https://github.com/MugenUtil/MugenUtil",
+    "author": "MugenNewTab",
+    "homepage_url": "https://github.com/MugenNewTab/MugenNewTab",
 
     "icons": {
         "16": "image/logo/enmaai_01.png",
@@ -19,7 +19,7 @@
 
     "action": {
         "default_popup": "view/popup.html",
-        "default_title": "添加网站到 MugenUtil",
+        "default_title": "添加网站到 MugenNewTab",
         "default_icon": {
             "16": "image/logo/enmaai_01.png",
             "32": "image/logo/enmaai_01.png"

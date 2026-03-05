@@ -120,33 +120,65 @@
 
         defaultData: {
             categories: [
-                { id: 'all', name: '全部应用', icon: '📱' },
-                { id: 'productivity', name: '效率工具', icon: '⚡' },
-                { id: 'dev', name: '开发工具', icon: '💻' },
-                { id: 'link', name: '外部链接', icon: '🔗' }
+                { id: 'all', name: '全部应用', icon: './image/icons/view.svg' },
+                { id: 'media', name: '娱乐媒体', icon: './image/icons/heart.svg' },
+                { id: 'productivity', name: '效率工具', icon: './image/icons/star.svg' },
+                { id: 'dev', name: '开发工具', icon: './image/icons/setting.svg' }
             ],
             apps: [
-                { id: '1', name: 'JSON格式化', description: '在线JSON格式化工具', icon: '📋', url: 'https://www.json.cn/', category: 'dev' },
-                { id: '2', name: 'GitHub', description: '代码托管平台', icon: '🐙', url: 'https://github.com/', category: 'dev' }
+                { id: '1', name: 'Bilibili', description: '哔哩哔哩弹幕视频网', icon: 'https://favicon.im/www.bilibili.com', url: 'https://www.bilibili.com/', category: 'media' },
+                { id: '2', name: 'Kimi AI', description: 'Kimi 智能助手', icon: 'https://favicon.im/kimi.moonshot.cn', url: 'https://kimi.moonshot.cn/', category: 'productivity' },
+                { id: '3', name: 'GitHub', description: '代码托管平台', icon: 'https://favicon.im/github.com', url: 'https://github.com/', category: 'dev' }
             ]
         },
 
         defaultUiLib: {
             categories: [
-                { id: 'tech', name: '技术' },
-                { id: 'social', name: '社交' },
-                { id: 'tools', name: '工具' },
-                { id: 'emoji', name: 'Emoji' }
+                { id: 'element', name: 'Element UI' }
             ],
             items: [
-                { id: '1', name: 'React', url: 'https://reactjs.org/favicon.ico', category: 'tech' },
-                { id: '2', name: 'Vue', url: 'https://vuejs.org/logo.svg', category: 'tech' },
-                { id: '3', name: 'GitHub', url: 'https://github.com/favicon.ico', category: 'tech' },
-                { id: '4', name: 'Twitter', url: 'https://twitter.com/favicon.ico', category: 'social' },
-                { id: '5', name: '🚀', url: '🚀', category: 'emoji' },
-                { id: '6', name: '⭐', url: '⭐', category: 'emoji' },
-                { id: '7', name: '🔥', url: '🔥', category: 'emoji' },
-                { id: '8', name: '💡', url: '💡', category: 'emoji' }
+                // Element UI 图标（本地 SVG，无网络也可用）
+                { id: 'el-user', name: '用户', url: './image/icons/user.svg', category: 'element' },
+                { id: 'el-setting', name: '设置', url: './image/icons/setting.svg', category: 'element' },
+                { id: 'el-home', name: '首页', url: './image/icons/home.svg', category: 'element' },
+                { id: 'el-search', name: '搜索', url: './image/icons/search.svg', category: 'element' },
+                { id: 'el-message', name: '消息', url: './image/icons/message.svg', category: 'element' },
+                { id: 'el-menu', name: '菜单', url: './image/icons/menu.svg', category: 'element' },
+                { id: 'el-close', name: '关闭', url: './image/icons/close.svg', category: 'element' },
+                { id: 'el-plus', name: '添加', url: './image/icons/plus.svg', category: 'element' },
+                { id: 'el-delete', name: '删除', url: './image/icons/delete.svg', category: 'element' },
+                { id: 'el-edit', name: '编辑', url: './image/icons/edit.svg', category: 'element' },
+                { id: 'el-view', name: '查看', url: './image/icons/view.svg', category: 'element' },
+                { id: 'el-upload', name: '上传', url: './image/icons/upload.svg', category: 'element' },
+                { id: 'el-download', name: '下载', url: './image/icons/download.svg', category: 'element' },
+                { id: 'el-star', name: '收藏', url: './image/icons/star.svg', category: 'element' },
+                { id: 'el-heart', name: '喜欢', url: './image/icons/heart.svg', category: 'element' },
+                { id: 'el-folder', name: '文件夹', url: './image/icons/folder.svg', category: 'element' },
+                { id: 'el-file', name: '文件', url: './image/icons/file.svg', category: 'element' },
+                { id: 'el-link', name: '链接', url: './image/icons/link.svg', category: 'element' },
+                { id: 'el-picture', name: '图片', url: './image/icons/picture.svg', category: 'element' },
+                { id: 'el-calendar', name: '日历', url: './image/icons/calendar.svg', category: 'element' },
+                { id: 'el-clock', name: '时钟', url: './image/icons/clock.svg', category: 'element' },
+                { id: 'el-location', name: '位置', url: './image/icons/location.svg', category: 'element' },
+                { id: 'el-phone', name: '电话', url: './image/icons/phone.svg', category: 'element' },
+                { id: 'el-mail', name: '邮件', url: './image/icons/mail.svg', category: 'element' },
+                // 新增图标
+                { id: 'el-check', name: '确认', url: './image/icons/check.svg', category: 'element' },
+                { id: 'el-warning', name: '警告', url: './image/icons/warning.svg', category: 'element' },
+                { id: 'el-info', name: '信息', url: './image/icons/info.svg', category: 'element' },
+                { id: 'el-question', name: '帮助', url: './image/icons/question.svg', category: 'element' },
+                { id: 'el-lock', name: '锁定', url: './image/icons/lock.svg', category: 'element' },
+                { id: 'el-unlock', name: '解锁', url: './image/icons/unlock.svg', category: 'element' },
+                { id: 'el-share', name: '分享', url: './image/icons/share.svg', category: 'element' },
+                { id: 'el-copy', name: '复制', url: './image/icons/copy.svg', category: 'element' },
+                { id: 'el-bell', name: '通知', url: './image/icons/bell.svg', category: 'element' },
+                { id: 'el-code', name: '代码', url: './image/icons/code.svg', category: 'element' },
+                { id: 'el-terminal', name: '终端', url: './image/icons/terminal.svg', category: 'element' },
+                { id: 'el-refresh', name: '刷新', url: './image/icons/refresh.svg', category: 'element' },
+                { id: 'el-more', name: '更多', url: './image/icons/more.svg', category: 'element' },
+                { id: 'el-sort', name: '排序', url: './image/icons/sort.svg', category: 'element' },
+                { id: 'el-filter', name: '筛选', url: './image/icons/filter.svg', category: 'element' },
+                { id: 'el-logout', name: '退出', url: './image/icons/logout.svg', category: 'element' }
             ]
         },
 
@@ -277,14 +309,21 @@
             };
         },
 
+        // 导入数据（支持两种格式：纯数据对象或包含 data/uiLib 的导出格式）
         async import(jsonData) {
-            if (jsonData.data) {
+            // 支持导出时的完整格式 { data: {...}, uiLib: {...}, exportTime, version }
+            if (jsonData.data && jsonData.data.categories && jsonData.data.apps) {
                 this._cache = jsonData.data;
                 await StorageManager.set('appNavigator_data', this._cache);
-            }
-            if (jsonData.uiLib) {
-                this._uiLibCache = jsonData.uiLib;
-                await StorageManager.set('appNavigator_uiLib', this._uiLibCache);
+                if (jsonData.uiLib && jsonData.uiLib.items) {
+                    this._uiLibCache = jsonData.uiLib;
+                    await StorageManager.set('appNavigator_uiLib', this._uiLibCache);
+                }
+            } 
+            // 支持简化格式 { categories: [...], apps: [...] }
+            else if (jsonData.categories && jsonData.apps) {
+                this._cache = jsonData;
+                await StorageManager.set('appNavigator_data', this._cache);
             }
             this._dirty = false;
         }
@@ -505,8 +544,8 @@
                             <p class="app-description">${Utils.escapeHtml(app.description || '')}</p>
                         </div>
                         <div class="app-actions">
-                            <button class="app-action-btn" data-action="edit-app" data-app-id="${app.id}" title="编辑" aria-label="编辑 ${Utils.escapeHtml(app.name)}">✏️</button>
-                            <button class="app-action-btn delete" data-action="delete-app" data-app-id="${app.id}" title="删除" aria-label="删除 ${Utils.escapeHtml(app.name)}">🗑️</button>
+                            <button class="app-action-btn" data-action="edit-app" data-app-id="${app.id}" title="编辑" aria-label="编辑 ${Utils.escapeHtml(app.name)}"><img src="./image/icons/edit.svg" width="16" height="16"></button>
+                            <button class="app-action-btn delete" data-action="delete-app" data-app-id="${app.id}" title="删除" aria-label="删除 ${Utils.escapeHtml(app.name)}"><img src="./image/icons/delete.svg" width="16" height="16"></button>
                         </div>
                     </div>
                 `;
@@ -773,7 +812,8 @@
     }
 
     async function deleteApp(appId) {
-        if (!confirm('确定要删除这个网站吗？')) return;
+        const confirmed = await showConfirm('确定要删除这个网站吗？', { isDanger: true, title: '删除网站' });
+        if (!confirmed) return;
         await DataManager.deleteApp(appId);
         await window.appNavigator.renderApps();
         showToast('网站已删除');
@@ -834,7 +874,8 @@
         }
         const data = await DataManager.getData();
         const cat = data.categories.find(c => c.id === catId);
-        if (!confirm(`确定要删除分类"${cat.name}"吗？该分类下的所有网站也会被删除。`)) return;
+        const confirmed = await showConfirm(`确定要删除分类"${cat.name}"吗？该分类下的所有网站也会被删除。`, { isDanger: true, title: '删除分类' });
+        if (!confirmed) return;
 
         await DataManager.deleteCategory(catId);
         if (window.appNavigator.currentCategory === catId) {
@@ -868,8 +909,8 @@
                                 <div class="cat-count">${count} 个网站</div>
                             </div>
                             <div class="cat-actions">
-                                <button class="app-action-btn" data-action="edit-cat" data-cat-id="${cat.id}" title="编辑" aria-label="编辑分类">✏️</button>
-                                <button class="app-action-btn delete" data-action="delete-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类">🗑️</button>
+                                <button class="app-action-btn" data-action="edit-cat" data-cat-id="${cat.id}" title="编辑" aria-label="编辑分类"><img src="./image/icons/edit.svg" width="16" height="16"></button>
+                                <button class="app-action-btn delete" data-action="delete-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类"><img src="./image/icons/delete.svg" width="16" height="16"></button>
                             </div>
                         </div>
                     `;
@@ -992,7 +1033,12 @@
 
         container.innerHTML = `<div class="ui-lib-grid">
                 ${items.map(item => {
-            const isImage = item.url.startsWith('http') || item.url.startsWith('data:');
+            // 判断是否为图片：网络URL、data URL、本地路径（./ 或 / 开头）
+            const isImage = item.url.startsWith('http') || 
+                           item.url.startsWith('data:') || 
+                           item.url.startsWith('./') || 
+                           item.url.startsWith('/') ||
+                           item.url.match(/\.(svg|png|jpg|jpeg|gif|ico|webp)$/i);
             const content = isImage ?
                 Utils.createImageWithFallback(item.url, item.name) :
                 `<span style="font-size:28px;">${Utils.escapeHtml(item.url)}</span>`;
@@ -1033,7 +1079,7 @@
                             <div class="cat-name">${Utils.escapeHtml(cat.name)}</div>
                         </div>
                         <div class="cat-actions">
-                            <button class="app-action-btn delete" data-action="delete-ui-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类">🗑️</button>
+                            <button class="app-action-btn delete" data-action="delete-ui-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类"><img src="./image/icons/delete.svg" width="16" height="16"></button>
                         </div>
                     </div>
                 `).join('');
@@ -1084,7 +1130,8 @@
     }
 
     async function deleteUiCategory(id) {
-        if (!confirm('确定要删除这个UI分类吗？')) return;
+        const confirmed = await showConfirm('确定要删除这个UI分类吗？', { isDanger: true, title: '删除分类' });
+        if (!confirmed) return;
         await DataManager.deleteUiCategory(id);
         await renderUiLibManager();
         showToast('UI分类已删除');
@@ -1093,18 +1140,79 @@
     async function addUiItem() {
         const category = Utils.get('uiItemCategory').value;
         const name = Utils.get('uiItemName').value.trim();
-        const url = Utils.get('uiItemUrl').value.trim();
+        let url = Utils.get('uiItemUrl').value.trim();
+        const fileInput = document.getElementById('uiItemFileInput');
+        const file = fileInput ? fileInput.files[0] : null;
 
-        if (!name || !url) {
-            showToast('请填写完整信息', 'error');
+        if (!name) {
+            showToast('请输入图标名称', 'error');
+            return;
+        }
+
+        // 如果有文件上传，优先处理文件
+        if (file) {
+            if (file.size > 100 * 1024) { // 限制100KB
+                showToast('SVG 文件过大，请选择小于100KB的文件', 'error');
+                return;
+            }
+            
+            try {
+                const reader = new FileReader();
+                url = await new Promise((resolve, reject) => {
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('文件读取失败'));
+                    reader.readAsDataURL(file);
+                });
+                showToast('正在上传 SVG 文件...');
+            } catch (e) {
+                showToast('文件读取失败: ' + e.message, 'error');
+                return;
+            }
+        } else if (!url) {
+            showToast('请选择 SVG 文件或输入图标 URL', 'error');
             return;
         }
 
         await DataManager.addUiItem({ category, name, url });
+        
+        // 清空表单
         Utils.get('uiItemName').value = '';
         Utils.get('uiItemUrl').value = '';
+        if (fileInput) fileInput.value = '';
+        const fileNameDisplay = document.getElementById('svgFileName');
+        if (fileNameDisplay) {
+            fileNameDisplay.textContent = '';
+            fileNameDisplay.style.display = 'none';
+        }
+        
         await renderUiItemsList();
         showToast('图标已添加');
+    }
+
+    // 绑定 SVG 文件选择事件
+    function bindSvgFileInput() {
+        const fileInput = document.getElementById('uiItemFileInput');
+        const selectBtn = document.getElementById('btnSelectSvgFile');
+        const fileNameDisplay = document.getElementById('svgFileName');
+        
+        if (!fileInput || !selectBtn) return;
+        
+        selectBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (fileNameDisplay) {
+                    fileNameDisplay.textContent = `已选择: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                    fileNameDisplay.style.display = 'block';
+                }
+                // 清空 URL 输入，避免冲突
+                const urlInput = Utils.get('uiItemUrl');
+                if (urlInput) urlInput.value = '';
+            }
+        });
     }
 
     async function renderUiItemsList() {
@@ -1114,10 +1222,16 @@
 
         container.innerHTML = lib.items.map(item => {
             const cat = lib.categories.find(c => c.id === item.category);
+            // 判断是否为图片：网络URL、data URL、本地路径或图片文件
+            const isImage = item.url.startsWith('http') || 
+                           item.url.startsWith('data:') || 
+                           item.url.startsWith('./') || 
+                           item.url.startsWith('/') ||
+                           item.url.match(/\.(svg|png|jpg|jpeg|gif|ico|webp)$/i);
             return `
                     <div class="category-list-item">
                         <div class="cat-icon" style="font-size:20px;">
-                            ${item.url.startsWith('http') ?
+                            ${isImage ?
                 Utils.createImageWithFallback(item.url, item.name) :
                 Utils.escapeHtml(item.url)}
                         </div>
@@ -1126,7 +1240,7 @@
                             <div class="cat-count">${cat ? Utils.escapeHtml(cat.name) : '未分类'}</div>
                         </div>
                         <div class="cat-actions">
-                            <button class="app-action-btn delete" data-action="delete-ui-item" data-item-id="${item.id}" title="删除" aria-label="删除图标">🗑️</button>
+                            <button class="app-action-btn delete" data-action="delete-ui-item" data-item-id="${item.id}" title="删除" aria-label="删除图标"><img src="./image/icons/delete.svg" width="16" height="16"></button>
                         </div>
                     </div>
                 `;
@@ -1164,7 +1278,8 @@
         reader.onload = async (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                if (confirm('导入数据将覆盖现有数据，确定继续吗？')) {
+                const confirmed = await showConfirm('导入数据将覆盖现有数据，确定继续吗？', { title: '导入数据', okText: '继续', isDanger: true });
+                if (confirmed) {
                     await DataManager.import(data);
                     await window.appNavigator.renderNavigation();
                     await window.appNavigator.renderApps();
@@ -1651,7 +1766,10 @@
                     }
                     
                     // 应用壁纸
-                    this.applySettings();
+                    await this.applySettings();
+                    
+                    // 保存设置（关键：保存 isLocalImage 标记和 url）
+                    await this.save();
                     
                     showToast('本地图片已保存到浏览器');
                     console.log('本地图片已保存:', file.name, this.formatFileSize(file.size));
@@ -1943,10 +2061,32 @@
         window.appNavigator = appNavigator;
         window.detectDarkMode = detectDarkMode;
 
+        // 导出函数到全局
+        window.autoFetchIcon = autoFetchIcon;
+        window.updateIconPreview = updateIconPreview;
+        window.clearIcon = clearIcon;
+        window.openUiLibManager = openUiLibManager;
+        window.renderUiLibManager = renderUiLibManager;
+        window.addUiCategory = addUiCategory;
+        window.deleteUiCategory = deleteUiCategory;
+        window.addUiItem = addUiItem;
+        window.deleteUiItem = deleteUiItem;
+        window.switchUiTab = switchUiTab;
+        window.addUiItem = addUiItem;
+        window.renderUiLib = renderUiLib;
+        window.renderUiLibItems = renderUiLibItems;
+        window.openUiLib = openUiLib;
+        window.openUiLibForCategory = openUiLibForCategory;
+        window.closeUiLib = closeUiLib;
+        window.selectUiIcon = selectUiIcon;
+
         await appNavigator.init();
         console.log('app.js: AppNavigator 初始化完成');
 
         wallpaperManager = new WallpaperManager();
+
+        // 绑定 SVG 文件上传事件
+        bindSvgFileInput();
 
         // 加载保存的搜索引擎设置
         try {
