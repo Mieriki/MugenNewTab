@@ -699,10 +699,12 @@ window.switchUiTab = function(tab, btn) {
     if (content) content.style.display = 'block';
 };
 
-window.switchUiLibTab = function(catId) {
+window.switchUiLibTab = async function(catId) {
     document.querySelectorAll('.ui-lib-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`[data-ui-cat="${catId}"]`)?.classList.add('active');
-    renderUiLib(catId);
+    document.querySelector(`[data-cat-id="${catId}"]`)?.classList.add('active');
+    if (typeof renderUiLibItems === 'function') {
+        await renderUiLibItems(catId);
+    }
 };
 
 // =====================================================

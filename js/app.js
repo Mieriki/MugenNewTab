@@ -1040,7 +1040,7 @@
                            item.url.startsWith('/') ||
                            item.url.match(/\.(svg|png|jpg|jpeg|gif|ico|webp)$/i);
             const content = isImage ?
-                Utils.createImageWithFallback(item.url, item.name) :
+                `<img src="${Utils.escapeHtml(item.url)}" alt="${Utils.escapeHtml(item.name)}" style="width:32px;height:32px;object-fit:contain;" loading="lazy" decoding="async" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\'font-size:24px;\'>\ud83c\udf10</span>';">` :
                 `<span style="font-size:28px;">${Utils.escapeHtml(item.url)}</span>`;
             return `
                         <div class="ui-lib-item" data-action="select-uilib-icon" data-icon="${Utils.escapeHtml(item.url)}"
@@ -1140,36 +1140,21 @@
     async function addUiItem() {
         const category = Utils.get('uiItemCategory').value;
         const name = Utils.get('uiItemName').value.trim();
-        let url = Utils.get('uiItemUrl').value.trim();
-        const fileInput = document.getElementById('uiItemFileInput');
-        const file = fileInput ? fileInput.files[0] : null;
+        const url = Utils.get('uiItemUrl').value.trim();
 
         if (!name) {
             showToast('请输入图标名称', 'error');
             return;
         }
 
-        // 如果有文件上传，优先处理文件
-        if (file) {
-            if (file.size > 100 * 1024) { // 限制100KB
-                showToast('SVG 文件过大，请选择小于100KB的文件', 'error');
-                return;
-            }
-            
-            try {
-                const reader = new FileReader();
-                url = await new Promise((resolve, reject) => {
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = () => reject(new Error('文件读取失败'));
-                    reader.readAsDataURL(file);
-                });
-                showToast('正在上传 SVG 文件...');
-            } catch (e) {
-                showToast('文件读取失败: ' + e.message, 'error');
-                return;
-            }
-        } else if (!url) {
-            showToast('请选择 SVG 文件或输入图标 URL', 'error');
+        if (!url) {
+            showToast('请输入图标 URL', 'error');
+            return;
+        }
+
+        // 验证 URL 格式（禁止 data URL 上传）
+        if (url.startsWith('data:')) {
+            showToast('为节省存储空间，不支持上传本地文件，请使用网络地址', 'error');
             return;
         }
 
@@ -1178,41 +1163,9 @@
         // 清空表单
         Utils.get('uiItemName').value = '';
         Utils.get('uiItemUrl').value = '';
-        if (fileInput) fileInput.value = '';
-        const fileNameDisplay = document.getElementById('svgFileName');
-        if (fileNameDisplay) {
-            fileNameDisplay.textContent = '';
-            fileNameDisplay.style.display = 'none';
-        }
         
         await renderUiItemsList();
         showToast('图标已添加');
-    }
-
-    // 绑定 SVG 文件选择事件
-    function bindSvgFileInput() {
-        const fileInput = document.getElementById('uiItemFileInput');
-        const selectBtn = document.getElementById('btnSelectSvgFile');
-        const fileNameDisplay = document.getElementById('svgFileName');
-        
-        if (!fileInput || !selectBtn) return;
-        
-        selectBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
-        
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                if (fileNameDisplay) {
-                    fileNameDisplay.textContent = `已选择: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-                    fileNameDisplay.style.display = 'block';
-                }
-                // 清空 URL 输入，避免冲突
-                const urlInput = Utils.get('uiItemUrl');
-                if (urlInput) urlInput.value = '';
-            }
-        });
     }
 
     async function renderUiItemsList() {
@@ -1232,7 +1185,7 @@
                     <div class="category-list-item">
                         <div class="cat-icon" style="font-size:20px;">
                             ${isImage ?
-                Utils.createImageWithFallback(item.url, item.name) :
+                `<img src="${Utils.escapeHtml(item.url)}" alt="${Utils.escapeHtml(item.name)}" style="width:24px;height:24px;object-fit:contain;" loading="lazy">` :
                 Utils.escapeHtml(item.url)}
                         </div>
                         <div class="cat-info">
@@ -2084,9 +2037,6 @@
         console.log('app.js: AppNavigator 初始化完成');
 
         wallpaperManager = new WallpaperManager();
-
-        // 绑定 SVG 文件上传事件
-        bindSvgFileInput();
 
         // 加载保存的搜索引擎设置
         try {

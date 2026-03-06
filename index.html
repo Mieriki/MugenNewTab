@@ -1830,10 +1830,11 @@
         }
 
         .ui-lib-item img {
-            width: 32px;
-            height: 32px;
+            width: 32px !important;
+            height: 32px !important;
             object-fit: contain;
             margin-bottom: 4px;
+            display: block;
         }
 
         .ui-lib-item span {
@@ -2380,6 +2381,10 @@
             display: block;
         }
 
+        .tab-content[hidden] {
+            display: none !important;
+        }
+
         /* 焦点可见性优化（无障碍） */
         button:focus-visible,
         a:focus-visible,
@@ -2733,19 +2738,14 @@
                     <input type="text" class="form-input" id="uiItemName" placeholder="例如：Vue">
                 </div>
                 
-                <!-- SVG 文件上传 -->
+                <!-- 图标 URL 输入 -->
                 <div class="form-group">
-                    <label class="form-label">图标文件（优兆）</label>
-                    <input type="file" id="uiItemFileInput" accept=".svg,image/svg+xml" style="display: none;">
-                    <button type="button" class="btn-secondary" id="btnSelectSvgFile" style="width: 100%; margin-bottom: 8px;">
-                        📁 选择 SVG 文件
-                    </button>
-                    <div id="svgFileName" style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); display: none;"></div>
+                    <label class="form-label" for="uiItemUrl">图标 URL</label>
+                    <input type="text" class="form-input" id="uiItemUrl" placeholder="https://.../logo.svg">
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label" for="uiItemUrl">或输入图标 URL</label>
-                    <input type="text" class="form-input" id="uiItemUrl" placeholder="https://.../logo.svg 或 ./image/icons/xxx.svg">
+                <div class="form-hint" style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: -12px; margin-bottom: 8px;">
+                    支持网络地址或本地路径，如: https://example.com/icon.svg
                 </div>
                 
                 <button class="btn-primary" data-action="add-ui-item" style="width:100%;" type="button">添加图标</button>
