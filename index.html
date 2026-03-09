@@ -7,6 +7,7 @@
     <meta name="description" content="统一应用管理平台">
     <meta name="theme-color" content="#B14A6B">
 
+    <script src="js/data.config.js"></script>
     <script src="js/themes.config.js"></script>
     <script src="js/searchEngines.js"></script>
     <script src="js/ThemeManager.js"></script>
@@ -193,29 +194,45 @@
             transition: gap 0.2s ease;
         }
 
-        /* 折叠按钮 - 纯文字版 */
+        /* 折叠按钮 - 使用 UI 库 SVG 图标 */
         .collapse-toggle-btn {
             margin-left: 6px;
             background: none;
             border: none;
             color: rgba(255, 255, 255, 0.7);
-            font-size: 13px;
-            font-family: 'Courier New', 'Consolas', monospace;
-            font-weight: bold;
             cursor: pointer;
-            padding: 4px 4px 4px 0;
+            padding: 4px;
             line-height: 1;
             transition: color 0.2s ease, transform 0.2s ease;
-            letter-spacing: -1px;
             user-select: none;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
         }
 
-        .collapse-toggle-btn::before {
-            content: '<<';
+        .collapse-toggle-btn .collapse-icon {
+            transition: opacity 0.2s ease;
+            filter: brightness(0) invert(1);
+            opacity: 0.7;
         }
 
-        body.sidebar-collapsed .collapse-toggle-btn::before {
-            content: '>>';
+        .collapse-toggle-btn:hover .collapse-icon {
+            opacity: 1;
+        }
+
+        .collapse-toggle-btn .collapse-icon-right {
+            display: none;
+        }
+
+        body.sidebar-collapsed .collapse-toggle-btn .collapse-icon-left {
+            display: none;
+        }
+
+        body.sidebar-collapsed .collapse-toggle-btn .collapse-icon-right {
+            display: block;
         }
 
         .collapse-toggle-btn:hover {
@@ -2470,7 +2487,10 @@
                 <h1>应用导航中心</h1>
                 <p>统一应用管理平台</p>
             </div>
-            <button class="collapse-toggle-btn" data-action="toggle-collapse" title="收起/展开侧边栏" aria-label="收起/展开侧边栏"></button>
+            <button class="collapse-toggle-btn" data-action="toggle-collapse" title="收起/展开侧边栏" aria-label="收起/展开侧边栏">
+                <img src="./image/icons/arrow-left.svg" class="collapse-icon collapse-icon-left" width="20" height="20" alt="收起">
+                <img src="./image/icons/arrow-right.svg" class="collapse-icon collapse-icon-right" width="20" height="20" alt="展开">
+            </button>
         </div>
     </div>
 
