@@ -5,18 +5,15 @@
     "description": "统一管理和快速访问各类开发者工具和外部链接的应用导航中心",
     "author": "MugenNewTab",
     "homepage_url": "https://github.com/MugenNewTab/MugenNewTab",
-
     "icons": {
         "16": "image/logo/enmaai_01.png",
         "32": "image/logo/enmaai_01.png",
         "48": "image/logo/enmaai_01.png",
         "128": "image/logo/enmaai_01.png"
     },
-
     "chrome_url_overrides": {
         "newtab": "index.html"
     },
-
     "action": {
         "default_popup": "view/popup.html",
         "default_title": "添加网站到 MugenNewTab",
@@ -25,33 +22,31 @@
             "32": "image/logo/enmaai_01.png"
         }
     },
-
     "permissions": [
         "storage",
         "activeTab",
         "tabs"
     ],
-
     "optional_permissions": [
         "bookmarks"
     ],
-
     "host_permissions": [
         "http://*/",
         "https://*/"
     ],
-
     "web_accessible_resources": [
         {
             "resources": [
                 "js/*",
                 "view/*",
-                "image/*"
+                "image/*",
+                "config/*"
             ],
-            "matches": ["<all_urls>"]
+            "matches": [
+                "<all_urls>"
+            ]
         }
     ],
-
     "content_security_policy": {
         "extension_pages": "script-src 'self'; object-src 'self'"
     }

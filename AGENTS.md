@@ -36,11 +36,16 @@ MugenNewTab（新标签页导航）是一个基于 Material Design 3 设计的**
 MugenNewTab/
 ├── index.html              # 主入口（约 4400 行，包含完整 HTML/CSS/JS）
 ├── manifest.json           # Chrome Extension Manifest V3 配置
-├── js/                     # JavaScript 配置文件目录
+├── config/                 # JSON 配置文件目录
+│   ├── themes.json         # 12 套主题配色配置
+│   ├── searchEngines.json  # 搜索引擎配置
+│   └── defaultData.json    # 应用、分类和系统 UI 图标配置
+├── js/                     # JavaScript 文件目录
 │   ├── app.js              # 主应用逻辑（Utils, StorageManager, DataManager, AppNavigator）
-│   ├── apps.config.js      # 应用和分类默认配置
-│   ├── themes.config.js    # 12 套主题配色配置
-│   ├── searchEngines.js    # 搜索引擎配置
+│   ├── configLoader.js     # 配置加载器（从 JSON 加载配置）
+│   ├── data.config.js      # 数据配置工具
+│   ├── themes.config.js    # 主题管理器
+│   ├── searchEngines.js    # 搜索引擎工具
 │   ├── ThemeManager.js     # 主题管理器类
 │   ├── ExtensionStorage.js # Chrome Storage 兼容层 + DataManager
 │   └── inline-scripts.js   # 全局函数和事件委托处理
@@ -78,7 +83,7 @@ MugenNewTab/
 | `js/ThemeManager.js` | 主题管理器类，处理主题切换和 CSS 变量应用 |
 | `js/ExtensionStorage.js` | Chrome Storage API 封装，DataManager 备用实现，全局存储兼容层 |
 | `js/inline-scripts.js` | 全局函数定义、事件委托（data-action）、初始化逻辑 |
-| `js/apps.config.js` | 静态配置：分类和应用列表 |
+| `config/defaultData.json` | 默认数据：分类、应用和 UI 图标库 |
 | `js/themes.config.js` | 静态配置：12 套主题配色方案 |
 | `js/searchEngines.js` | 静态配置：6 个搜索引擎 |
 
@@ -120,11 +125,16 @@ MugenNewTab/
 | 键名 | 用途 | 格式 |
 |------|------|------|
 | `appNavigator_data` | 应用和分类数据 | JSON `{categories, apps}` |
-| `appNavigator_uiLib` | UI 图标库数据 | JSON `{categories, items}` |
+| `appNavigator_user_uiLib` | 用户自定义 UI 图标库 | JSON `{categories, items}` |
 | `appNavigator_wallpaper` | 壁纸设置 | JSON `{url, opacity, blur, overlayOpacity}` |
 | `selectedTheme` | 当前主题 ID | 字符串 |
 | `sidebarCollapsed` | 侧边栏折叠状态 | 布尔值 |
 | `searchHistory` | 搜索历史记录 | JSON 数组 |
+
+**注意：** UI 图标库分为系统默认和用户自定义两部分：
+- **系统 UI**：从 `config/defaultData.json` 的 `systemUiLib` 读取，不保存到浏览器存储，更新版本时可自动添加新图标
+- **用户 UI**：保存到 `appNavigator_user_uiLib`，用户可自由添加/删除/导出
+- **显示时**：合并系统 UI 和用户 UI，系统图标标记为 `isSystem: true`，不可删除
 
 ### 数据结构
 
@@ -266,7 +276,7 @@ python -m http.server 8080
    <script src="../js/ThemeManager.js"></script>
    ```
 3. 复制现有工具页面的 CSS 变量和主题切换器结构
-4. 在 `js/apps.config.js` 中注册应用：
+4. 在 `config/defaultData.json` 中注册应用：
    ```javascript
    {
        id: 'unique-id',
@@ -294,7 +304,7 @@ python -m http.server 8080
 
 6. **主题闪烁**：页面加载时有防闪烁脚本，修改主题逻辑时注意保持
 
-7. **重复 ID**：`apps.config.js` 中存在重复的应用 ID（`MugenCron` 出现两次），添加新应用时需确保 ID 唯一
+7. **重复 ID**：添加新应用时需确保 ID 唯一
 
 ---
 

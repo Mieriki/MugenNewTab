@@ -114,7 +114,7 @@
     // ==================== 数据管理（带内存缓存）====================
     const DataManager = {
         _cache: null,
-        _uiLibCache: null,
+        _userUiLibCache: null,  // 只保存用户自定义 UI
         _dirty: false,
         _syncTimer: null,
 
@@ -135,9 +135,18 @@
             };
         },
 
-        get defaultUiLib() {
-            return DefaultData?.uiLib || {
+        // 系统 UI 库（从配置读取，不保存到 storage）
+        get systemUiLib() {
+            return DefaultData?.systemUiLib || {
                 categories: [{ id: 'element', name: 'Element UI' }],
+                items: []
+            };
+        },
+
+        // 用户 UI 默认空
+        get defaultUserUiLib() {
+            return {
+                categories: [],
                 items: []
             };
         },
@@ -145,7 +154,8 @@
         async init() {
             // 一次性加载到内存
             this._cache = await StorageManager.get('appNavigator_data') || this.defaultData;
-            this._uiLibCache = await StorageManager.get('appNavigator_uiLib') || this.defaultUiLib;
+            // 只加载用户 UI，系统 UI 从配置实时读取
+            this._userUiLibCache = await StorageManager.get('appNavigator_user_uiLib') || this.defaultUserUiLib;
 
             // 页面卸载时同步
             window.addEventListener('beforeunload', () => this.sync());
@@ -159,8 +169,29 @@
             return JSON.parse(JSON.stringify(this._cache));
         },
 
+        // 获取完整的 UI 库（系统 + 用户）
         async getUiLib() {
-            return JSON.parse(JSON.stringify(this._uiLibCache));
+            const system = this.systemUiLib;
+            const user = this._userUiLibCache;
+            
+            // 合并系统 UI 和用户 UI
+            const merged = {
+                categories: [
+                    ...system.categories,
+                    ...user.categories
+                ],
+                items: [
+                    ...system.items.map(item => ({ ...item, isSystem: true })),
+                    ...user.items.map(item => ({ ...item, isSystem: false }))
+                ]
+            };
+            
+            return JSON.parse(JSON.stringify(merged));
+        },
+
+        // 只获取用户 UI（用于导出）
+        async getUserUiLib() {
+            return JSON.parse(JSON.stringify(this._userUiLibCache));
         },
 
         async saveData(data) {
@@ -171,8 +202,8 @@
             this._syncTimer = setTimeout(() => this.sync(), 1000);
         },
 
-        async saveUiLib(data) {
-            this._uiLibCache = data;
+        async saveUserUiLib(data) {
+            this._userUiLibCache = data;
             this._dirty = true;
             if (this._syncTimer) clearTimeout(this._syncTimer);
             this._syncTimer = setTimeout(() => this.sync(), 1000);
@@ -182,7 +213,7 @@
             if (!this._dirty) return;
             try {
                 await StorageManager.set('appNavigator_data', this._cache);
-                await StorageManager.set('appNavigator_uiLib', this._uiLibCache);
+                await StorageManager.set('appNavigator_user_uiLib', this._userUiLibCache);
                 this._dirty = false;
             } catch (e) {
                 console.error('Sync failed:', e);
@@ -234,57 +265,88 @@
             await this.saveData(this._cache);
         },
 
+        // UI 分类管理（只能操作用户分类）
         async addUiCategory(name) {
             const category = { id: Utils.generateId(), name };
-            this._uiLibCache.categories.push(category);
-            await this.saveUiLib(this._uiLibCache);
+            this._userUiLibCache.categories.push(category);
+            await this.saveUserUiLib(this._userUiLibCache);
             return category;
         },
 
         async deleteUiCategory(id) {
-            this._uiLibCache.categories = this._uiLibCache.categories.filter(c => c.id !== id);
-            this._uiLibCache.items = this._uiLibCache.items.filter(i => i.category !== id);
-            await this.saveUiLib(this._uiLibCache);
+            // 检查是否是系统分类
+            const systemCategory = this.systemUiLib.categories.find(c => c.id === id);
+            if (systemCategory) {
+                console.warn('不能删除系统分类');
+                return;
+            }
+            this._userUiLibCache.categories = this._userUiLibCache.categories.filter(c => c.id !== id);
+            this._userUiLibCache.items = this._userUiLibCache.items.filter(i => i.category !== id);
+            await this.saveUserUiLib(this._userUiLibCache);
         },
 
+        // UI 图标管理（只能操作用户图标）
         async addUiItem(item) {
             item.id = Utils.generateId();
-            this._uiLibCache.items.push(item);
-            await this.saveUiLib(this._uiLibCache);
+            this._userUiLibCache.items.push(item);
+            await this.saveUserUiLib(this._userUiLibCache);
             return item;
         },
 
         async deleteUiItem(id) {
-            this._uiLibCache.items = this._uiLibCache.items.filter(i => i.id !== id);
-            await this.saveUiLib(this._uiLibCache);
+            // 检查是否是系统图标
+            const systemItem = this.systemUiLib.items.find(i => i.id === id);
+            if (systemItem) {
+                console.warn('不能删除系统图标');
+                return;
+            }
+            this._userUiLibCache.items = this._userUiLibCache.items.filter(i => i.id !== id);
+            await this.saveUserUiLib(this._userUiLibCache);
         },
 
+        // 导出数据（只导出用户数据）
         async export() {
             await this.sync(); // 确保数据已保存
             return {
                 data: this._cache,
-                uiLib: this._uiLibCache,
+                userUiLib: this._userUiLibCache,  // 只导出用户 UI
                 exportTime: new Date().toISOString(),
                 version: '1.0'
             };
         },
 
-        // 导入数据（支持两种格式：纯数据对象或包含 data/uiLib 的导出格式）
+        // 导入数据（只导入用户 UI）
         async import(jsonData) {
-            // 支持导出时的完整格式 { data: {...}, uiLib: {...}, exportTime, version }
+            // 导入应用数据
             if (jsonData.data && jsonData.data.categories && jsonData.data.apps) {
                 this._cache = jsonData.data;
                 await StorageManager.set('appNavigator_data', this._cache);
-                if (jsonData.uiLib && jsonData.uiLib.items) {
-                    this._uiLibCache = jsonData.uiLib;
-                    await StorageManager.set('appNavigator_uiLib', this._uiLibCache);
-                }
             } 
-            // 支持简化格式 { categories: [...], apps: [...] }
+            // 支持简化格式
             else if (jsonData.categories && jsonData.apps) {
                 this._cache = jsonData;
                 await StorageManager.set('appNavigator_data', this._cache);
             }
+            
+            // 只导入用户 UI（不导入系统 UI）
+            if (jsonData.userUiLib) {
+                this._userUiLibCache = jsonData.userUiLib;
+                await StorageManager.set('appNavigator_user_uiLib', this._userUiLibCache);
+            } else if (jsonData.uiLib) {
+                // 兼容旧格式：如果导入的是 uiLib，只导入其中的用户分类和图标
+                // 过滤掉与系统 UI id 冲突的项目
+                const systemIds = this.systemUiLib.items.map(i => i.id);
+                const userItems = jsonData.uiLib.items.filter(i => !systemIds.includes(i.id));
+                const systemCatIds = this.systemUiLib.categories.map(c => c.id);
+                const userCategories = jsonData.uiLib.categories.filter(c => !systemCatIds.includes(c.id));
+                
+                this._userUiLibCache = {
+                    categories: userCategories,
+                    items: userItems
+                };
+                await StorageManager.set('appNavigator_user_uiLib', this._userUiLibCache);
+            }
+            
             this._dirty = false;
         }
     };
@@ -1030,19 +1092,29 @@
 
     async function renderUiLibManager() {
         const lib = await DataManager.getUiLib();
+        const systemLib = DataManager.systemUiLib;
 
         const catList = Utils.get('uiCategoriesList');
         if (catList) {
-            catList.innerHTML = lib.categories.map(cat => `
+            catList.innerHTML = lib.categories.map(cat => {
+                // 检查是否是系统分类
+                const isSystem = systemLib.categories.some(c => c.id === cat.id);
+                const deleteBtn = isSystem ? '' : `
+                    <button class="app-action-btn delete" data-action="delete-ui-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类">
+                        <img src="./image/icons/delete.svg" width="16" height="16">
+                    </button>
+                `;
+                return `
                     <div class="category-list-item">
                         <div class="cat-info">
-                            <div class="cat-name">${Utils.escapeHtml(cat.name)}</div>
+                            <div class="cat-name">${Utils.escapeHtml(cat.name)}${isSystem ? ' <span style="color:var(--md-sys-color-outline);font-size:12px;">系统</span>' : ''}</div>
                         </div>
                         <div class="cat-actions">
-                            <button class="app-action-btn delete" data-action="delete-ui-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类"><img src="./image/icons/delete.svg" width="16" height="16"></button>
+                            ${deleteBtn}
                         </div>
                     </div>
-                `).join('');
+                `;
+            }).join('');
         }
 
         const select = Utils.get('uiItemCategory');
@@ -1141,6 +1213,12 @@
                            item.url.startsWith('./') || 
                            item.url.startsWith('/') ||
                            item.url.match(/\.(svg|png|jpg|jpeg|gif|ico|webp)$/i);
+            // 系统图标不能删除
+            const deleteBtn = item.isSystem ? '' : `
+                <button class="app-action-btn delete" data-action="delete-ui-item" data-item-id="${item.id}" title="删除" aria-label="删除图标">
+                    <img src="./image/icons/delete.svg" width="16" height="16">
+                </button>
+            `;
             return `
                     <div class="category-list-item">
                         <div class="cat-icon" style="font-size:20px;">
@@ -1150,10 +1228,10 @@
                         </div>
                         <div class="cat-info">
                             <div class="cat-name">${Utils.escapeHtml(item.name)}</div>
-                            <div class="cat-count">${cat ? Utils.escapeHtml(cat.name) : '未分类'}</div>
+                            <div class="cat-count">${cat ? Utils.escapeHtml(cat.name) : '未分类'}${item.isSystem ? ' · 系统' : ''}</div>
                         </div>
                         <div class="cat-actions">
-                            <button class="app-action-btn delete" data-action="delete-ui-item" data-item-id="${item.id}" title="删除" aria-label="删除图标"><img src="./image/icons/delete.svg" width="16" height="16"></button>
+                            ${deleteBtn}
                         </div>
                     </div>
                 `;

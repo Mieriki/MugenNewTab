@@ -1,39 +1,39 @@
-// 搜索引擎配置 - 使用网络图标
-const searchEngines = [
-    {
-        id: 'google',
-        name: 'Google',
-        iconUrl: 'https://favicon.im/google.com',
-        url: 'https://www.google.com/search?q={q}'
+// ==================== 搜索引擎配置 ====================
+// 配置已从 config/searchEngines.json 加载，通过 searchEngines 全局变量访问
+
+// 搜索引擎工具函数
+const SearchEngineUtils = {
+    // 获取所有搜索引擎
+    getAll() {
+        return searchEngines || [];
     },
-    {
-        id: 'bing',
-        name: 'Bing',
-        iconUrl: 'https://www.bing.com/favicon.ico',
-        url: 'https://www.bing.com/search?q={q}'
+
+    // 获取默认搜索引擎
+    getDefault() {
+        return (searchEngines && searchEngines[0]) || null;
     },
-    {
-        id: 'baidu',
-        name: '百度',
-        iconUrl: 'https://www.baidu.com/favicon.ico',
-        url: 'https://www.baidu.com/s?wd={q}'
+
+    // 根据索引获取搜索引擎
+    getByIndex(index) {
+        if (!searchEngines || index < 0 || index >= searchEngines.length) {
+            return null;
+        }
+        return searchEngines[index];
     },
-    {
-        id: 'duckduckgo',
-        name: 'DuckDuckGo',
-        iconUrl: 'https://favicon.im/duckduckgo.com',
-        url: 'https://duckduckgo.com/?q={q}'
+
+    // 构建搜索 URL
+    buildSearchUrl(engine, query) {
+        if (!engine || !engine.url) return null;
+        return engine.url.replace('{q}', encodeURIComponent(query));
     },
-    {
-        id: 'github',
-        name: 'GitHub',
-        iconUrl: 'https://github.com/favicon.ico',
-        url: 'https://github.com/search?q={q}'
-    },
-    {
-        id: 'stackoverflow',
-        name: 'Stack Overflow',
-        iconUrl: 'https://stackoverflow.com/favicon.ico',
-        url: 'https://stackoverflow.com/search?q={q}'
+
+    // 执行搜索
+    search(engine, query) {
+        const url = this.buildSearchUrl(engine, query);
+        if (url) {
+            window.open(url, '_blank');
+        }
     }
-];
+};
+
+// searchEngines 全局变量由 configLoader.js 填充

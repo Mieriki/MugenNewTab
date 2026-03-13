@@ -107,9 +107,9 @@ const StorageManager = {
 // ==================== DataManager（数据管理器）====================
 const DataManager = {
     STORAGE_KEY: 'appNavigator_data',
-    UI_LIB_KEY: 'appNavigator_uiLib',
+    USER_UI_LIB_KEY: 'appNavigator_user_uiLib',
     _cache: null,
-    _uiLibCache: null,
+    _userUiLibCache: null,
     _initPromise: null,
 
     // 从统一配置文件获取默认数据
@@ -129,9 +129,18 @@ const DataManager = {
         };
     },
 
-    get defaultUiLib() {
-        return DefaultData?.uiLib || {
+    // 系统 UI 库（从配置读取，不保存到 storage）
+    get systemUiLib() {
+        return DefaultData?.systemUiLib || {
             categories: [{ id: 'element', name: 'Element UI' }],
+            items: []
+        };
+    },
+
+    // 用户 UI 默认空
+    get defaultUserUiLib() {
+        return {
+            categories: [],
             items: []
         };
     },
@@ -157,19 +166,19 @@ const DataManager = {
                     await this.sync();
                 }
                 
-                // 加载 UI 图标库数据
-                const uiLib = await StorageManager.get(this.UI_LIB_KEY);
-                if (uiLib && uiLib.categories && uiLib.items) {
-                    this._uiLibCache = uiLib;
+                // 只加载用户 UI，系统 UI 从配置实时读取
+                const userUiLib = await StorageManager.get(this.USER_UI_LIB_KEY);
+                if (userUiLib && userUiLib.categories) {
+                    this._userUiLibCache = userUiLib;
                 } else {
-                    this._uiLibCache = JSON.parse(JSON.stringify(this.defaultUiLib));
-                    await this.syncUiLib();
+                    this._userUiLibCache = JSON.parse(JSON.stringify(this.defaultUserUiLib));
+                    await this.syncUserUiLib();
                 }
             } catch (error) {
                 console.error('DataManager 初始化失败:', error);
                 // 使用默认数据作为回退
                 this._cache = JSON.parse(JSON.stringify(this.defaultData));
-                this._uiLibCache = JSON.parse(JSON.stringify(this.defaultUiLib));
+                this._userUiLibCache = JSON.parse(JSON.stringify(this.defaultUserUiLib));
             }
         })();
         
@@ -182,10 +191,31 @@ const DataManager = {
         return JSON.parse(JSON.stringify(this._cache));
     },
 
-    // 获取 UI 图标库
+    // 获取完整的 UI 库（系统 + 用户）
     async getUiLib() {
         await this.init();
-        return JSON.parse(JSON.stringify(this._uiLibCache));
+        const system = this.systemUiLib;
+        const user = this._userUiLibCache;
+        
+        // 合并系统 UI 和用户 UI
+        const merged = {
+            categories: [
+                ...system.categories,
+                ...user.categories
+            ],
+            items: [
+                ...system.items.map(item => ({ ...item, isSystem: true })),
+                ...user.items.map(item => ({ ...item, isSystem: false }))
+            ]
+        };
+        
+        return JSON.parse(JSON.stringify(merged));
+    },
+
+    // 只获取用户 UI（用于导出）
+    async getUserUiLib() {
+        await this.init();
+        return JSON.parse(JSON.stringify(this._userUiLibCache));
     },
 
     // 同步主数据到存储
@@ -195,10 +225,10 @@ const DataManager = {
         }
     },
 
-    // 同步 UI 图标库到存储
-    async syncUiLib() {
-        if (this._uiLibCache) {
-            await StorageManager.set(this.UI_LIB_KEY, this._uiLibCache);
+    // 同步用户 UI 到存储
+    async syncUserUiLib() {
+        if (this._userUiLibCache) {
+            await StorageManager.set(this.USER_UI_LIB_KEY, this._userUiLibCache);
         }
     },
 
@@ -261,12 +291,12 @@ const DataManager = {
         await this.sync();
     },
 
-    // 导出数据
+    // 导出数据（只导出用户数据）
     async exportData() {
         await this.init();
         return {
             data: JSON.parse(JSON.stringify(this._cache)),
-            uiLib: JSON.parse(JSON.stringify(this._uiLibCache)),
+            userUiLib: JSON.parse(JSON.stringify(this._userUiLibCache)),
             exportTime: new Date().toISOString(),
             version: '1.0'
         };
@@ -277,47 +307,69 @@ const DataManager = {
         return this.exportData();
     },
 
-    // 导入数据（支持两种格式：纯数据对象或包含 data/uiLib 的导出格式）
+    // 导入数据（只导入用户 UI）
     async importData(data) {
-        // 支持导出时的完整格式 { data: {...}, uiLib: {...} }
+        // 导入应用数据
         if (data.data && data.data.categories && data.data.apps) {
             this._cache = JSON.parse(JSON.stringify(data.data));
             await this.sync();
-            if (data.uiLib && data.uiLib.items) {
-                this._uiLibCache = JSON.parse(JSON.stringify(data.uiLib));
-                await this.syncUiLib();
-            }
         } 
-        // 支持简化格式 { categories: [...], apps: [...] }
+        // 支持简化格式
         else if (data.categories && data.apps) {
             this._cache = JSON.parse(JSON.stringify(data));
             await this.sync();
+        }
+        
+        // 只导入用户 UI
+        if (data.userUiLib) {
+            this._userUiLibCache = data.userUiLib;
+            await this.syncUserUiLib();
+        } else if (data.uiLib) {
+            // 兼容旧格式：过滤掉与系统 UI id 冲突的项目
+            const systemIds = this.systemUiLib.items.map(i => i.id);
+            const userItems = data.uiLib.items.filter(i => !systemIds.includes(i.id));
+            const systemCatIds = this.systemUiLib.categories.map(c => c.id);
+            const userCategories = data.uiLib.categories.filter(c => !systemCatIds.includes(c.id));
+            
+            this._userUiLibCache = {
+                categories: userCategories,
+                items: userItems
+            };
+            await this.syncUserUiLib();
         }
     },
 
     // 重置为默认
     async resetToDefault() {
         this._cache = JSON.parse(JSON.stringify(this.defaultData));
+        this._userUiLibCache = JSON.parse(JSON.stringify(this.defaultUserUiLib));
         await this.sync();
+        await this.syncUserUiLib();
     },
 
-    // ==================== UI 图标库管理 ====================
+    // ==================== UI 图标库管理（只操作用户 UI）====================
     async addUiCategory(name) {
         await this.init();
         const category = { 
             id: 'uicat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             name 
         };
-        this._uiLibCache.categories.push(category);
-        await this.syncUiLib();
+        this._userUiLibCache.categories.push(category);
+        await this.syncUserUiLib();
         return category;
     },
 
     async deleteUiCategory(id) {
         await this.init();
-        this._uiLibCache.categories = this._uiLibCache.categories.filter(c => c.id !== id);
-        this._uiLibCache.items = this._uiLibCache.items.filter(i => i.category !== id);
-        await this.syncUiLib();
+        // 检查是否是系统分类
+        const systemCategory = this.systemUiLib.categories.find(c => c.id === id);
+        if (systemCategory) {
+            console.warn('不能删除系统分类');
+            return;
+        }
+        this._userUiLibCache.categories = this._userUiLibCache.categories.filter(c => c.id !== id);
+        this._userUiLibCache.items = this._userUiLibCache.items.filter(i => i.category !== id);
+        await this.syncUserUiLib();
     },
 
     async addUiItem(item) {
@@ -326,15 +378,21 @@ const DataManager = {
             id: 'uiitem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             ...item
         };
-        this._uiLibCache.items.push(newItem);
-        await this.syncUiLib();
+        this._userUiLibCache.items.push(newItem);
+        await this.syncUserUiLib();
         return newItem;
     },
 
     async deleteUiItem(id) {
         await this.init();
-        this._uiLibCache.items = this._uiLibCache.items.filter(i => i.id !== id);
-        await this.syncUiLib();
+        // 检查是否是系统图标
+        const systemItem = this.systemUiLib.items.find(i => i.id === id);
+        if (systemItem) {
+            console.warn('不能删除系统图标');
+            return;
+        }
+        this._userUiLibCache.items = this._userUiLibCache.items.filter(i => i.id !== id);
+        await this.syncUserUiLib();
     }
 };
 
