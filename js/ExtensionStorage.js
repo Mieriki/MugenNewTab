@@ -225,6 +225,12 @@ const DataManager = {
         }
     },
 
+    // 强制立即同步（兼容接口）
+    async syncNow() {
+        await this.sync();
+        await this.syncUserUiLib();
+    },
+
     // 同步用户 UI 到存储
     async syncUserUiLib() {
         if (this._userUiLibCache) {

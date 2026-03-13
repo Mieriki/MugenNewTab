@@ -292,7 +292,10 @@ window.editCategory = async function(catId) {
     const modalTitle = document.getElementById('categoryModalTitle');
     if (modalTitle) modalTitle.textContent = '编辑分类';
     document.getElementById('catName').value = cat.name;
+    
+    // 设置图标值并更新预览
     document.getElementById('catIcon').value = cat.icon || '';
+    document.getElementById('catIconDark').value = cat.iconDark || '';
     updateCatIconPreview();
 
     closeModal('manageCategoriesModal');
@@ -302,13 +305,18 @@ window.editCategory = async function(catId) {
 window.saveCategory = async function() {
     const name = document.getElementById('catName')?.value.trim();
     const icon = document.getElementById('catIcon')?.value.trim();
+    const iconDark = document.getElementById('catIconDark')?.value.trim();
 
     if (!name) {
         showToast('请输入分类名称', 'error');
         return;
     }
 
-    const catData = { name, icon: icon || './image/icons/folder.svg' };
+    const catData = { 
+        name, 
+        icon: icon || './image/icons/folder.svg',
+        iconDark: iconDark || ''
+    };
 
     if (window.appNavigator?.editingCategoryId) {
         await DataManager.updateCategory(window.appNavigator.editingCategoryId, catData);
@@ -317,6 +325,9 @@ window.saveCategory = async function() {
         await DataManager.addCategory(catData);
         showToast('分类已添加');
     }
+
+    // 强制立即同步，确保数据保存到存储
+    await DataManager.syncNow();
 
     closeModal('categoryModal');
     await window.appNavigator?.renderNavigation();
@@ -356,6 +367,12 @@ window.openUiLibForCategory = function() {
     renderUiLib();
 };
 
+window.openUiLibDarkForCategory = function() {
+    window.uiLibTarget = 'categoryDark';
+    document.getElementById('uiLibModal')?.classList.add('active');
+    renderUiLib();
+};
+
 window.closeUiLib = function() {
     document.getElementById('uiLibModal')?.classList.remove('active');
     window.uiLibTarget = null;
@@ -364,6 +381,9 @@ window.closeUiLib = function() {
 window.selectUiIcon = function(url) {
     if (window.uiLibTarget === 'category') {
         document.getElementById('catIcon').value = url;
+        updateCatIconPreview();
+    } else if (window.uiLibTarget === 'categoryDark') {
+        document.getElementById('catIconDark').value = url;
         updateCatIconPreview();
     } else {
         document.getElementById('appIcon').value = url;
@@ -447,16 +467,24 @@ window.updateIconPreview = function() {
 };
 
 window.updateCatIconPreview = function() {
-    const iconInput = document.getElementById('catIcon');
-    const icon = iconInput?.value || '';
-    const preview = document.getElementById('catIconPreview');
-    if (!preview) return;
+    const lightIcon = document.getElementById('catIcon')?.value || '';
+    const darkIcon = document.getElementById('catIconDark')?.value || '';
+    const lightPreview = document.getElementById('catIconPreview');
+    const darkPreview = document.getElementById('catIconPreviewDark');
     
-    if (icon.includes('.') || icon.startsWith('http')) {
-        preview.innerHTML = `<img src="${icon}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<img src=\'./image/icons/folder.svg\' width=\'28\' height=\'28\'>'">`;
-    } else {
-        preview.textContent = icon;
+    function renderPreview(preview, icon, defaultIcon) {
+        if (!preview) return;
+        if (icon.indexOf('/') >= 0) {
+            preview.innerHTML = '<img src="' + icon + '" style="width:60%;height:60%;object-fit:contain;display:block;" onerror="this.onerror=null;this.parentElement.innerHTML=\'<span style=font-size:28px;>' + defaultIcon + '</span>\';">';
+        } else if (icon.length <= 2 && icon) {
+            preview.innerHTML = '<span style="font-size:28px;">' + icon + '</span>';
+        } else {
+            preview.innerHTML = '<span style="font-size:28px;">' + defaultIcon + '</span>';
+        }
     }
+    
+    renderPreview(lightPreview, lightIcon, '📁');
+    renderPreview(darkPreview, darkIcon, '📁');
 };
 
 window.autoFetchIcon = async function() {
@@ -482,6 +510,13 @@ window.autoFetchIcon = async function() {
 window.clearIcon = function() {
     document.getElementById('appIcon').value = '';
     updateIconPreview();
+};
+
+window.clearCatIcon = function() {
+    document.getElementById('catIcon').value = '';
+    document.getElementById('catIconDark').value = '';
+    updateCatIconPreview();
+    showToast('已恢复默认图标');
 };
 
 // 搜索功能
@@ -572,7 +607,7 @@ window.renderEngineList = function() {
     
     dropdown.innerHTML = searchEngines.map((engine, i) => `
         <div class="engine-option" data-engine-index="${i}">
-            <img src="${engine.iconUrl}" alt="${engine.name}">
+            <img src="${engine.icon}" alt="${engine.name}" onerror="this.src='./image/icons/search.svg'">
             <span>${engine.name}</span>
         </div>
     `).join('');
@@ -866,21 +901,31 @@ async function renderCategoriesList() {
         .filter(c => c.id !== 'all')
         .map(cat => {
             const count = data.apps.filter(a => a.category === cat.id).length;
-            const isImage = cat.icon && (cat.icon.includes('.') || cat.icon.startsWith('http'));
-            const iconHtml = isImage 
-                ? `<img src="${cat.icon}" style="width:24px;height:24px;" onerror="this.style.display='none';this.parentElement.innerHTML='<img src=\'./image/icons/folder.svg\' width=\'24\' height=\'24\'>'">`
-                : (cat.icon || '<img src=\'./image/icons/folder.svg\' width=\'24\' height=\'24\'>');
+            // 简单判断：有斜杠就是图片路径
+            const isPath = cat.icon && cat.icon.includes('/');
+            const isEmoji = cat.icon && !isPath && cat.icon.length <= 2;
+            
+            let iconHtml;
+            if (isPath) {
+                iconHtml = `<img src="${cat.icon}" alt="" style="width:24px!important;height:24px!important;object-fit:contain;display:block;max-width:24px;max-height:24px;" onerror="this.onerror=null;this.style.display='none';this.parentElement.innerHTML='📁';">`;
+            } else if (isEmoji) {
+                iconHtml = cat.icon;
+            } else {
+                iconHtml = '📁';
+            }
             
             return `
                 <div class="category-item">
                     <div class="category-info">
                         <span class="category-icon">${iconHtml}</span>
-                        <span class="category-name">${escapeHtml(cat.name)}</span>
-                        <span class="category-count">${count} 个应用</span>
+                        <div class="cat-text">
+                            <div class="category-name">${escapeHtml(cat.name)}</div>
+                            <div class="category-count">${count} 个应用</div>
+                        </div>
                     </div>
                     <div class="category-actions">
-                        <button class="app-action-btn" data-action="edit-cat" data-cat-id="${cat.id}" title="编辑">✏️</button>
-                        <button class="app-action-btn delete" data-action="delete-cat" data-cat-id="${cat.id}" title="删除">🗑️</button>
+                        <button class="app-action-btn" data-action="edit-cat" data-cat-id="${cat.id}" title="编辑"><img src="./image/icons/edit.svg" width="16" height="16" alt="编辑"></button>
+                        <button class="app-action-btn delete" data-action="delete-cat" data-cat-id="${cat.id}" title="删除"><img src="./image/icons/delete.svg" width="16" height="16" alt="删除"></button>
                     </div>
                 </div>
             `;
@@ -1070,14 +1115,21 @@ async function handleDataAction(action, element, event) {
         case 'open-uilib':
             openUiLib();
             break;
+
         case 'open-uilib-cat':
             openUiLibForCategory();
+            break;
+        case 'open-uilib-cat-dark':
+            openUiLibDarkForCategory();
             break;
         case 'fetch-icon':
             autoFetchIcon();
             break;
         case 'clear-icon':
             clearIcon();
+            break;
+        case 'clear-cat-icon':
+            clearCatIcon();
             break;
             
         // UI 库

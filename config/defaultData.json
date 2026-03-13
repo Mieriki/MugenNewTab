@@ -1,0 +1,90 @@
+{
+    "appNavigator": {
+        "categories": [
+            { "id": "all", "name": "全部应用", "icon": "./image/icons/menu.svg" },
+            { "id": "media", "name": "娱乐媒体", "icon": "./image/icons/heart.svg" },
+            { "id": "productivity", "name": "效率工具", "icon": "./image/icons/star.svg" },
+            { "id": "dev", "name": "开发工具", "icon": "./image/icons/setting.svg" }
+        ],
+        "apps": [
+            {
+                "id": "1",
+                "name": "Bilibili",
+                "description": "哔哩哔哩弹幕视频网",
+                "icon": "https://favicon.im/www.bilibili.com",
+                "url": "https://www.bilibili.com/",
+                "category": "media"
+            },
+            {
+                "id": "2",
+                "name": "Kimi AI",
+                "description": "Kimi 智能助手",
+                "icon": "https://favicon.im/kimi.moonshot.cn",
+                "url": "https://kimi.moonshot.cn/",
+                "category": "productivity"
+            },
+            {
+                "id": "3",
+                "name": "GitHub",
+                "description": "代码托管平台",
+                "icon": "https://favicon.im/github.com",
+                "url": "https://github.com/",
+                "category": "dev"
+            }
+        ]
+    },
+    "systemUiLib": {
+        "categories": [
+            { "id": "element", "name": "系统默认" },
+            { "id": "custom", "name": "自定义" }
+        ],
+        "items": [
+            { "id": "el-user", "name": "用户", "url": "./image/icons/user.svg", "category": "element" },
+            { "id": "el-setting", "name": "设置", "url": "./image/icons/setting.svg", "category": "element" },
+            { "id": "el-home", "name": "首页", "url": "./image/icons/home.svg", "category": "element" },
+            { "id": "el-search", "name": "搜索", "url": "./image/icons/search.svg", "category": "element" },
+            { "id": "el-message", "name": "消息", "url": "./image/icons/message.svg", "category": "element" },
+            { "id": "el-menu", "name": "菜单", "url": "./image/icons/menu.svg", "category": "element" },
+            { "id": "el-close", "name": "关闭", "url": "./image/icons/close.svg", "category": "element" },
+            { "id": "el-plus", "name": "添加", "url": "./image/icons/plus.svg", "category": "element" },
+            { "id": "el-delete", "name": "删除", "url": "./image/icons/delete.svg", "category": "element" },
+            { "id": "el-edit", "name": "编辑", "url": "./image/icons/edit.svg", "category": "element" },
+            { "id": "el-view", "name": "查看", "url": "./image/icons/view.svg", "category": "element" },
+            { "id": "el-upload", "name": "上传", "url": "./image/icons/upload.svg", "category": "element" },
+            { "id": "el-download", "name": "下载", "url": "./image/icons/download.svg", "category": "element" },
+            { "id": "el-star", "name": "收藏", "url": "./image/icons/star.svg", "category": "element" },
+            { "id": "el-heart", "name": "喜欢", "url": "./image/icons/heart.svg", "category": "element" },
+            { "id": "el-folder", "name": "文件夹", "url": "./image/icons/folder.svg", "category": "element" },
+            { "id": "el-file", "name": "文件", "url": "./image/icons/file.svg", "category": "element" },
+            { "id": "el-link", "name": "链接", "url": "./image/icons/link.svg", "category": "element" },
+            { "id": "el-picture", "name": "图片", "url": "./image/icons/picture.svg", "category": "element" },
+            { "id": "el-calendar", "name": "日历", "url": "./image/icons/calendar.svg", "category": "element" },
+            { "id": "el-clock", "name": "时钟", "url": "./image/icons/clock.svg", "category": "element" },
+            { "id": "el-location", "name": "位置", "url": "./image/icons/location.svg", "category": "element" },
+            { "id": "el-phone", "name": "电话", "url": "./image/icons/phone.svg", "category": "element" },
+            { "id": "el-mail", "name": "邮件", "url": "./image/icons/mail.svg", "category": "element" },
+            { "id": "el-check", "name": "确认", "url": "./image/icons/check.svg", "category": "element" },
+            { "id": "el-warning", "name": "警告", "url": "./image/icons/warning.svg", "category": "element" },
+            { "id": "el-info", "name": "信息", "url": "./image/icons/info.svg", "category": "element" },
+            { "id": "el-question", "name": "帮助", "url": "./image/icons/question.svg", "category": "element" },
+            { "id": "el-lock", "name": "锁定", "url": "./image/icons/lock.svg", "category": "element" },
+            { "id": "el-unlock", "name": "解锁", "url": "./image/icons/unlock.svg", "category": "element" },
+            { "id": "el-share", "name": "分享", "url": "./image/icons/share.svg", "category": "element" },
+            { "id": "el-copy", "name": "复制", "url": "./image/icons/copy.svg", "category": "element" },
+            { "id": "el-bell", "name": "通知", "url": "./image/icons/bell.svg", "category": "element" },
+            { "id": "el-code", "name": "代码", "url": "./image/icons/code.svg", "category": "element" },
+            { "id": "el-terminal", "name": "终端", "url": "./image/icons/terminal.svg", "category": "element" },
+            { "id": "el-refresh", "name": "刷新", "url": "./image/icons/refresh.svg", "category": "element" },
+            { "id": "el-more", "name": "更多", "url": "./image/icons/more.svg", "category": "element" },
+            { "id": "el-sort", "name": "排序", "url": "./image/icons/sort.svg", "category": "element" },
+            { "id": "el-filter", "name": "筛选", "url": "./image/icons/filter.svg", "category": "element" },
+            { "id": "el-logout", "name": "退出", "url": "./image/icons/logout.svg", "category": "element" },
+            { "id": "el-filter", "name": "筛选", "url": "./image/icons/filter.svg", "category": "element" },
+            { "id": "el-filter", "name": "筛选", "url": "./image/波斯猫.svg", "category": "element" }
+        ]
+    },
+    "userUiLib": {
+        "categories": [],
+        "items": []
+    }
+}

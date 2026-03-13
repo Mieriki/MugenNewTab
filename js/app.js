@@ -153,9 +153,21 @@
 
         async init() {
             // 一次性加载到内存
-            this._cache = await StorageManager.get('appNavigator_data') || this.defaultData;
+            const savedData = await StorageManager.get('appNavigator_data');
+            // 检查保存的数据是否有效（必须有 categories 和 apps 数组）
+            if (savedData && Array.isArray(savedData.categories) && Array.isArray(savedData.apps)) {
+                this._cache = savedData;
+            } else {
+                this._cache = JSON.parse(JSON.stringify(this.defaultData));
+            }
+            
             // 只加载用户 UI，系统 UI 从配置实时读取
-            this._userUiLibCache = await StorageManager.get('appNavigator_user_uiLib') || this.defaultUserUiLib;
+            const savedUserUiLib = await StorageManager.get('appNavigator_user_uiLib');
+            if (savedUserUiLib && Array.isArray(savedUserUiLib.categories)) {
+                this._userUiLibCache = savedUserUiLib;
+            } else {
+                this._userUiLibCache = JSON.parse(JSON.stringify(this.defaultUserUiLib));
+            }
 
             // 页面卸载时同步
             window.addEventListener('beforeunload', () => this.sync());
@@ -215,9 +227,16 @@
                 await StorageManager.set('appNavigator_data', this._cache);
                 await StorageManager.set('appNavigator_user_uiLib', this._userUiLibCache);
                 this._dirty = false;
+                console.log('DataManager: 数据已同步到存储');
             } catch (e) {
                 console.error('Sync failed:', e);
             }
+        },
+
+        // 强制立即同步（用于关键操作后）
+        async syncNow() {
+            if (this._syncTimer) clearTimeout(this._syncTimer);
+            await this.sync();
         },
 
         async addApp(app) {
@@ -370,6 +389,9 @@
             const savedState = await StorageManager.get('sidebarCollapsed');
             this.sidebarCollapsed = savedState === true;
 
+            // 先检测深色模式，确保渲染时能获取正确状态
+            detectDarkMode();
+
             this.bindEvents();
             await this.renderNavigation();
             await this.renderApps();
@@ -378,7 +400,6 @@
             // 使用 requestAnimationFrame 优化首次渲染
             requestAnimationFrame(() => {
                 this.updateHeaderLogo();
-                detectDarkMode();
             });
         }
 
@@ -450,6 +471,7 @@
             if (!navMenu) return;
 
             const data = await DataManager.getData();
+            const isDarkMode = document.body.classList.contains('dark-mode');
 
             // 使用 DocumentFragment 优化 DOM 操作
             const fragment = document.createDocumentFragment();
@@ -463,8 +485,10 @@
                 navItem.setAttribute('role', 'menuitem');
                 if (category.id === this.currentCategory) navItem.classList.add('active');
 
-                const isImage = this.isImageIcon(category.icon);
-                const iconHtml = isImage ? Utils.createImageWithFallback(category.icon, category.name) : Utils.escapeHtml(category.icon);
+                // 根据主题选择图标
+                const catIcon = isDarkMode && category.iconDark ? category.iconDark : category.icon;
+                const isImage = this.isImageIcon(catIcon);
+                const iconHtml = isImage ? Utils.createImageWithFallback(catIcon, category.name) : Utils.escapeHtml(catIcon);
 
                 navItem.innerHTML = `
                         <span class="nav-icon">${iconHtml}</span>
@@ -601,7 +625,13 @@
 
             // 主题变更监听
             const themeHandler = () => {
+                // 先检测并更新深色模式类，确保后续渲染能获取正确的状态
+                detectDarkMode();
                 this.updateHeaderLogo();
+                // 重新渲染应用列表以切换深浅色图标
+                this.renderApps();
+                // 重新渲染导航栏以切换分类深浅色图标
+                this.renderNavigation();
             };
             document.addEventListener('themeChanged', themeHandler);
             this.eventListeners.push({ element: document, event: 'themeChanged', handler: themeHandler });
@@ -859,6 +889,7 @@
         Utils.get('categoryModalTitle').textContent = '编辑分类';
         Utils.get('catName').value = cat.name;
         Utils.get('catIcon').value = cat.icon || '';
+        Utils.get('catIconDark').value = cat.iconDark || '';
         updateCatIconPreview();
 
         closeModal('manageCategoriesModal');
@@ -868,13 +899,14 @@
     async function saveCategory() {
         const name = Utils.get('catName').value.trim();
         const icon = Utils.get('catIcon').value.trim();
+        const iconDark = Utils.get('catIconDark')?.value.trim();
 
         if (!name) {
             showToast('请输入分类名称', 'error');
             return;
         }
 
-        const catData = { name, icon: icon || '📁' };
+        const catData = { name, icon: icon || '📁', iconDark: iconDark || '' };
 
         if (window.appNavigator.editingCategoryId) {
             await DataManager.updateCategory(window.appNavigator.editingCategoryId, catData);
@@ -883,6 +915,9 @@
             await DataManager.addCategory(catData);
             showToast('分类已添加');
         }
+
+        // 强制立即同步，确保数据保存到存储
+        await DataManager.syncNow();
 
         closeModal('categoryModal');
         await window.appNavigator.renderNavigation();
@@ -1006,6 +1041,16 @@
     function openUiLibForCategory() {
         window.appNavigator.iconSelectCallback = (icon) => {
             Utils.get('catIcon').value = icon;
+            updateCatIconPreview();
+            closeUiLib();
+        };
+        renderUiLib();
+        Utils.get('uiLibPanel').classList.add('show');
+    }
+
+    function openUiLibDarkForCategory() {
+        window.appNavigator.iconSelectCallback = (icon) => {
+            Utils.get('catIconDark').value = icon;
             updateCatIconPreview();
             closeUiLib();
         };
@@ -1419,7 +1464,7 @@
                      data-action="select-engine" data-engine-index="${index}"
                      role="option"
                      aria-selected="${index === currentEngineIndex}">
-                    <img src="${engine.iconUrl}" alt="" loading="lazy">
+                    <img src="${engine.icon}" alt="" loading="lazy" onerror="this.src='./image/icons/search.svg'">
                     <span>${Utils.escapeHtml(engine.name)}</span>
                 </div>
             `).join('');
@@ -1433,7 +1478,7 @@
         const footerName = Utils.get('footerEngineName');
 
         if (iconImg) {
-            iconImg.src = engine.iconUrl;
+            iconImg.src = engine.icon;
             iconImg.alt = '';
         }
         if (nameSpan) nameSpan.textContent = engine.name;
@@ -2068,8 +2113,12 @@
         window.renderUiLibItems = renderUiLibItems;
         window.openUiLib = openUiLib;
         window.openUiLibForCategory = openUiLibForCategory;
+        window.openUiLibDarkForCategory = openUiLibDarkForCategory;
         window.closeUiLib = closeUiLib;
         window.selectUiIcon = selectUiIcon;
+
+        // 导出 DataManager 到全局，供 inline-scripts.js 使用
+        window.DataManager = DataManager;
 
         await appNavigator.init();
         console.log('app.js: AppNavigator 初始化完成');

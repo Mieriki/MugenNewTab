@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Google",
+        "url": "https://www.google.com/search?q={q}",
+        "icon": "https://favicon.im/www.google.com"
+    },
+    {
+        "name": "Bing",
+        "url": "https://www.bing.com/search?q={q}",
+        "icon": "https://favicon.im/www.bing.com"
+    },
+    {
+        "name": "百度",
+        "url": "https://www.baidu.com/s?wd={q}",
+        "icon": "https://favicon.im/www.baidu.com"
+    },
+    {
+        "name": "DuckDuckGo",
+        "url": "https://duckduckgo.com/?q={q}",
+        "icon": "https://favicon.im/duckduckgo.com"
+    },
+    {
+        "name": "GitHub",
+        "url": "https://github.com/search?q={q}",
+        "icon": "https://favicon.im/github.com"
+    },
+    {
+        "name": "Stack Overflow",
+        "url": "https://stackoverflow.com/search?q={q}",
+        "icon": "https://favicon.im/stackoverflow.com"
+    }
+]
