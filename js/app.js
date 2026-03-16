@@ -130,47 +130,36 @@
         _dirty: false,
         _syncTimer: null,
 
-        // 从统一配置文件获取默认数据
+        // 从配置文件获取默认数据（config/defaultData.json）
         get defaultData() {
-            return DefaultData?.appNavigator || {
-                categories: [
-                    { id: 'all', name: '全部应用', icon: './image/icons/view.svg' },
-                    { id: 'media', name: '娱乐媒体', icon: './image/icons/heart.svg' },
-                    { id: 'productivity', name: '效率工具', icon: './image/icons/star.svg' },
-                    { id: 'dev', name: '开发工具', icon: './image/icons/setting.svg' }
-                ],
-                apps: [
-                    { id: '1', name: 'Bilibili', description: '哔哩哔哩弹幕视频网', icon: 'https://favicon.im/www.bilibili.com', url: 'https://www.bilibili.com/', category: 'media' },
-                    { id: '2', name: 'Kimi AI', description: 'Kimi 智能助手', icon: 'https://favicon.im/kimi.moonshot.cn', url: 'https://kimi.moonshot.cn/', category: 'productivity' },
-                    { id: '3', name: 'GitHub', description: '代码托管平台', icon: 'https://favicon.im/github.com', url: 'https://github.com/', category: 'dev' }
-                ]
-            };
+            return DefaultData?.appNavigator || { categories: [], apps: [] };
         },
 
         // 系统 UI 库（从配置读取，不保存到 storage）
         get systemUiLib() {
-            return DefaultData?.systemUiLib || {
-                categories: [{ id: 'element', name: 'Element UI' }],
-                items: []
-            };
+            return DefaultData?.systemUiLib || { categories: [], items: [] };
         },
 
-        // 用户 UI 默认空
+        // 用户 UI 默认空结构
         get defaultUserUiLib() {
-            return {
-                categories: [],
-                items: []
-            };
+            return { categories: [], items: [] };
         },
 
         async init() {
             // 一次性加载到内存
             const savedData = await StorageManager.get('appNavigator_data');
-            // 检查保存的数据是否有效（必须有 categories 和 apps 数组）
-            if (savedData && Array.isArray(savedData.categories) && Array.isArray(savedData.apps)) {
+            // 检查是否有有效数据（非空数组）
+            const hasValidData = savedData && 
+                Array.isArray(savedData.categories) && savedData.categories.length > 0 &&
+                Array.isArray(savedData.apps);
+            
+            if (hasValidData) {
                 this._cache = savedData;
             } else {
+                // 使用默认数据初始化
                 this._cache = JSON.parse(JSON.stringify(this.defaultData));
+                // 立即同步到存储
+                await this.sync();
             }
             
             // 只加载用户 UI，系统 UI 从配置实时读取
@@ -179,6 +168,8 @@
                 this._userUiLibCache = savedUserUiLib;
             } else {
                 this._userUiLibCache = JSON.parse(JSON.stringify(this.defaultUserUiLib));
+                this._dirty = true;
+                await this.sync();
             }
 
             // 页面卸载时同步

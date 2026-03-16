@@ -112,37 +112,19 @@ const DataManager = {
     _userUiLibCache: null,
     _initPromise: null,
 
-    // 从统一配置文件获取默认数据
+    // 从配置文件获取默认数据（config/defaultData.json）
     get defaultData() {
-        return DefaultData?.appNavigator || {
-            categories: [
-                { id: 'all', name: '全部应用', icon: './image/icons/view.svg' },
-                { id: 'media', name: '娱乐媒体', icon: './image/icons/heart.svg' },
-                { id: 'productivity', name: '效率工具', icon: './image/icons/star.svg' },
-                { id: 'dev', name: '开发工具', icon: './image/icons/setting.svg' }
-            ],
-            apps: [
-                { id: '1', name: 'Bilibili', description: '哔哩哔哩弹幕视频网', icon: 'https://favicon.im/www.bilibili.com', url: 'https://www.bilibili.com/', category: 'media' },
-                { id: '2', name: 'Kimi AI', description: 'Kimi 智能助手', icon: 'https://favicon.im/kimi.moonshot.cn', url: 'https://kimi.moonshot.cn/', category: 'productivity' },
-                { id: '3', name: 'GitHub', description: '代码托管平台', icon: 'https://favicon.im/github.com', url: 'https://github.com/', category: 'dev' }
-            ]
-        };
+        return DefaultData?.appNavigator || { categories: [], apps: [] };
     },
 
     // 系统 UI 库（从配置读取，不保存到 storage）
     get systemUiLib() {
-        return DefaultData?.systemUiLib || {
-            categories: [{ id: 'element', name: 'Element UI' }],
-            items: []
-        };
+        return DefaultData?.systemUiLib || { categories: [], items: [] };
     },
 
-    // 用户 UI 默认空
+    // 用户 UI 默认空结构
     get defaultUserUiLib() {
-        return {
-            categories: [],
-            items: []
-        };
+        return { categories: [], items: [] };
     },
 
     // 初始化
@@ -157,11 +139,16 @@ const DataManager = {
                 const data = await StorageManager.get(this.STORAGE_KEY);
                 console.log('从存储读取数据:', data);
                 
-                if (data && data.categories && data.apps) {
+                // 检查是否有有效数据（非空数组）
+                const hasValidData = data && 
+                    Array.isArray(data.categories) && data.categories.length > 0 &&
+                    Array.isArray(data.apps);
+                
+                if (hasValidData) {
                     this._cache = data;
                     console.log('使用存储的数据');
                 } else {
-                    console.log('使用默认数据');
+                    console.log('使用默认数据初始化');
                     this._cache = JSON.parse(JSON.stringify(this.defaultData));
                     await this.sync();
                 }
