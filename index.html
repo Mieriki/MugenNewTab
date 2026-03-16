@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>应用导航中心</title>
+    <title>Mugen新标签页</title>
     <meta name="description" content="统一应用管理平台">
     <meta name="theme-color" content="#B14A6B">
 
@@ -48,10 +48,10 @@
             --md-sys-color-background-rgb: 255, 248, 249;
 
             /* 组件颜色变量 - 支持深色模式覆盖 */
-            --card-bg: var(--md-sys-color-surface);
-            --card-border: var(--md-sys-color-outline-variant);
-            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            --hover-bg: var(--md-sys-color-primary-container);
+            --card-bg: rgba(200, 200, 200, 0.25);
+            --card-border: rgba(175, 175, 175, 0.2);
+            --card-shadow: 0 2px 8px rgba(1, 1, 1, 0.1);
+            --hover-bg: rgba(255, 255, 255, 0.9);
 
             --md-easing: cubic-bezier(0.4, 0, 0.2, 1);
             --md-transition-fast: 0.15s;
@@ -64,6 +64,9 @@
             --fab-size: 56px;
             --fab-bottom: 24px;
             --fab-right: 24px;
+
+            /* 图标滤镜 - 浅色模式显示黑色，深色模式显示白色 */
+            --icon-filter: brightness(0) saturate(0);
         }
 
         /* 深色模式优化 - 使用 CSS 变量统一覆盖 */
@@ -72,6 +75,7 @@
             --card-border: transparent;
             --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
             --hover-bg: rgba(255, 255, 255, 0.08);
+            --icon-filter: invert(1) brightness(2);
 
             --md-sys-color-outline: rgba(255, 255, 255, 0.06);
             --md-sys-color-outline-variant: rgba(255, 255, 255, 0.04);
@@ -122,10 +126,6 @@
             background: rgba(255, 255, 255, 0.06);
             border-color: rgba(255, 255, 255, 0.08);
         }
-
-        body.dark-mode .fab-item img,
-        body.dark-mode .search-nav-item img,
-
 
         body.dark-mode .history-item:hover {
             background: var(--hover-bg);
@@ -814,6 +814,7 @@
             height: 20px;
             object-fit: contain;
             display: block;
+            background: transparent;
         }
 
         .sidebar.collapsed .nav-item:hover::after {
@@ -1381,6 +1382,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            background: transparent;
+        }
+
+        .fab-item-icon img {
+            background: transparent;
         }
 
         .fab-divider {
@@ -2725,8 +2731,8 @@
         <div class="brand">
             <div class="brand-icon" id="headerLogo" aria-hidden="true">🧭</div>
             <div class="brand-text" id="brandText">
-                <h1>应用导航中心</h1>
-                <p>统一应用管理平台</p>
+                <h1>MUGEN新标签页</h1>
+<!--                <p>统一应用管理平台</p>-->
             </div>
             <button class="collapse-toggle-btn" data-action="toggle-collapse" title="收起/展开侧边栏" aria-label="收起/展开侧边栏">
                 <img src="./image/icons/Fold.svg" class="collapse-icon collapse-icon-left" width="20" height="20" alt="收起">
@@ -2761,10 +2767,10 @@
                         </div>
                     </div>
                     <div class="wallpaper-presets-compact" id="wallpaperPresets">
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-url="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" title="紫色渐变" role="button" tabindex="0"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-url="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" title="粉色渐变" role="button" tabindex="0"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-url="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" title="蓝色渐变" role="button" tabindex="0"></div>
-                        <div class="wallpaper-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-url="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" title="绿色渐变" role="button" tabindex="0"></div>
+                        <div class="wallpaper-preset" style="background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80'); background-size: cover; background-position: center;" data-url="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80" title="阿尔卑斯山脉" role="button" tabindex="0"></div>
+                        <div class="wallpaper-preset" style="background-image: url('https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=1920&q=80'); background-size: cover; background-position: center;" data-url="https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=1920&q=80" title="瀑布森林" role="button" tabindex="0"></div>
+                        <div class="wallpaper-preset" style="background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80'); background-size: cover; background-position: center;" data-url="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80" title="高山云海" role="button" tabindex="0"></div>
+                        <div class="wallpaper-preset" style="background-image: url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80'); background-size: cover; background-position: center;" data-url="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80" title="雾中山谷" role="button" tabindex="0"></div>
                     </div>
                     <div class="wallpaper-input-group">
                         <input type="text" class="wallpaper-input" id="wallpaperUrl" placeholder="输入图片URL..." data-action="update-wallpaper" aria-label="壁纸URL">
@@ -2808,7 +2814,7 @@
     <nav class="nav-menu" id="navMenu" role="menubar"></nav>
     <div class="sidebar-footer">
         <div class="search-nav-item" data-action="open-search" data-title="搜索" role="button" tabindex="0">
-            <span class="nav-icon" aria-hidden="true"><img src="./image/icons/search.svg" width="20" height="20"></span>
+            <span class="nav-icon" aria-hidden="true"><img src="./image/icons/search.svg" width="20" height="20" style="filter: var(--icon-filter, none);"></span>
             <span class="nav-text">搜索</span>
             <span class="search-shortcut" aria-label="快捷键 Ctrl K">Ctrl K</span>
         </div>
@@ -2942,6 +2948,13 @@
                     <div class="cat-icon-preview-box" id="catIconPreviewDark" style="background:#333;">
                         <img src="./image/icons/folder.svg" style="width:60%;height:60%;object-fit:contain;opacity:0.5;filter:invert(1);">
                     </div>
+                </div>
+                <!-- 黑白模式选项 -->
+                <div class="cat-icon-row" style="margin-top:12px;">
+                    <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--md-sys-color-on-surface-variant);">
+                        <input type="checkbox" id="catMonochrome" style="width:18px;height:18px;cursor:pointer;">
+                        <span>深色模式下图标增加反色遮罩</span>
+                    </label>
                 </div>
                 <button class="btn-text" data-action="clear-cat-icon" type="button" style="font-size:12px;color:var(--md-sys-color-outline);margin-top:8px;">恢复默认</button>
             </div>

@@ -296,6 +296,13 @@ window.editCategory = async function(catId) {
     // 设置图标值并更新预览
     document.getElementById('catIcon').value = cat.icon || '';
     document.getElementById('catIconDark').value = cat.iconDark || '';
+    
+    // 设置黑白模式选项
+    const monochromeCheckbox = document.getElementById('catMonochrome');
+    if (monochromeCheckbox) {
+        monochromeCheckbox.checked = cat.monochrome || false;
+    }
+    
     updateCatIconPreview();
 
     closeModal('manageCategoriesModal');
@@ -306,6 +313,7 @@ window.saveCategory = async function() {
     const name = document.getElementById('catName')?.value.trim();
     const icon = document.getElementById('catIcon')?.value.trim();
     const iconDark = document.getElementById('catIconDark')?.value.trim();
+    const monochrome = document.getElementById('catMonochrome')?.checked || false;
 
     if (!name) {
         showToast('请输入分类名称', 'error');
@@ -315,7 +323,8 @@ window.saveCategory = async function() {
     const catData = { 
         name, 
         icon: icon || './image/icons/folder.svg',
-        iconDark: iconDark || ''
+        iconDark: iconDark || '',
+        monochrome
     };
 
     if (window.appNavigator?.editingCategoryId) {
@@ -515,6 +524,10 @@ window.clearIcon = function() {
 window.clearCatIcon = function() {
     document.getElementById('catIcon').value = '';
     document.getElementById('catIconDark').value = '';
+    const monochromeCheckbox = document.getElementById('catMonochrome');
+    if (monochromeCheckbox) {
+        monochromeCheckbox.checked = false;
+    }
     updateCatIconPreview();
     showToast('已恢复默认图标');
 };

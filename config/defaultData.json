@@ -1,10 +1,10 @@
 {
     "appNavigator": {
         "categories": [
-            { "id": "all", "name": "全部应用", "icon": "./image/icons/menu.svg" },
-            { "id": "media", "name": "娱乐媒体", "icon": "./image/icons/heart.svg" },
-            { "id": "productivity", "name": "效率工具", "icon": "./image/icons/star.svg" },
-            { "id": "dev", "name": "开发工具", "icon": "./image/icons/setting.svg" }
+            { "id": "all", "name": "全部应用", "icon": "./image/icons/menu.svg", "monochrome": true  },
+            { "id": "media", "name": "娱乐媒体", "icon": "./image/icons/heart.svg", "monochrome": true  },
+            { "id": "productivity", "name": "效率工具", "icon": "./image/icons/star.svg", "monochrome": true  },
+            { "id": "dev", "name": "开发工具", "icon": "./image/icons/code.svg", "monochrome": true  }
         ],
         "apps": [
             {
@@ -35,7 +35,7 @@
     },
     "systemUiLib": {
         "categories": [
-            { "id": "element", "name": "系统默认" },
+            { "id": "element", "name": "系统默认"},
             { "id": "custom", "name": "自定义" }
         ],
         "items": [
@@ -49,7 +49,6 @@
             { "id": "el-plus", "name": "添加", "url": "./image/icons/plus.svg", "category": "element" },
             { "id": "el-delete", "name": "删除", "url": "./image/icons/delete.svg", "category": "element" },
             { "id": "el-edit", "name": "编辑", "url": "./image/icons/edit.svg", "category": "element" },
-            { "id": "el-view", "name": "查看", "url": "./image/icons/view.svg", "category": "element" },
             { "id": "el-upload", "name": "上传", "url": "./image/icons/upload.svg", "category": "element" },
             { "id": "el-download", "name": "下载", "url": "./image/icons/download.svg", "category": "element" },
             { "id": "el-star", "name": "收藏", "url": "./image/icons/star.svg", "category": "element" },
@@ -58,7 +57,6 @@
             { "id": "el-file", "name": "文件", "url": "./image/icons/file.svg", "category": "element" },
             { "id": "el-link", "name": "链接", "url": "./image/icons/link.svg", "category": "element" },
             { "id": "el-picture", "name": "图片", "url": "./image/icons/picture.svg", "category": "element" },
-            { "id": "el-calendar", "name": "日历", "url": "./image/icons/calendar.svg", "category": "element" },
             { "id": "el-clock", "name": "时钟", "url": "./image/icons/clock.svg", "category": "element" },
             { "id": "el-location", "name": "位置", "url": "./image/icons/location.svg", "category": "element" },
             { "id": "el-phone", "name": "电话", "url": "./image/icons/phone.svg", "category": "element" },
@@ -79,8 +77,7 @@
             { "id": "el-sort", "name": "排序", "url": "./image/icons/sort.svg", "category": "element" },
             { "id": "el-filter", "name": "筛选", "url": "./image/icons/filter.svg", "category": "element" },
             { "id": "el-logout", "name": "退出", "url": "./image/icons/logout.svg", "category": "element" },
-            { "id": "el-filter", "name": "筛选", "url": "./image/icons/filter.svg", "category": "element" },
-            { "id": "el-filter", "name": "筛选", "url": "./image/波斯猫.svg", "category": "element" }
+            { "id": "el-filter", "name": "筛选", "url": "./image/icons/filter.svg", "category": "element" }
         ]
     },
     "userUiLib": {

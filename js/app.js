@@ -73,6 +73,18 @@
                     decoding="async"
                     onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${fallback}';"
                 >`;
+        },
+
+        // 创建支持黑白模式的图片
+        createMonochromeImage(src, alt, style, fallback = '🌐') {
+            const styleAttr = style ? `style="${style}"` : '';
+            return `<img src="${src}"
+                    alt="${this.escapeHtml(alt)}"
+                    loading="lazy"
+                    decoding="async"
+                    ${styleAttr}
+                    onerror="this.onerror=null; this.style.display='none'; this.parentElement.textContent='${fallback}';"
+                >`;
         }
     };
 
@@ -488,10 +500,31 @@
                 // 根据主题选择图标
                 const catIcon = isDarkMode && category.iconDark ? category.iconDark : category.icon;
                 const isImage = this.isImageIcon(catIcon);
-                const iconHtml = isImage ? Utils.createImageWithFallback(catIcon, category.name) : Utils.escapeHtml(catIcon);
+                
+                // 根据 monochrome 属性决定图标颜色
+                // 浅色模式：显示原色
+                // 深色模式：显示白色
+                let iconHtml;
+                if (isImage) {
+                    // 图片图标：使用 filter 滤镜
+                    let iconStyle = '';
+                    if (category.monochrome && isDarkMode) {
+                        // 深色模式下 monochrome 图标显示白色
+                        iconStyle = 'filter: invert(1) brightness(2);';
+                    }
+                    iconHtml = Utils.createMonochromeImage(catIcon, category.name, iconStyle);
+                } else {
+                    // Emoji/Unicode 图标：使用 CSS color
+                    let iconColor = '';
+                    if (category.monochrome && isDarkMode) {
+                        // 深色模式下 monochrome 图标显示白色
+                        iconColor = 'color: white;';
+                    }
+                    iconHtml = `<span style="font-size: 20px; ${iconColor}">${Utils.escapeHtml(catIcon)}</span>`;
+                }
 
                 navItem.innerHTML = `
-                        <span class="nav-icon">${iconHtml}</span>
+                        <span class="nav-icon" ${category.monochrome ? 'data-monochrome="true"' : ''}>${iconHtml}</span>
                         <span class="nav-text">${Utils.escapeHtml(category.name)}</span>
                     `;
 
@@ -516,6 +549,7 @@
             if (!contentArea) return;
 
             const data = await DataManager.getData();
+            const isDarkMode = document.body.classList.contains('dark-mode');
             let html = '';
 
             if (this.currentCategory === 'all') {
@@ -535,7 +569,7 @@
                 } else {
                     html = categoriesWithApps.map(({ category, appsInCategory, index }) => `
                             <div style="animation-delay: ${index * 0.08}s" class="category">
-                                ${this.createCategoryHTML(category, appsInCategory)}
+                                ${this.createCategoryHTML(category, appsInCategory, isDarkMode)}
                             </div>
                         `).join('');
                 }
@@ -564,9 +598,21 @@
             contentArea.innerHTML = html;
         }
 
-        createCategoryHTML(category, apps) {
-            const isImage = this.isImageIcon(category.icon);
-            const iconHtml = isImage ? Utils.createImageWithFallback(category.icon, category.name) : Utils.escapeHtml(category.icon);
+        createCategoryHTML(category, apps, isDarkMode) {
+            const catIcon = isDarkMode && category.iconDark ? category.iconDark : category.icon;
+            const isImage = this.isImageIcon(catIcon);
+            
+            // 根据 monochrome 属性决定图标颜色
+            // 浅色模式：显示原色
+            // 深色模式：显示白色
+            let iconStyle = '';
+            if (category.monochrome && isImage && isDarkMode) {
+                // 深色模式下 monochrome 图标显示白色
+                iconStyle = 'filter: invert(1) brightness(2);';
+            }
+            const iconHtml = isImage ? 
+                Utils.createMonochromeImage(catIcon, category.name, iconStyle) : 
+                Utils.escapeHtml(catIcon);
 
             return `
                     <h3 class="category-title">${iconHtml} ${Utils.escapeHtml(category.name)}</h3>
@@ -590,8 +636,8 @@
                             <p class="app-description">${Utils.escapeHtml(app.description || '')}</p>
                         </div>
                         <div class="app-actions">
-                            <button class="app-action-btn" data-action="edit-app" data-app-id="${app.id}" title="编辑" aria-label="编辑 ${Utils.escapeHtml(app.name)}"><img src="./image/icons/edit.svg" width="16" height="16"></button>
-                            <button class="app-action-btn delete" data-action="delete-app" data-app-id="${app.id}" title="删除" aria-label="删除 ${Utils.escapeHtml(app.name)}"><img src="./image/icons/delete.svg" width="16" height="16"></button>
+                            <button class="app-action-btn" data-action="edit-app" data-app-id="${app.id}" title="编辑" aria-label="编辑 ${Utils.escapeHtml(app.name)}"><img src="./image/icons/edit.svg" width="16" height="16" style="filter: var(--icon-filter, none);"></button>
+                            <button class="app-action-btn delete" data-action="delete-app" data-app-id="${app.id}" title="删除" aria-label="删除 ${Utils.escapeHtml(app.name)}"><img src="./image/icons/delete.svg" width="16" height="16" style="filter: var(--icon-filter, none);"></button>
                         </div>
                     </div>
                 `;
@@ -890,6 +936,9 @@
         Utils.get('catName').value = cat.name;
         Utils.get('catIcon').value = cat.icon || '';
         Utils.get('catIconDark').value = cat.iconDark || '';
+        if (Utils.get('catMonochrome')) {
+            Utils.get('catMonochrome').checked = cat.monochrome || false;
+        }
         updateCatIconPreview();
 
         closeModal('manageCategoriesModal');
@@ -900,13 +949,14 @@
         const name = Utils.get('catName').value.trim();
         const icon = Utils.get('catIcon').value.trim();
         const iconDark = Utils.get('catIconDark')?.value.trim();
+        const monochrome = Utils.get('catMonochrome')?.checked || false;
 
         if (!name) {
             showToast('请输入分类名称', 'error');
             return;
         }
 
-        const catData = { name, icon: icon || '📁', iconDark: iconDark || '' };
+        const catData = { name, icon: icon || '📁', iconDark: iconDark || '', monochrome };
 
         if (window.appNavigator.editingCategoryId) {
             await DataManager.updateCategory(window.appNavigator.editingCategoryId, catData);
@@ -966,8 +1016,8 @@
                                 <div class="cat-count">${count} 个网站</div>
                             </div>
                             <div class="cat-actions">
-                                <button class="app-action-btn" data-action="edit-cat" data-cat-id="${cat.id}" title="编辑" aria-label="编辑分类"><img src="./image/icons/edit.svg" width="16" height="16"></button>
-                                <button class="app-action-btn delete" data-action="delete-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类"><img src="./image/icons/delete.svg" width="16" height="16"></button>
+                                <button class="app-action-btn" data-action="edit-cat" data-cat-id="${cat.id}" title="编辑" aria-label="编辑分类"><img src="./image/icons/edit.svg" width="16" height="16" style="filter: var(--icon-filter, none);"></button>
+                                <button class="app-action-btn delete" data-action="delete-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类"><img src="./image/icons/delete.svg" width="16" height="16" style="filter: var(--icon-filter, none);"></button>
                             </div>
                         </div>
                     `;
@@ -985,22 +1035,6 @@
 
         if (icon.startsWith('http') || icon.startsWith('data:') || icon.startsWith('//')) {
             preview.innerHTML = Utils.createImageWithFallback(icon, '预览', '❓');
-        } else {
-            preview.textContent = icon;
-        }
-    }
-
-    function updateCatIconPreview() {
-        const icon = Utils.get('catIcon').value.trim();
-        const preview = Utils.get('catIconPreview');
-
-        if (!icon) {
-            preview.textContent = '📁';
-            return;
-        }
-
-        if (icon.startsWith('http') || icon.startsWith('data:') || icon.startsWith('//')) {
-            preview.innerHTML = Utils.createImageWithFallback(icon, '预览', '📁');
         } else {
             preview.textContent = icon;
         }
@@ -1146,7 +1180,7 @@
                 const isSystem = systemLib.categories.some(c => c.id === cat.id);
                 const deleteBtn = isSystem ? '' : `
                     <button class="app-action-btn delete" data-action="delete-ui-cat" data-cat-id="${cat.id}" title="删除" aria-label="删除分类">
-                        <img src="./image/icons/delete.svg" width="16" height="16">
+                        <img src="./image/icons/delete.svg" width="16" height="16" style="filter: var(--icon-filter, none);">
                     </button>
                 `;
                 return `
@@ -1261,7 +1295,7 @@
             // 系统图标不能删除
             const deleteBtn = item.isSystem ? '' : `
                 <button class="app-action-btn delete" data-action="delete-ui-item" data-item-id="${item.id}" title="删除" aria-label="删除图标">
-                    <img src="./image/icons/delete.svg" width="16" height="16">
+                    <img src="./image/icons/delete.svg" width="16" height="16" style="filter: var(--icon-filter, none);">
                 </button>
             `;
             return `
@@ -1907,6 +1941,15 @@
             if (blurSlider) blurSlider.value = this.settings.blur;
             if (overlaySlider) overlaySlider.value = this.settings.overlayOpacity;
 
+            // 恢复预设的 active 状态
+            const presets = document.querySelectorAll('.wallpaper-preset');
+            presets.forEach(p => {
+                p.classList.remove('active');
+                if (p.dataset.url === this.settings.url) {
+                    p.classList.add('active');
+                }
+            });
+
             this.updateDisplayValues();
         }
 
@@ -1970,6 +2013,7 @@
             };
 
             await this.applySettings();
+            await this.save(); // 保存设置
         }
 
         async reset() {
