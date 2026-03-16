@@ -6,10 +6,10 @@
     "author": "MugenNewTab",
     "homepage_url": "https://github.com/MugenNewTab/MugenNewTab",
     "icons": {
-        "16": "image/logo/mugen.jpg",
-        "32": "image/logo/mugen.jpg",
-        "48": "image/logo/mugen.jpg",
-        "128": "image/logo/mugen.jpg"
+        "16": "image/logo/mugen.png",
+        "32": "image/logo/mugen.png",
+        "48": "image/logo/mugen.png",
+        "128": "image/logo/mugen.png"
     },
     "chrome_url_overrides": {
         "newtab": "index.html"
@@ -18,8 +18,8 @@
         "default_popup": "view/popup.html",
         "default_title": "添加网站到 MugenNewTab",
         "default_icon": {
-            "16": "image/logo/mugen.jpg",
-            "32": "image/logo/mugen.jpg"
+            "16": "image/logo/mugen.png",
+            "32": "image/logo/mugen.png"
         }
     },
     "permissions": [
