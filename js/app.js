@@ -288,6 +288,18 @@
             return category;
         },
 
+        async updateCategoriesOrder(orderedIds) {
+            // 确保 'all' 始终排在第一位
+            const allCategory = this._cache.categories.find(c => c.id === 'all');
+            const otherCategories = orderedIds
+                .map(id => this._cache.categories.find(c => c.id === id))
+                .filter(c => c && c.id !== 'all');
+            
+            // 重新构建分类数组：all 在前，其他按新顺序
+            this._cache.categories = allCategory ? [allCategory, ...otherCategories] : otherCategories;
+            await this.saveData(this._cache);
+        },
+
         async updateCategory(id, updates) {
             const index = this._cache.categories.findIndex(c => c.id === id);
             if (index !== -1) {
@@ -749,6 +761,192 @@
 
             // 初始化拖拽排序
             this.initDragAndDrop();
+            this.initCategoryDragAndDrop();
+        }
+
+        initCategoryDragAndDrop() {
+            const navMenu = Utils.get('navMenu');
+            if (!navMenu) return;
+
+            let longPressTimer = null;
+            let isDragging = false;
+            let isLongPress = false;
+            let startX = 0;
+            let startY = 0;
+            let currentNavItem = null;
+            let draggedCategoryId = null;
+            const LONG_PRESS_DURATION = 500;
+            const MOVE_THRESHOLD = 10;
+
+            // 开始长按检测
+            const startLongPress = (e, navItem) => {
+                // 跳过 "全部应用"
+                if (navItem.dataset.category === 'all') return;
+
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+                startX = clientX;
+                startY = clientY;
+                currentNavItem = navItem;
+                isLongPress = false;
+                isDragging = false;
+
+                navItem.classList.add('pressing');
+
+                longPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    navItem.classList.add('pressing-active');
+                    navItem.setAttribute('draggable', 'true');
+                    
+                    const dragStartEvent = new DragEvent('dragstart', {
+                        bubbles: true,
+                        cancelable: true,
+                        dataTransfer: new DataTransfer()
+                    });
+                    navItem.dispatchEvent(dragStartEvent);
+                }, LONG_PRESS_DURATION);
+            };
+
+            const cancelLongPress = () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+                if (currentNavItem) {
+                    currentNavItem.classList.remove('pressing', 'pressing-active');
+                    if (!isDragging) {
+                        currentNavItem.setAttribute('draggable', 'false');
+                    }
+                }
+            };
+
+            const pointerDownHandler = (e) => {
+                const navItem = e.target.closest('.nav-item');
+                if (!navItem) return;
+                startLongPress(e, navItem);
+            };
+
+            const pointerMoveHandler = (e) => {
+                if (!currentNavItem || isDragging) return;
+
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+                const moveDistance = Math.sqrt(
+                    Math.pow(clientX - startX, 2) + Math.pow(clientY - startY, 2)
+                );
+
+                if (moveDistance > MOVE_THRESHOLD) {
+                    cancelLongPress();
+                }
+            };
+
+            const pointerUpHandler = () => {
+                cancelLongPress();
+            };
+
+            const dragStartHandler = (e) => {
+                const navItem = e.target.closest('.nav-item');
+                if (!navItem || !isLongPress || navItem.dataset.category === 'all') {
+                    e.preventDefault();
+                    return;
+                }
+
+                isDragging = true;
+                navItem.classList.add('dragging');
+                navItem.classList.remove('pressing', 'pressing-active');
+                draggedCategoryId = navItem.dataset.category;
+
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', draggedCategoryId);
+            };
+
+            const dragOverHandler = (e) => {
+                e.preventDefault();
+                if (!isDragging) return;
+
+                const targetItem = e.target.closest('.nav-item');
+                const draggedItem = document.querySelector('.nav-item.dragging');
+                if (!targetItem || !draggedItem || targetItem === draggedItem) return;
+                if (targetItem.dataset.category === 'all') return; // 不能拖到 "全部" 前面
+
+                // 计算插入位置
+                const rect = targetItem.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                
+                if (e.clientY < midY) {
+                    navMenu.insertBefore(draggedItem, targetItem);
+                } else {
+                    navMenu.insertBefore(draggedItem, targetItem.nextSibling);
+                }
+            };
+
+            const dropHandler = async (e) => {
+                e.preventDefault();
+                if (!isDragging) return;
+
+                // 获取新的分类顺序（跳过 'all'）
+                const navItems = [...navMenu.querySelectorAll('.nav-item')];
+                const newOrder = navItems
+                    .map(item => item.dataset.category)
+                    .filter(id => id !== 'all');
+
+                // 保存新顺序
+                await DataManager.updateCategoriesOrder(newOrder);
+                showToast('分类排序已保存');
+
+                // 刷新应用列表以更新分类显示顺序
+                await this.renderApps();
+
+                // 清理状态
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('dragging', 'pressing', 'pressing-active');
+                    item.setAttribute('draggable', 'false');
+                });
+
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+
+                isDragging = false;
+                isLongPress = false;
+                currentNavItem = null;
+                draggedCategoryId = null;
+            };
+
+            const dragEndHandler = () => {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('dragging', 'pressing', 'pressing-active');
+                    item.setAttribute('draggable', 'false');
+                });
+
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+
+                isDragging = false;
+                isLongPress = false;
+                currentNavItem = null;
+                draggedCategoryId = null;
+            };
+
+            // 绑定事件
+            navMenu.addEventListener('mousedown', pointerDownHandler);
+            navMenu.addEventListener('mousemove', pointerMoveHandler);
+            navMenu.addEventListener('mouseup', pointerUpHandler);
+            navMenu.addEventListener('mouseleave', pointerUpHandler);
+
+            navMenu.addEventListener('touchstart', pointerDownHandler, { passive: true });
+            navMenu.addEventListener('touchmove', pointerMoveHandler, { passive: true });
+            navMenu.addEventListener('touchend', pointerUpHandler);
+
+            navMenu.addEventListener('dragstart', dragStartHandler);
+            navMenu.addEventListener('dragover', dragOverHandler);
+            navMenu.addEventListener('drop', dropHandler);
+            navMenu.addEventListener('dragend', dragEndHandler);
         }
 
         initDragAndDrop() {
