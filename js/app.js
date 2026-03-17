@@ -802,7 +802,12 @@
     function openModal(modalId) {
         const modal = Utils.get(modalId);
         if (modal) {
-            modal.classList.add('show');
+            // 支持 show 和 active 两种类名
+            if (modal.id === 'iconPreviewModal') {
+                modal.classList.add('active');
+            } else {
+                modal.classList.add('show');
+            }
             // 焦点管理
             const focusable = modal.querySelector('input, select, textarea, button:not(.modal-close)');
             if (focusable) setTimeout(() => focusable.focus(), 100);
@@ -814,6 +819,7 @@
         const modal = Utils.get(modalId);
         if (modal) {
             modal.classList.remove('show');
+            modal.classList.remove('active');
         }
 
         // 重置表单
@@ -1189,7 +1195,15 @@
 
         const select = Utils.get('uiItemCategory');
         if (select) {
-            select.innerHTML = lib.categories.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.name)}</option>`).join('');
+            // 添加"全部"选项作为第一个选项
+            select.innerHTML = '<option value="">全部分类</option>' + 
+                lib.categories.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.name)}</option>`).join('');
+            
+            // 添加 change 事件监听，根据分类筛选图标
+            select.onchange = async () => {
+                const selectedCategory = select.value;
+                await renderUiItemsList(selectedCategory);
+            };
         }
 
         await renderUiItemsList();
@@ -1266,16 +1280,30 @@
         Utils.get('uiItemName').value = '';
         Utils.get('uiItemUrl').value = '';
         
-        await renderUiItemsList();
+        // 根据当前选中的分类筛选刷新列表
+        const select = Utils.get('uiItemCategory');
+        const filterCategory = select ? select.value : '';
+        await renderUiItemsList(filterCategory);
         showToast('图标已添加');
     }
 
-    async function renderUiItemsList() {
+    async function renderUiItemsList(filterCategory = '') {
         const lib = await DataManager.getUiLib();
         const container = Utils.get('uiItemsList');
         if (!container) return;
 
-        container.innerHTML = lib.items.map(item => {
+        // 根据分类筛选
+        let items = lib.items;
+        if (filterCategory) {
+            items = items.filter(item => item.category === filterCategory);
+        }
+
+        if (items.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--md-sys-color-on-surface-variant);">暂无图标</div>';
+            return;
+        }
+
+        container.innerHTML = items.map(item => {
             const cat = lib.categories.find(c => c.id === item.category);
             // 判断是否为图片：网络URL、data URL、本地路径或图片文件
             const isImage = item.url.startsWith('http') || 
@@ -1289,18 +1317,21 @@
                     <img src="./image/icons/delete.svg" width="16" height="16" style="filter: var(--icon-filter, none);">
                 </button>
             `;
-            return `
-                    <div class="category-list-item">
-                        <div class="cat-icon" style="font-size:20px;">
-                            ${isImage ?
+            // 图标显示内容
+            const iconContent = isImage ?
                 `<img src="${Utils.escapeHtml(item.url)}" alt="${Utils.escapeHtml(item.name)}" style="width:24px;height:24px;object-fit:contain;" loading="lazy">` :
-                Utils.escapeHtml(item.url)}
+                Utils.escapeHtml(item.url);
+            
+            return `
+                    <div class="category-list-item" style="cursor:pointer;" data-action="preview-ui-item" data-item-id="${item.id}">
+                        <div class="cat-icon" style="font-size:20px;pointer-events:none;">
+                            ${iconContent}
                         </div>
-                        <div class="cat-info">
+                        <div class="cat-info" style="pointer-events:none;">
                             <div class="cat-name">${Utils.escapeHtml(item.name)}</div>
                             <div class="cat-count">${cat ? Utils.escapeHtml(cat.name) : '未分类'}${item.isSystem ? ' · 系统' : ''}</div>
                         </div>
-                        <div class="cat-actions">
+                        <div class="cat-actions" onclick="event.stopPropagation();">
                             ${deleteBtn}
                         </div>
                     </div>
@@ -1310,7 +1341,41 @@
 
     async function deleteUiItem(id) {
         await DataManager.deleteUiItem(id);
-        await renderUiItemsList();
+        // 获取当前选中的分类筛选，刷新列表时保持一致
+        const select = Utils.get('uiItemCategory');
+        const filterCategory = select ? select.value : '';
+        await renderUiItemsList(filterCategory);
+    }
+
+    // 预览图标
+    async function previewUiItem(id) {
+        const lib = await DataManager.getUiLib();
+        const item = lib.items.find(i => i.id === id);
+        if (!item) return;
+
+        const cat = lib.categories.find(c => c.id === item.category);
+        
+        // 设置预览内容
+        const previewImage = Utils.get('iconPreviewImage');
+        const previewName = Utils.get('iconPreviewName');
+        const previewCategory = Utils.get('iconPreviewCategory');
+        
+        if (previewImage) {
+            previewImage.src = item.url;
+            previewImage.alt = item.name;
+        }
+        if (previewName) {
+            previewName.textContent = item.name;
+        }
+        if (previewCategory) {
+            previewCategory.textContent = (cat ? cat.name : '未分类') + (item.isSystem ? ' · 系统图标' : '');
+        }
+        
+        // 打开预览模态框
+        const modal = Utils.get('iconPreviewModal');
+        if (modal) {
+            modal.classList.add('active');
+        }
     }
 
     async function exportData() {

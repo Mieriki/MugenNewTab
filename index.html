@@ -3051,6 +3051,26 @@
     </div>
 </div>
 
+<!-- 图标预览模态框 -->
+<div class="modal-overlay" id="iconPreviewModal" role="dialog" aria-modal="true" aria-label="图标预览" style="z-index: 2500;">
+    <div class="modal-content" style="max-width: 400px; text-align: center;" role="document">
+        <div class="modal-header">
+            <h3 class="modal-title">图标预览</h3>
+            <button class="modal-close" data-action="close-modal" data-modal="iconPreviewModal" aria-label="关闭">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 32px;">
+            <div id="iconPreviewContainer" style="width: 120px; height: 120px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; background: var(--md-sys-color-surface-variant); border-radius: 16px;">
+                <img id="iconPreviewImage" src="" alt="" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+            </div>
+            <div id="iconPreviewName" style="font-size: 16px; font-weight: 500; color: var(--md-sys-color-on-surface); margin-bottom: 8px;"></div>
+            <div id="iconPreviewCategory" style="font-size: 13px; color: var(--md-sys-color-on-surface-variant);"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-text" data-action="close-modal" data-modal="iconPreviewModal" type="button">关闭</button>
+        </div>
+    </div>
+</div>
+
 <!-- 美化的确认对话框 -->
 <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" style="z-index: 3000;">
     <div class="modal-content confirm-modal-content" role="document">

@@ -415,6 +415,21 @@ window.closeModal = function(modalId) {
     }
 };
 
+// 点击模态框外部关闭
+document.addEventListener('click', function(e) {
+    // 检查是否点击了模态框背景（modal-overlay 本身，而不是其子元素）
+    if (e.target.classList.contains('modal-overlay') && e.target.classList.contains('active')) {
+        // 关闭被点击的模态框
+        e.target.classList.remove('active');
+        
+        // 检查是否还有其他模态框打开
+        const anyActive = document.querySelectorAll('.modal-overlay.active');
+        if (anyActive.length === 0) {
+            document.body.style.overflow = '';
+        }
+    }
+});
+
 // 数据导入导出
 window.exportData = async function() {
     // 使用 DataManager.export() 获取完整数据（包含 apps、categories 和 uiLib）
@@ -1258,6 +1273,10 @@ async function handleDataAction(action, element, event) {
         case 'delete-ui-item':
             const itemId = element.dataset.itemId;
             if (itemId && typeof deleteUiItem === 'function') deleteUiItem(itemId);
+            break;
+        case 'preview-ui-item':
+            const previewItemId = element.dataset.itemId;
+            if (previewItemId && typeof previewUiItem === 'function') previewUiItem(previewItemId);
             break;
     }
 }
