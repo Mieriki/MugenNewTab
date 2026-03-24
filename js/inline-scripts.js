@@ -2,24 +2,12 @@
 // MugenNewTab 内联脚本外置 - Manifest V3 CSP 兼容
 // =====================================================
 
-// 防止主题闪烁 - 在 CSS 渲染前执行
-(function() {
-    const savedTheme = localStorage.getItem('selectedTheme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme-loading', 'true');
-    }
-    if (prefersDark && !savedTheme) {
-        document.documentElement.classList.add('dark-mode-prefers');
-    }
-})();
-
 // =====================================================
 // DOM 加载完成后初始化
+// 注：主题已由 theme-loader.js 在页面渲染前应用，这里只需初始化其他组件
 // =====================================================
 document.addEventListener('DOMContentLoaded', function() {
-    initTheme();
+    initThemeUI();
     initSearchEngine();
     initEventDelegation();
     initKeyboardShortcuts();
@@ -55,17 +43,31 @@ function initSearchEngine() {
     }
 }
 
-// 初始化主题
-function initTheme() {
+// 初始化主题 UI（主题颜色已由 theme-loader.js 应用）
+function initThemeUI() {
     if (typeof ThemeManager === 'undefined') return;
     
-    const themeManager = new ThemeManager();
-    const currentTheme = themeManager.getCurrentTheme();
+    // 检查主题是否已由 theme-loader.js 应用
+    const themeAlreadyApplied = document.documentElement.hasAttribute('data-theme-loaded') ||
+                                window.ThemeLoader !== undefined;
     
-    if (currentTheme && currentTheme.colors) {
-        themeManager.applyTheme(currentTheme.id, false);
+    // 获取当前主题信息，确保深色模式类正确应用
+    const themeId = localStorage.getItem('selectedTheme') || 'material-rose';
+    if (typeof themeConfig !== 'undefined' && themeConfig.themes) {
+        const theme = themeConfig.themes.find(t => t.id === themeId);
+        if (theme && theme.isDark) {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
     }
+    
+    // 创建 ThemeManager 实例，如果主题已应用则跳过重复应用
+    window.themeManager = new ThemeManager({ skipApply: themeAlreadyApplied });
+    
+    // 确保加载状态已移除
     document.documentElement.removeAttribute('data-theme-loading');
+    document.documentElement.setAttribute('data-theme-loaded', 'true');
 }
 
 // 初始化应用导航器

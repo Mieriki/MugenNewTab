@@ -7,12 +7,18 @@
     <meta name="description" content="统一应用管理平台">
     <meta name="theme-color" content="#B14A6B">
 
+    <!-- 配置加载（必须在主题之前） -->
     <script src="js/configLoader.js"></script>
     <script src="js/data.config.js"></script>
     <script src="js/themes.config.js"></script>
     <script src="js/searchEngines.js"></script>
+    
+    <!-- 主题系统（在 <head> 中同步加载，防止 FOUC 闪烁） -->
     <script src="js/ThemeManager.js"></script>
-    <script src="js/inline-scripts.js?v=10"></script>
+    <script src="js/theme-loader.js"></script>
+    
+    <!-- 其他脚本（可延迟加载） -->
+    <script src="js/inline-scripts.js?v=11"></script>
 
     <style>
         :root {
@@ -67,6 +73,34 @@
 
             /* 图标滤镜 - 浅色模式显示黑色，深色模式显示白色 */
             --icon-filter: brightness(0) saturate(0);
+        }
+
+        /* ==================== 防止主题闪烁 (FOUC) ==================== */
+        /* 在主题加载完成前隐藏内容，避免显示默认主题后再切换 */
+        html[data-theme-loading] {
+            visibility: hidden;
+        }
+        
+        /* 主题加载完成后显示内容，添加淡入效果 */
+        html[data-theme-loaded] {
+            visibility: visible;
+            animation: themeFadeIn 0.2s ease-out;
+        }
+        
+        @keyframes themeFadeIn {
+            from { opacity: 0.8; }
+            to { opacity: 1; }
+        }
+        
+        /* 处理浏览器不支持 visibility 的情况：使用背景色遮罩 */
+        html[data-theme-loading] body {
+            background-color: var(--md-sys-color-background, #FFF8F9);
+            opacity: 0;
+        }
+        
+        html[data-theme-loaded] body {
+            opacity: 1;
+            transition: opacity 0.15s ease-out;
         }
 
         /* 深色模式优化 - 使用 CSS 变量统一覆盖 */

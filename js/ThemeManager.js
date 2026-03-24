@@ -1,16 +1,61 @@
 class ThemeManager {
-        constructor() {
+        constructor(options = {}) {
             this.currentTheme = localStorage.getItem('selectedTheme') || 'material-rose';
+            // options.skipApply: 如果主题已由 theme-loader.js 应用，跳过重复应用
+            this.skipApply = options.skipApply || false;
             this.init();
         }
 
         init() {
             try {
                 this.renderThemeSelector();
-                this.applyTheme(this.currentTheme);
+                // 只有当主题尚未被应用时才应用（避免 FOUC 后重复应用）
+                if (!this.skipApply) {
+                    this.applyTheme(this.currentTheme);
+                } else {
+                    // 仅更新派生变量和显示
+                    this.applyDerivedVariables(this.currentTheme);
+                }
                 this.bindEvents();
             } catch (error) {
                 console.error('主题管理器初始化失败:', error);
+            }
+        }
+        
+        // 仅应用派生变量（当主题颜色已由 theme-loader.js 应用时使用）
+        applyDerivedVariables(themeId) {
+            try {
+                const theme = themeConfig.themes.find(t => t.id === themeId);
+                if (!theme) return;
+                
+                const root = document.documentElement;
+                const primary = theme.colors['--md-sys-color-primary'];
+                const surface = theme.colors['--md-sys-color-surface'];
+                
+                root.style.setProperty('--md-primary', primary);
+                root.style.setProperty('--md-primary-dark', this.adjustColor(primary, -15));
+                root.style.setProperty('--md-primary-light', this.adjustColor(primary, 15));
+                root.style.setProperty('--md-primary-container', theme.colors['--md-sys-color-primary-container']);
+                root.style.setProperty('--md-secondary', theme.colors['--md-sys-color-secondary']);
+                root.style.setProperty('--md-secondary-container', theme.colors['--md-sys-color-secondary-container']);
+                root.style.setProperty('--md-background', surface);
+                root.style.setProperty('--md-surface', this.hexToRgba(surface, 0.85));
+                root.style.setProperty('--md-surface-variant', theme.colors['--md-sys-color-surface-variant']);
+                root.style.setProperty('--md-surface-2', this.hexToRgba(surface, 0.7));
+                root.style.setProperty('--md-on-primary', theme.colors['--md-sys-color-on-primary']);
+                root.style.setProperty('--md-on-background', theme.colors['--md-sys-color-on-surface']);
+                root.style.setProperty('--md-on-surface', theme.colors['--md-sys-color-on-surface-variant']);
+                root.style.setProperty('--md-outline', theme.colors['--md-sys-color-surface-variant']);
+                root.style.setProperty('--md-shadow', this.hexToRgba(primary, 0.15));
+                
+                // 更新显示
+                const themeNameEl = document.getElementById('currentThemeName');
+                if (themeNameEl) themeNameEl.textContent = theme.name;
+                
+                this.currentTheme = themeId;
+                localStorage.setItem('selectedTheme', themeId);
+            } catch (error) {
+                console.error('应用派生变量失败:', error);
             }
         }
 
