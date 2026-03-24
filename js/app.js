@@ -2069,7 +2069,11 @@
     const debouncedSaveHistory = Utils.debounce(async (query) => {
         try {
             let history = await StorageManager.get('searchHistory') || [];
-            history = history.filter(item => item.query !== query);
+            // 兼容旧格式（字符串数组）
+            history = history.filter(item => {
+                const itemQuery = typeof item === 'string' ? item : item?.query;
+                return itemQuery !== query;
+            });
             history.unshift({ query: query, time: Date.now() });
             history = history.slice(0, 10);
             await StorageManager.set('searchHistory', history);
@@ -2093,9 +2097,20 @@
     async function renderSearchHistory() {
         const historyDiv = Utils.get('searchHistory');
         const listDiv = Utils.get('historyList');
-        const history = await getSearchHistory();
+        let history = await getSearchHistory();
 
         if (!historyDiv || !listDiv) return;
+
+        // 兼容旧格式（字符串数组）
+        history = history.map(item => {
+            if (typeof item === 'string') {
+                return { query: item, time: Date.now() };
+            }
+            return item;
+        });
+
+        // 更新全局变量供事件处理使用
+        window.searchHistory = history;
 
         if (history.length === 0) {
             listDiv.innerHTML = '<div class="empty-history">暂无搜索记录</div>';
@@ -2121,7 +2136,9 @@
 
         const input = Utils.get('searchInput');
         if (input) {
-            input.value = item.query;
+            // 兼容旧格式（字符串数组）和新格式（对象数组）
+            const query = typeof item === 'string' ? item : item.query;
+            input.value = query;
             // 使用当前选择的引擎搜索，而不是历史引擎
             doSearch();
         }

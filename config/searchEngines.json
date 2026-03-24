@@ -1,32 +1,42 @@
 [
-    {
-        "name": "Google",
-        "url": "https://www.google.com/search?q={q}",
-        "icon": "https://favicon.im/www.google.com"
-    },
-    {
-        "name": "Bing",
-        "url": "https://www.bing.com/search?q={q}",
-        "icon": "https://favicon.im/www.bing.com"
-    },
-    {
-        "name": "百度",
-        "url": "https://www.baidu.com/s?wd={q}",
-        "icon": "https://favicon.im/www.baidu.com"
-    },
-    {
-        "name": "DuckDuckGo",
-        "url": "https://duckduckgo.com/?q={q}",
-        "icon": "https://favicon.im/duckduckgo.com"
-    },
-    {
-        "name": "GitHub",
-        "url": "https://github.com/search?q={q}",
-        "icon": "https://favicon.im/github.com"
-    },
-    {
-        "name": "Stack Overflow",
-        "url": "https://stackoverflow.com/search?q={q}",
-        "icon": "https://favicon.im/stackoverflow.com"
-    }
+  {
+    "name": "Google",
+    "url": "https://www.google.com/search?q={q}",
+    "icon": "https://favicon.im/www.google.com"
+  },
+  {
+    "name": "Bing",
+    "url": "https://www.bing.com/search?q={q}",
+    "icon": "https://favicon.im/www.bing.com"
+  },
+  {
+    "name": "夸克",
+    "url": "https://quark.sm.cn/s?q={q}",
+    "icon": "https://favicon.im/quark.sm.cn"
+  },
+  {
+    "name": "百度",
+    "url": "https://www.baidu.com/s?wd={q}",
+    "icon": "https://favicon.im/www.baidu.com"
+  },
+  {
+    "name": "DuckDuckGo",
+    "url": "https://duckduckgo.com/?q={q}",
+    "icon": "https://favicon.im/duckduckgo.com"
+  },
+  {
+    "name": "BiliBili",
+    "url": "https://search.bilibili.com/all?keyword={q}",
+    "icon": "https://favicon.im/search.bilibili.com"
+  },
+  {
+    "name": "GitHub",
+    "url": "https://github.com/search?q={q}",
+    "icon": "https://favicon.im/github.com"
+  },
+  {
+    "name": "Stack Overflow",
+    "url": "https://stackoverflow.com/search?q={q}",
+    "icon": "https://favicon.im/stackoverflow.com"
+  }
 ]

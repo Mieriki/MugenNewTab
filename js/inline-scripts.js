@@ -32,20 +32,24 @@ function initSearchEngine() {
     
     try {
         const savedIndex = localStorage.getItem('selectedSearchEngine');
+        let index = 0; // 默认使用第一个搜索引擎
+        
         if (savedIndex !== null) {
-            const index = parseInt(savedIndex);
-            if (index >= 0 && index < searchEngines.length) {
-                window.currentSearchEngine = searchEngines[index];
-                window.currentEngineIndex = index;
-                
-                // 更新显示
-                const footerName = document.getElementById('footerEngineName');
-                if (footerName) {
-                    footerName.textContent = searchEngines[index].name;
-                }
-                console.log('已恢复保存的搜索引擎:', searchEngines[index].name);
+            const parsedIndex = parseInt(savedIndex);
+            if (parsedIndex >= 0 && parsedIndex < searchEngines.length) {
+                index = parsedIndex;
             }
         }
+        
+        window.currentSearchEngine = searchEngines[index];
+        window.currentEngineIndex = index;
+        
+        // 更新显示
+        const footerName = document.getElementById('footerEngineName');
+        if (footerName) {
+            footerName.textContent = searchEngines[index].name;
+        }
+        console.log('已恢复保存的搜索引擎:', searchEngines[index].name);
     } catch (e) {
         console.error('加载保存的搜索引擎失败:', e);
     }
@@ -568,8 +572,12 @@ window.doSearch = function() {
 
 window.saveSearchHistory = function(query) {
     let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-    history = history.filter(q => q !== query);
-    history.unshift(query);
+    // 兼容旧格式（字符串数组）和新格式（对象数组）
+    history = history.filter(item => {
+        const itemQuery = typeof item === 'string' ? item : item?.query;
+        return itemQuery !== query;
+    });
+    history.unshift({ query: query, time: Date.now() });
     if (history.length > 10) history = history.slice(0, 10);
     localStorage.setItem('searchHistory', JSON.stringify(history));
     window.searchHistory = history;
@@ -580,7 +588,14 @@ window.renderSearchHistory = function() {
     const listContainer = document.getElementById('historyList');
     if (!container || !listContainer) return;
     
-    const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+    let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+    // 兼容旧格式（字符串数组）
+    history = history.map(item => {
+        if (typeof item === 'string') {
+            return { query: item, time: Date.now() };
+        }
+        return item;
+    });
     window.searchHistory = history;
     
     if (history.length === 0) {
@@ -589,10 +604,10 @@ window.renderSearchHistory = function() {
     }
     
     container.style.display = 'block';
-    listContainer.innerHTML = history.map((q, i) => `
-        <div class="history-item" data-history-index="${i}">
+    listContainer.innerHTML = history.map((item, i) => `
+        <div class="history-item" data-action="use-history" data-history-index="${i}" role="listitem" tabindex="0">
             <span class="history-icon">🕐</span>
-            <span class="history-text">${escapeHtml(q)}</span>
+            <span class="history-text">${escapeHtml(item.query)}</span>
         </div>
     `).join('');
 };
@@ -1012,19 +1027,7 @@ function initEventDelegation() {
         }
     });
     
-    // 历史记录项点击
-    document.addEventListener('click', function(e) {
-        const item = e.target.closest('[data-history-index]');
-        if (item) {
-            const index = parseInt(item.dataset.historyIndex);
-            const query = window.searchHistory?.[index];
-            const input = document.getElementById('searchInput');
-            if (query && input) {
-                input.value = query;
-                doSearch();
-            }
-        }
-    });
+    // 历史记录项点击通过 handleDataAction 中的 'use-history' case 处理
     
     // 搜索引擎选项点击
     document.addEventListener('click', function(e) {
@@ -1242,10 +1245,11 @@ async function handleDataAction(action, element, event) {
             
         // 搜索历史
         case 'use-history':
-            const historyIdx = element.dataset.historyIndex;
-            const query = window.searchHistory?.[historyIdx];
+            const historyIdx = parseInt(element.dataset.historyIndex);
+            const historyItem = window.searchHistory?.[historyIdx];
             const input = document.getElementById('searchInput');
-            if (query && input) {
+            if (historyItem && input) {
+                const query = typeof historyItem === 'string' ? historyItem : historyItem.query;
                 input.value = query;
                 doSearch();
             }
