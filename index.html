@@ -77,16 +77,69 @@
             --hover-bg: rgba(255, 255, 255, 0.08);
             --icon-filter: invert(1) brightness(2);
 
-            --md-sys-color-outline: rgba(255, 255, 255, 0.06);
-            --md-sys-color-outline-variant: rgba(255, 255, 255, 0.04);
+            --md-sys-color-outline: rgba(255, 255, 255, 0.12);
+            --md-sys-color-outline-variant: rgba(255, 255, 255, 0.08);
             --md-sys-color-surface-rgb: 30, 30, 30;
             --md-sys-color-background-rgb: 20, 20, 20;
+        }
+
+        /* 深色模式滚动条优化 */
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        body.dark-mode ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        body.dark-mode ::-webkit-scrollbar-thumb:active {
+            background: var(--md-sys-color-primary);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        /* ==================== 自定义滚动条 ==================== */
+        /* Webkit 浏览器 (Chrome, Safari, Edge) */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--md-sys-color-outline);
+            border-radius: 4px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            transition: background var(--md-transition-fast) ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--md-sys-color-on-surface-variant);
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        ::-webkit-scrollbar-thumb:active {
+            background: var(--md-sys-color-primary);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+
+        /* Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--md-sys-color-outline) transparent;
         }
 
         html {
