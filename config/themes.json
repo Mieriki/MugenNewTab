@@ -36,7 +36,7 @@
             "id": "midnight-rose",
             "name": "午夜蔷薇",
             "description": "深邃红与黑，神秘优雅",
-            "logo": "image/logo/enmaai_01.png",
+            "logo": "image/logo/mugen.png",
             "isDark": true,
             "colors": {
                 "--md-sys-color-primary": "#8B0000",
