@@ -407,6 +407,7 @@
         constructor() {
             this.currentCategory = 'all';
             this.sidebarCollapsed = false;
+            this.showHiddenApps = false;
             this.editingAppId = null;
             this.editingCategoryId = null;
             this.iconSelectCallback = null;
@@ -420,6 +421,10 @@
             // 加载侧边栏状态
             const savedState = await StorageManager.get('sidebarCollapsed');
             this.sidebarCollapsed = savedState === true;
+
+            // 加载隐藏站点显示状态
+            const savedShowHidden = await StorageManager.get('appNavigator_showHiddenApps');
+            this.showHiddenApps = savedShowHidden === true;
 
             // 先检测深色模式，确保渲染时能获取正确状态
             detectDarkMode();
@@ -576,7 +581,9 @@
                 const categoriesWithApps = data.categories
                     .filter(cat => cat.id !== 'all')
                     .map((category, index) => {
-                        const appsInCategory = data.apps.filter(app => app.category === category.id);
+                        const appsInCategory = data.apps
+                            .filter(app => app.category === category.id)
+                            .filter(app => this.showHiddenApps || !app.hidden);
                         return { category, appsInCategory, index };
                     })
                     .filter(item => item.appsInCategory.length > 0);
@@ -595,7 +602,9 @@
                 }
             } else {
                 const category = data.categories.find(cat => cat.id === this.currentCategory);
-                const appsInCategory = data.apps.filter(app => app.category === this.currentCategory);
+                const appsInCategory = data.apps
+                    .filter(app => app.category === this.currentCategory)
+                    .filter(app => this.showHiddenApps || !app.hidden);
 
                 if (category && appsInCategory.length > 0) {
                     html = `<div class="category">
@@ -647,9 +656,10 @@
             const iconHtml = isImage ?
                 Utils.createImageWithFallback(app.icon, app.name, '🌐') :
                 Utils.escapeHtml(app.icon || '🌐');
+            const hiddenClass = app.hidden ? ' app-card-hidden' : '';
 
             return `
-                    <div class="app-card" data-app-id="${app.id}" tabindex="0" role="link" aria-label="${Utils.escapeHtml(app.name)}">
+                    <div class="app-card${hiddenClass}" data-app-id="${app.id}" tabindex="0" role="link" aria-label="${Utils.escapeHtml(app.name)}">
                         <div class="app-icon">${iconHtml}</div>
                         <div class="app-content">
                             <h3 class="app-name">${Utils.escapeHtml(app.name)}</h3>
@@ -670,6 +680,20 @@
 
         bindEvents() {
             console.log('AppNavigator: 绑定事件...');
+
+            // 双击 Logo 切换隐藏站点显示状态
+            const headerLogo = Utils.get('headerLogo');
+            if (headerLogo) {
+                const dblclickHandler = async () => {
+                    this.showHiddenApps = !this.showHiddenApps;
+                    await StorageManager.set('appNavigator_showHiddenApps', this.showHiddenApps);
+                    await this.renderApps();
+                    showToast(this.showHiddenApps ? '已显示隐藏的站点' : '已隐藏隐藏的站点');
+                };
+                headerLogo.addEventListener('dblclick', dblclickHandler);
+                this.eventListeners.push({ element: headerLogo, event: 'dblclick', handler: dblclickHandler });
+            }
+
             const navMenu = Utils.get('navMenu');
             if (navMenu) {
                 const clickHandler = (e) => {
@@ -1302,6 +1326,7 @@
             Utils.get('appUrl').value = '';
             Utils.get('appDesc').value = '';
             Utils.get('appIcon').value = '';
+            Utils.get('appHidden').checked = false;
             Utils.get('iconPreview').innerHTML = '🌐';
         } else if (modalId === 'categoryModal') {
             window.appNavigator.editingCategoryId = null;
@@ -1321,6 +1346,7 @@
                 .map(c => `<option value="${c.id}" ${c.id === categoryId ? 'selected' : ''}>${Utils.escapeHtml(c.name)}</option>`)
                 .join('');
         }
+        Utils.get('appHidden').checked = false;
         openModal('appModal');
     }
 
@@ -1335,6 +1361,7 @@
         Utils.get('appUrl').value = app.url;
         Utils.get('appDesc').value = app.description || '';
         Utils.get('appIcon').value = app.icon || '';
+        Utils.get('appHidden').checked = app.hidden || false;
         updateIconPreview();
 
         const select = Utils.get('appCategory');
@@ -1352,6 +1379,7 @@
         const category = Utils.get('appCategory').value;
         const description = Utils.get('appDesc').value.trim();
         const icon = Utils.get('appIcon').value.trim();
+        const hidden = Utils.get('appHidden')?.checked || false;
 
         if (!name || !url || !category) {
             showToast('请填写必填项', 'error');
@@ -1363,7 +1391,7 @@
             finalUrl = 'https://' + url;
         }
 
-        const appData = { name, url: finalUrl, category, description, icon };
+        const appData = { name, url: finalUrl, category, description, icon, hidden };
 
         if (window.appNavigator.editingAppId) {
             await DataManager.updateApp(window.appNavigator.editingAppId, appData);
@@ -1376,6 +1404,10 @@
         closeModal('appModal');
         await window.appNavigator.renderNavigation();
         await window.appNavigator.renderApps();
+
+        if (hidden) {
+            await showHiddenTip();
+        }
     }
 
     async function deleteApp(appId) {

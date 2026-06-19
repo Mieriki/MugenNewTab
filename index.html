@@ -1123,6 +1123,12 @@
             box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
         }
 
+        .app-card.app-card-hidden {
+            opacity: 0.7;
+            background: var(--md-sys-color-surface-variant);
+            border-style: dashed;
+        }
+
         .app-actions {
             position: absolute;
             top: 8px;
@@ -3070,6 +3076,12 @@
                     <button class="btn-secondary" data-action="clear-icon" style="font-size:12px;" type="button">清除</button>
                 </div>
             </div>
+            <div class="form-group">
+                <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--md-sys-color-on-surface-variant);">
+                    <input type="checkbox" id="appHidden" style="width:18px;height:18px;cursor:pointer;">
+                    <span>隐藏该站点（默认不在首页显示）</span>
+                </label>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn-text" data-action="close-modal" data-modal="appModal" type="button">取消</button>
@@ -3256,6 +3268,23 @@
         <div class="confirm-modal-footer">
             <button class="btn-text confirm-cancel-btn" id="confirmCancelBtn" type="button">取消</button>
             <button class="btn-filled confirm-ok-btn" id="confirmOkBtn" type="button">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 隐藏站点提示对话框 -->
+<div class="modal-overlay" id="hiddenTipModal" role="dialog" aria-modal="true" aria-labelledby="hiddenTipTitle" style="z-index: 3000;">
+    <div class="modal-content confirm-modal-content" role="document">
+        <div class="confirm-modal-body">
+            <h3 class="confirm-title" id="hiddenTipTitle" style="display:flex;align-items:center;justify-content:center;gap:8px;"><span aria-hidden="true">💡</span>提示</h3>
+            <p class="confirm-message">隐藏的站点默认不再显示。双击页面左上角的 Logo，可快速切换已隐藏站点的显示状态。</p>
+            <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--md-sys-color-on-surface-variant);margin-top:12px;">
+                <input type="checkbox" id="hiddenTipDontShowAgain" style="width:18px;height:18px;cursor:pointer;">
+                <span>不再提示</span>
+            </label>
+        </div>
+        <div class="confirm-modal-footer">
+            <button class="btn-primary" id="hiddenTipOkBtn" type="button">知道了</button>
         </div>
     </div>
 </div>

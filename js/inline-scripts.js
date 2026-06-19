@@ -185,6 +185,7 @@ window.openAddAppModal = async function(categoryId) {
     document.getElementById('appUrl').value = '';
     document.getElementById('appDesc').value = '';
     document.getElementById('appIcon').value = '';
+    document.getElementById('appHidden').checked = false;
     updateIconPreview();
     
     if (window.appNavigator) {
@@ -213,6 +214,7 @@ window.editApp = async function(appId) {
     document.getElementById('appUrl').value = app.url;
     document.getElementById('appDesc').value = app.description || '';
     document.getElementById('appIcon').value = app.icon || '';
+    document.getElementById('appHidden').checked = app.hidden || false;
     updateIconPreview();
     
     const select = document.getElementById('appCategory');
@@ -229,6 +231,7 @@ window.saveApp = async function() {
     let category = document.getElementById('appCategory')?.value;
     const description = document.getElementById('appDesc')?.value.trim();
     const icon = document.getElementById('appIcon')?.value.trim();
+    const hidden = document.getElementById('appHidden')?.checked || false;
 
     if (!name || !url || !category) {
         showToast('请填写必填项', 'error');
@@ -251,7 +254,8 @@ window.saveApp = async function() {
         finalUrl = 'https://' + url;
     }
 
-    const appData = { name, url: finalUrl, category, description, icon };
+    const appData = { name, url: finalUrl, category, description, icon, hidden };
+    const wasHidden = hidden;
     
     if (window.appNavigator?.editingAppId) {
         await DataManager.updateApp(window.appNavigator.editingAppId, appData);
@@ -264,6 +268,48 @@ window.saveApp = async function() {
     closeModal('appModal');
     await window.appNavigator?.renderNavigation();
     await window.appNavigator?.renderApps();
+
+    if (wasHidden) {
+        await showHiddenTip();
+    }
+};
+
+window.showHiddenTip = async function() {
+    const dismissed = await StorageManager.get('appNavigator_hiddenTipDismissed');
+    if (dismissed) return;
+
+    const modal = document.getElementById('hiddenTipModal');
+    const okBtn = document.getElementById('hiddenTipOkBtn');
+    const checkbox = document.getElementById('hiddenTipDontShowAgain');
+    if (!modal || !okBtn) return;
+
+    checkbox.checked = false;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    return new Promise((resolve) => {
+        const cleanup = async () => {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            if (checkbox.checked) {
+                await StorageManager.set('appNavigator_hiddenTipDismissed', true);
+            }
+            okBtn.removeEventListener('click', handleOk);
+            modal.removeEventListener('click', handleOverlayClick);
+            document.removeEventListener('keydown', handleKeydown);
+            resolve();
+        };
+        const handleOk = () => cleanup();
+        const handleOverlayClick = (e) => {
+            if (e.target === modal) cleanup();
+        };
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') cleanup();
+        };
+        okBtn.addEventListener('click', handleOk);
+        modal.addEventListener('click', handleOverlayClick);
+        document.addEventListener('keydown', handleKeydown);
+    });
 };
 
 window.deleteApp = async function(appId) {
