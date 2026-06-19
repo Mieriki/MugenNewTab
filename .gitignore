@@ -1,0 +1,49 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories (if any)
+node_modules/
+bower_components/
+
+# Build / distribution (if generated)
+dist/
+build/
+release/
+*.zip
+*.crx
+*.pem
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Local environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Backup / history
+.history/
+*.bak

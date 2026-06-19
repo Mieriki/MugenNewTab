@@ -100,7 +100,7 @@
             "id": "forest-whisper",
             "name": "森之语",
             "description": "清新自然，生机盎然",
-            "logo": "image/logo/sanae_01.png",
+            "logo": "image/logo/mugen.png",
             "isDark": false,
             "colors": {
                 "--md-sys-color-primary": "#26A69A",
