@@ -76,6 +76,12 @@ async function loadCategories() {
             select.appendChild(option);
         });
         
+        // 添加新建分类选项
+        const newOption = document.createElement('option');
+        newOption.value = '__new__';
+        newOption.textContent = '+ 新建分类';
+        select.appendChild(newOption);
+        
         console.log('分类加载完成:', categories.length, '个分类');
     } catch (error) {
         console.error('加载分类失败:', error);
@@ -83,6 +89,16 @@ async function loadCategories() {
         if (select) {
             select.innerHTML = '<option value="">加载失败</option>';
         }
+    }
+}
+
+function toggleNewCategoryInput(show) {
+    const group = document.getElementById('newCategoryGroup');
+    const input = document.getElementById('newCategoryName');
+    if (group) group.style.display = show ? 'block' : 'none';
+    if (show && input) {
+        input.value = '';
+        input.focus();
     }
 }
 
@@ -225,13 +241,24 @@ async function saveApp(e) {
     
     const name = document.getElementById('appName').value.trim();
     const url = document.getElementById('appUrl').value.trim();
-    const category = document.getElementById('appCategory').value;
+    let category = document.getElementById('appCategory').value;
     const description = document.getElementById('appDesc').value.trim();
     const icon = document.getElementById('appIcon').value.trim();
 
     if (!name || !url || !category) {
         showToast('请填写必填项', 'error');
         return;
+    }
+
+    // 新建分类
+    if (category === '__new__') {
+        const newName = document.getElementById('newCategoryName').value.trim();
+        if (!newName) {
+            showToast('请输入新分类名称', 'error');
+            return;
+        }
+        const newCat = await DataManager.addCategory({ name: newName, icon: '📁' });
+        category = newCat.id;
     }
 
     let finalUrl = url;
@@ -281,5 +308,10 @@ function setupEventListeners() {
     document.getElementById('btnReset').addEventListener('click', () => {
         document.getElementById('addAppForm').reset();
         document.getElementById('iconPreview').innerHTML = '<img src="../image/icons/picture.svg" width="28" height="28">';
+        toggleNewCategoryInput(false);
+    });
+    
+    document.getElementById('appCategory').addEventListener('change', (e) => {
+        toggleNewCategoryInput(e.target.value === '__new__');
     });
 }

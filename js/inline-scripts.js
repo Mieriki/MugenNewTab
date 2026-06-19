@@ -193,6 +193,7 @@ window.openAddAppModal = async function(categoryId) {
     
     // 加载分类选项
     await loadCategoryOptions(select, categoryId);
+    toggleNewCategoryInput(false);
     
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -216,6 +217,7 @@ window.editApp = async function(appId) {
     
     const select = document.getElementById('appCategory');
     await loadCategoryOptions(select, app.category);
+    toggleNewCategoryInput(false);
     
     document.getElementById('appModal').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -224,13 +226,24 @@ window.editApp = async function(appId) {
 window.saveApp = async function() {
     const name = document.getElementById('appName')?.value.trim();
     const url = document.getElementById('appUrl')?.value.trim();
-    const category = document.getElementById('appCategory')?.value;
+    let category = document.getElementById('appCategory')?.value;
     const description = document.getElementById('appDesc')?.value.trim();
     const icon = document.getElementById('appIcon')?.value.trim();
 
     if (!name || !url || !category) {
         showToast('请填写必填项', 'error');
         return;
+    }
+
+    // 新建分类
+    if (category === '__new__') {
+        const newName = document.getElementById('newCategoryName')?.value.trim();
+        if (!newName) {
+            showToast('请输入新分类名称', 'error');
+            return;
+        }
+        const newCat = await DataManager.addCategory({ name: newName, icon: '📁' });
+        category = newCat.id;
     }
 
     let finalUrl = url;
@@ -934,7 +947,17 @@ async function loadCategoryOptions(select, selectedId) {
     const categories = data.categories.filter(c => c.id !== 'all');
     select.innerHTML = categories.map(c => 
         `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
-    ).join('');
+    ).join('') + '<option value="__new__">+ 新建分类</option>';
+}
+
+function toggleNewCategoryInput(show) {
+    const group = document.getElementById('newCategoryGroup');
+    const input = document.getElementById('newCategoryName');
+    if (group) group.style.display = show ? 'block' : 'none';
+    if (show && input) {
+        input.value = '';
+        input.focus();
+    }
 }
 
 async function renderCategoriesList() {
@@ -1000,6 +1023,11 @@ function initEventDelegation() {
     
     // 处理 change 事件
     document.addEventListener('change', function(e) {
+        if (e.target.id === 'appCategory') {
+            toggleNewCategoryInput(e.target.value === '__new__');
+            return;
+        }
+        
         const target = e.target.closest('[data-action]');
         if (!target) return;
         
