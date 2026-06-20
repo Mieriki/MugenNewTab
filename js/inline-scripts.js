@@ -688,10 +688,14 @@ let searchSuggestionsAbortController = null;
 
 function debounce(fn, delay) {
     let timer = null;
-    return function(...args) {
+    const debounced = function(...args) {
         clearTimeout(timer);
         timer = setTimeout(() => fn.apply(this, args), delay);
     };
+    debounced.cancel = function() {
+        clearTimeout(timer);
+    };
+    return debounced;
 }
 
 async function getLocalSearchSuggestions(query) {
@@ -725,7 +729,8 @@ async function getLocalSearchSuggestions(query) {
 }
 
 window.fetchSearchSuggestions = async function(query) {
-    if (!query || query.trim().length === 0) {
+    const input = document.getElementById('searchInput');
+    if (!query || query.trim().length === 0 || (input && !input.value.trim())) {
         clearSearchSuggestions();
         return;
     }
@@ -820,7 +825,7 @@ function updateActiveSuggestion(items) {
     });
 }
 
-window.debouncedFetchSearchSuggestions = debounce(fetchSearchSuggestions, 250);
+window.debouncedFetchSearchSuggestions = debounce(fetchSearchSuggestions, 300);
 
 // 绑定搜索输入事件
 function initSearchAutocomplete() {
@@ -831,6 +836,12 @@ function initSearchAutocomplete() {
     input.addEventListener('input', (e) => {
         const query = e.target.value.trim();
         if (!query) {
+            // 清空时取消 pending 的请求和防抖，避免旧建议残留
+            debouncedFetchSearchSuggestions.cancel();
+            if (searchSuggestionsAbortController) {
+                searchSuggestionsAbortController.abort();
+                searchSuggestionsAbortController = null;
+            }
             clearSearchSuggestions();
         } else {
             debouncedFetchSearchSuggestions(query);
