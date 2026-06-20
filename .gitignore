@@ -33,6 +33,7 @@ release/
 *.zip
 *.crx
 *.pem
+*.xpi
 
 # Temporary files
 tmp/
