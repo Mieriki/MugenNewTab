@@ -985,8 +985,41 @@
             let currentCard = null;
             let sourceCategoryId = null;
             let draggedAppId = null;
+            let dropHandled = false;
             const LONG_PRESS_DURATION = 500; // 长按时间阈值 500ms
             const MOVE_THRESHOLD = 10; // 移动阈值 10px
+
+            // 提交拖拽变更（同分类排序或跨分类移动）
+            const commitDragChanges = async (grid, draggedCard) => {
+                const targetCategoryId = grid.dataset.category;
+                const appId = draggedCard.dataset.appId;
+
+                if (sourceCategoryId && targetCategoryId && sourceCategoryId !== targetCategoryId) {
+                    // 跨分类：更新应用分类
+                    await DataManager.updateApp(appId, { category: targetCategoryId });
+                    showToast('应用已移动到新分类');
+                    await this.renderApps();
+                } else {
+                    // 同分类：只更新排序
+                    const data = await DataManager.getData();
+                    const visibleOrder = [...grid.querySelectorAll('.app-card')].map(card => card.dataset.appId);
+                    const visibleSet = new Set(visibleOrder);
+
+                    // 与原始顺序合并，隐藏的站点保持原有位置不被挤到最后
+                    let visibleIndex = 0;
+                    const newGlobalOrder = data.apps.map(app => {
+                        if (app.category !== targetCategoryId) return app.id;
+                        if (visibleSet.has(app.id)) {
+                            return visibleOrder[visibleIndex++];
+                        }
+                        return app.id;
+                    });
+
+                    await DataManager.updateAppsOrder(newGlobalOrder);
+                }
+
+                dropHandled = true;
+            };
 
             // 开始长按检测
             const startLongPress = (e, card) => {
@@ -1112,23 +1145,8 @@
                 const draggedCard = document.querySelector('.app-card.dragging');
                 if (!grid || !draggedCard) return;
 
-                const targetCategoryId = grid.dataset.category;
-                const appId = draggedCard.dataset.appId;
-                
-                // 检查是否跨分类拖拽
-                if (sourceCategoryId && targetCategoryId && sourceCategoryId !== targetCategoryId) {
-                    // 跨分类：更新应用分类
-                    await DataManager.updateApp(appId, { category: targetCategoryId });
-                    showToast('应用已移动到新分类');
-                    
-                    // 重新渲染以显示新分类
-                    await this.renderApps();
-                } else {
-                    // 同分类：只更新排序
-                    const cards = [...grid.querySelectorAll('.app-card')];
-                    const newOrder = cards.map(card => card.dataset.appId);
-                    await DataManager.updateAppsOrder(newOrder);
-                }
+                // 提交拖拽变更
+                await commitDragChanges(grid, draggedCard);
 
                 // 清理所有状态
                 document.querySelectorAll('.app-card').forEach(card => {
@@ -1149,7 +1167,20 @@
             };
 
             // 拖拽结束
-            const dragEndHandler = (e) => {
+            const dragEndHandler = async (e) => {
+                // drop 事件未触发时（如某些触摸环境），在 dragend 中兜底提交变更
+                if (isDragging && !dropHandled && draggedAppId && sourceCategoryId) {
+                    const draggedCard = document.querySelector('.app-card.dragging');
+                    const grid = draggedCard ? draggedCard.closest('.apps-grid') : null;
+                    if (grid) {
+                        try {
+                            await commitDragChanges(grid, draggedCard);
+                        } catch (err) {
+                            console.error('拖拽结束提交排序失败:', err);
+                        }
+                    }
+                }
+
                 // 清理所有卡片的拖拽状态
                 document.querySelectorAll('.app-card').forEach(card => {
                     card.classList.remove('dragging', 'pressing', 'pressing-active');
@@ -1166,6 +1197,7 @@
                 currentCard = null;
                 sourceCategoryId = null;
                 draggedAppId = null;
+                dropHandled = false;
             };
 
             // 获取拖拽后的插入位置
