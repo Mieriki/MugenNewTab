@@ -985,9 +985,11 @@
             let currentCard = null;
             let sourceCategoryId = null;
             let draggedAppId = null;
-            let dropHandled = false;
-            const LONG_PRESS_DURATION = 500; // 长按时间阈值 500ms
-            const MOVE_THRESHOLD = 10; // 移动阈值 10px
+            let dragJustEnded = false;
+            let placeholder = null;
+            let ghost = null;
+            const LONG_PRESS_DURATION = 300; // 长按时间阈值 300ms
+            const MOVE_THRESHOLD = 15; // 移动阈值 15px
 
             // 提交拖拽变更（同分类排序或跨分类移动）
             const commitDragChanges = async (grid, draggedCard) => {
@@ -1002,7 +1004,8 @@
                 } else {
                     // 同分类：只更新排序
                     const data = await DataManager.getData();
-                    const visibleOrder = [...grid.querySelectorAll('.app-card')].map(card => card.dataset.appId);
+                    const visibleOrder = [...grid.querySelectorAll('.app-card:not(.drag-placeholder)')]
+                        .map(card => card.dataset.appId);
                     const visibleSet = new Set(visibleOrder);
 
                     // 与原始顺序合并，隐藏的站点保持原有位置不被挤到最后
@@ -1017,9 +1020,136 @@
 
                     await DataManager.updateAppsOrder(newGlobalOrder);
                 }
-
-                dropHandled = true;
             };
+
+            // 清理拖拽状态
+            const cleanupDrag = () => {
+                if (placeholder) {
+                    placeholder.remove();
+                    placeholder = null;
+                }
+                if (ghost) {
+                    ghost.remove();
+                    ghost = null;
+                }
+                if (currentCard) {
+                    currentCard.classList.remove('pressing', 'pressing-active', 'dragging');
+                    currentCard.style.display = '';
+                    currentCard = null;
+                }
+                document.body.classList.remove('is-dragging-cards');
+                isDragging = false;
+                isLongPress = false;
+                draggedAppId = null;
+                sourceCategoryId = null;
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+            };
+
+            // 开始拖拽：创建幽灵卡片和占位符，原卡片隐藏
+            const startDrag = () => {
+                if (!currentCard) return;
+                isDragging = true;
+                isLongPress = true;
+                draggedAppId = currentCard.dataset.appId;
+                const sourceGrid = currentCard.closest('.apps-grid');
+                sourceCategoryId = sourceGrid ? sourceGrid.dataset.category : null;
+
+                const rect = currentCard.getBoundingClientRect();
+
+                // 占位符
+                placeholder = document.createElement('div');
+                placeholder.className = 'app-card drag-placeholder';
+                currentCard.parentNode.insertBefore(placeholder, currentCard);
+
+                // 幽灵卡片（跟随鼠标）
+                ghost = currentCard.cloneNode(true);
+                ghost.classList.add('drag-ghost');
+                ghost.style.position = 'fixed';
+                ghost.style.left = rect.left + 'px';
+                ghost.style.top = rect.top + 'px';
+                ghost.style.width = rect.width + 'px';
+                ghost.style.height = rect.height + 'px';
+                ghost.style.pointerEvents = 'none';
+                ghost.style.zIndex = '10000';
+                document.body.appendChild(ghost);
+
+                currentCard.classList.add('dragging');
+                currentCard.style.display = 'none';
+                document.body.classList.add('is-dragging-cards');
+            };
+
+            // 更新幽灵位置与占位符位置
+            const updateDrag = (x, y) => {
+                if (!ghost || !placeholder) return;
+
+                const ghostRect = ghost.getBoundingClientRect();
+                ghost.style.left = (x - ghostRect.width / 2) + 'px';
+                ghost.style.top = (y - ghostRect.height / 2) + 'px';
+
+                const grid = document.elementFromPoint(x, y)?.closest('.apps-grid');
+                if (!grid) return;
+
+                const afterElement = getDragAfterElement(grid, x, y);
+                const currentNext = placeholder.nextElementSibling;
+
+                // 只有真正改变位置时才移动占位符
+                if (afterElement === null) {
+                    if (currentNext !== null) {
+                        grid.appendChild(placeholder);
+                    }
+                } else if (currentNext !== afterElement) {
+                    grid.insertBefore(placeholder, afterElement);
+                }
+            };
+
+            // 结束拖拽：把原卡片插到占位符位置并提交
+            const endDrag = async () => {
+                if (!placeholder || !currentCard) {
+                    cleanupDrag();
+                    return;
+                }
+
+                const grid = placeholder.closest('.apps-grid');
+                if (grid) {
+                    grid.insertBefore(currentCard, placeholder);
+                    await commitDragChanges(grid, currentCard);
+                }
+
+                dragJustEnded = true;
+                setTimeout(() => { dragJustEnded = false; }, 100);
+                cleanupDrag();
+            };
+
+            // 获取拖拽后的插入位置
+            function getDragAfterElement(container, x, y) {
+                const elements = document.elementsFromPoint(x, y);
+                const target = elements.find(el =>
+                    el.classList.contains('app-card') &&
+                    !el.classList.contains('dragging')
+                );
+
+                if (target) {
+                    const box = target.getBoundingClientRect();
+                    return y < box.top + box.height / 2 ? target : target.nextElementSibling;
+                }
+
+                // 鼠标未落在任何卡片上时，回退到最近中心点
+                const draggableElements = [...container.querySelectorAll('.app-card:not(.dragging)')]
+                    .filter(el => el !== placeholder);
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const distance = Math.hypot(
+                        x - box.left - box.width / 2,
+                        y - box.top - box.height / 2
+                    );
+                    return distance < closest.distance
+                        ? { distance, element: child }
+                        : closest;
+                }, { distance: Number.POSITIVE_INFINITY }).element;
+            }
 
             // 开始长按检测
             const startLongPress = (e, card) => {
@@ -1040,17 +1170,7 @@
 
                 // 启动长按定时器
                 longPressTimer = setTimeout(() => {
-                    isLongPress = true;
-                    card.classList.add('pressing-active');
-                    card.setAttribute('draggable', 'true');
-                    
-                    // 触发拖拽开始
-                    const dragStartEvent = new DragEvent('dragstart', {
-                        bubbles: true,
-                        cancelable: true,
-                        dataTransfer: new DataTransfer()
-                    });
-                    card.dispatchEvent(dragStartEvent);
+                    startDrag();
                 }, LONG_PRESS_DURATION);
             };
 
@@ -1060,11 +1180,9 @@
                     clearTimeout(longPressTimer);
                     longPressTimer = null;
                 }
-                if (currentCard) {
+                if (currentCard && !isDragging) {
                     currentCard.classList.remove('pressing', 'pressing-active');
-                    if (!isDragging) {
-                        currentCard.setAttribute('draggable', 'false');
-                    }
+                    currentCard = null;
                 }
             };
 
@@ -1072,151 +1190,37 @@
             const pointerDownHandler = (e) => {
                 const card = e.target.closest('.app-card');
                 if (!card) return;
-                
+
                 startLongPress(e, card);
             };
 
             // 鼠标/触摸移动
             const pointerMoveHandler = (e) => {
-                if (!currentCard || isDragging) return;
+                if (!currentCard) return;
 
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
 
-                // 如果移动距离超过阈值，取消长按
-                const moveDistance = Math.sqrt(
-                    Math.pow(clientX - startX, 2) + Math.pow(clientY - startY, 2)
-                );
+                if (isDragging) {
+                    updateDrag(clientX, clientY);
+                    return;
+                }
 
+                // 如果移动距离超过阈值，取消长按
+                const moveDistance = Math.hypot(clientX - startX, clientY - startY);
                 if (moveDistance > MOVE_THRESHOLD) {
                     cancelLongPress();
                 }
             };
 
             // 鼠标/触摸抬起
-            const pointerUpHandler = (e) => {
-                cancelLongPress();
-            };
-
-            // 拖拽开始
-            const dragStartHandler = (e) => {
-                const card = e.target.closest('.app-card');
-                if (!card || !isLongPress) {
-                    e.preventDefault();
-                    return;
-                }
-
-                isDragging = true;
-                card.classList.add('dragging');
-                card.classList.remove('pressing', 'pressing-active');
-                
-                // 保存拖拽的应用ID和源分类
-                draggedAppId = card.dataset.appId;
-                const sourceGrid = card.closest('.apps-grid');
-                sourceCategoryId = sourceGrid ? sourceGrid.dataset.category : null;
-
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', draggedAppId);
-            };
-
-            // 拖拽经过
-            const dragOverHandler = (e) => {
-                e.preventDefault();
-                if (!isDragging) return;
-
-                const grid = e.target.closest('.apps-grid');
-                const draggedCard = document.querySelector('.app-card.dragging');
-                if (!grid || !draggedCard) return;
-
-                const afterElement = getDragAfterElement(grid, e.clientY, e.clientX);
-                if (afterElement == null) {
-                    grid.appendChild(draggedCard);
+            const pointerUpHandler = async () => {
+                if (isDragging) {
+                    await endDrag();
                 } else {
-                    grid.insertBefore(draggedCard, afterElement);
+                    cancelLongPress();
                 }
             };
-
-            // 放置
-            const dropHandler = async (e) => {
-                e.preventDefault();
-                if (!isDragging) return;
-
-                const grid = e.target.closest('.apps-grid');
-                const draggedCard = document.querySelector('.app-card.dragging');
-                if (!grid || !draggedCard) return;
-
-                // 提交拖拽变更
-                await commitDragChanges(grid, draggedCard);
-
-                // 清理所有状态
-                document.querySelectorAll('.app-card').forEach(card => {
-                    card.classList.remove('dragging', 'pressing', 'pressing-active');
-                    card.setAttribute('draggable', 'false');
-                });
-                
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                
-                isDragging = false;
-                isLongPress = false;
-                currentCard = null;
-                sourceCategoryId = null;
-                draggedAppId = null;
-            };
-
-            // 拖拽结束
-            const dragEndHandler = async (e) => {
-                // drop 事件未触发时（如某些触摸环境），在 dragend 中兜底提交变更
-                if (isDragging && !dropHandled && draggedAppId && sourceCategoryId) {
-                    const draggedCard = document.querySelector('.app-card.dragging');
-                    const grid = draggedCard ? draggedCard.closest('.apps-grid') : null;
-                    if (grid) {
-                        try {
-                            await commitDragChanges(grid, draggedCard);
-                        } catch (err) {
-                            console.error('拖拽结束提交排序失败:', err);
-                        }
-                    }
-                }
-
-                // 清理所有卡片的拖拽状态
-                document.querySelectorAll('.app-card').forEach(card => {
-                    card.classList.remove('dragging', 'pressing', 'pressing-active');
-                    card.setAttribute('draggable', 'false');
-                });
-                
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                
-                isDragging = false;
-                isLongPress = false;
-                currentCard = null;
-                sourceCategoryId = null;
-                draggedAppId = null;
-                dropHandled = false;
-            };
-
-            // 获取拖拽后的插入位置
-            function getDragAfterElement(container, y, x) {
-                const draggableElements = [...container.querySelectorAll('.app-card:not(.dragging)')];
-                
-                return draggableElements.reduce((closest, child) => {
-                    const box = child.getBoundingClientRect();
-                    const offsetX = x - box.left - box.width / 2;
-                    const offsetY = y - box.top - box.height / 2;
-                    const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-                    
-                    if (distance < closest.offset) {
-                        return { offset: distance, element: child };
-                    } else {
-                        return closest;
-                    }
-                }, { offset: Number.POSITIVE_INFINITY }).element;
-            }
 
             // 绑定事件
             contentArea.addEventListener('mousedown', pointerDownHandler);
@@ -1225,32 +1229,36 @@
             contentArea.addEventListener('mouseleave', pointerUpHandler);
 
             contentArea.addEventListener('touchstart', pointerDownHandler, { passive: true });
-            contentArea.addEventListener('touchmove', pointerMoveHandler, { passive: true });
+            contentArea.addEventListener('touchmove', (e) => {
+                if (isDragging) e.preventDefault();
+                pointerMoveHandler(e);
+            }, { passive: false });
             contentArea.addEventListener('touchend', pointerUpHandler);
+            contentArea.addEventListener('touchcancel', pointerUpHandler);
 
-            contentArea.addEventListener('dragstart', dragStartHandler);
-            contentArea.addEventListener('dragover', dragOverHandler);
-            contentArea.addEventListener('drop', dropHandler);
-            contentArea.addEventListener('dragend', dragEndHandler);
-
-            // 阻止拖拽时打开应用，并清理状态
+            // 阻止拖拽刚结束时打开应用
             contentArea.addEventListener('click', (e) => {
+                if (dragJustEnded) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+
                 // 清理所有拖拽状态
                 document.querySelectorAll('.app-card').forEach(card => {
                     card.classList.remove('dragging', 'pressing', 'pressing-active');
-                    card.setAttribute('draggable', 'false');
                 });
-                
+
                 if (longPressTimer) {
                     clearTimeout(longPressTimer);
                     longPressTimer = null;
                 }
-                
+
                 if (isDragging || isLongPress) {
                     e.preventDefault();
                     e.stopPropagation();
                 }
-                
+
                 isDragging = false;
                 isLongPress = false;
                 currentCard = null;
@@ -1258,7 +1266,6 @@
                 draggedAppId = null;
             }, true);
         }
-
         switchCategory(category) {
             this.currentCategory = category;
             this.renderApps();
