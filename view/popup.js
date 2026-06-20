@@ -1,17 +1,18 @@
 // Popup 脚本 - 独立的 JS 文件，避免 CSP 问题
 
 console.log('=== POPUP 脚本开始加载 ===');
-console.log('chrome 对象:', typeof chrome !== 'undefined' ? '存在' : '不存在');
-console.log('chrome.tabs:', typeof chrome !== 'undefined' && chrome.tabs ? '存在' : '不存在');
-console.log('chrome.storage:', typeof chrome !== 'undefined' && chrome.storage ? '存在' : '不存在');
+console.log('扩展环境 (isExtension):', typeof window.isExtension !== 'undefined' ? window.isExtension : '未知');
+console.log('BrowserAPI:', typeof window.BrowserAPI !== 'undefined' ? '存在' : '不存在');
 
-// 检查当前环境
-if (typeof chrome !== 'undefined' && chrome.tabs) {
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+// 检查当前环境（支持 Chrome 和 Firefox）
+if (typeof window.BrowserAPI !== 'undefined' && window.BrowserAPI.tabs) {
+    BrowserAPI.tabs.query({ active: true, currentWindow: true }).then(function(tabs) {
         console.log('同步查询结果:', tabs);
-        if (chrome.runtime.lastError) {
-            console.error('Chrome API 错误:', chrome.runtime.lastError);
+        if (BrowserAPI.runtime && BrowserAPI.runtime.lastError) {
+            console.error('扩展 API 错误:', BrowserAPI.runtime.lastError);
         }
+    }).catch(function(err) {
+        console.error('tabs.query 失败:', err);
     });
 }
 
@@ -102,96 +103,107 @@ function toggleNewCategoryInput(show) {
     }
 }
 
-// 尝试获取当前标签页信息
+// 尝试获取当前标签页信息（支持 Chrome / Firefox）
 async function tryGetCurrentTabInfo() {
     console.log('尝试获取当前标签页...');
-    
-    // 检查 chrome API
-    if (typeof chrome === 'undefined') {
-        console.error('chrome 对象不存在！');
+
+    // 优先使用统一的 BrowserAPI，回退到原生 browser / chrome 对象
+    const tabsApi = (window.BrowserAPI && BrowserAPI.tabs) ||
+                     (typeof browser !== 'undefined' && browser.tabs) ||
+                     (typeof chrome !== 'undefined' && chrome.tabs);
+
+    if (!tabsApi) {
+        console.error('tabs API 不存在！可能缺少 tabs 权限');
         return;
     }
-    if (!chrome.tabs) {
-        console.error('chrome.tabs 不存在！可能缺少 tabs 权限');
-        return;
-    }
-    
-    // 使用回调方式（更可靠）
-    return new Promise((resolve) => {
-        console.log('使用回调方式获取标签页...');
-        
-        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-            // 检查 Chrome API 错误
-            if (chrome.runtime.lastError) {
-                console.error('Chrome API 错误:', chrome.runtime.lastError.message);
-                resolve();
-                return;
-            }
-            
-            console.log('回调获取到标签页数量:', tabs?.length || 0);
-            
-            if (!tabs || tabs.length === 0) {
-                console.log('没有获取到标签页');
-                resolve();
-                return;
-            }
-            
-            const tab = tabs[0];
-            console.log('当前页面信息:');
-            console.log('  - 标题:', tab.title);
-            console.log('  - URL:', tab.url);
-            console.log('  - favIconUrl:', tab.favIconUrl ? '有' : '无');
-            
-            // 排除浏览器内部页面
-            if (!tab.url) {
-                console.log('页面无 URL，跳过');
-                resolve();
-                return;
-            }
-            if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || 
-                tab.url.startsWith('about:') || tab.url.startsWith('chrome-extension://')) {
-                console.log('浏览器内部页面，跳过:', tab.url);
-                resolve();
-                return;
-            }
-            
-            // 填充表单
-            const urlInput = document.getElementById('appUrl');
-            const nameInput = document.getElementById('appName');
-            const iconInput = document.getElementById('appIcon');
-            
-            if (urlInput) {
-                urlInput.value = tab.url;
-                console.log('已填充 URL');
-            }
-            if (nameInput) {
-                nameInput.value = tab.title || '';
-                console.log('已填充标题');
-            }
-            
-            // 获取图标
-            if (tab.favIconUrl && iconInput) {
-                iconInput.value = tab.favIconUrl;
-                updateIconPreview(tab.favIconUrl);
-                console.log('已使用页面 favicon');
-            } else if (tab.url) {
-                try {
-                    const urlObj = new URL(tab.url);
-                    const favicon = `https://favicon.im/${urlObj.hostname}`;
-                    if (iconInput) {
-                        iconInput.value = favicon;
-                        updateIconPreview(favicon);
-                        console.log('已使用 Google Favicon 服务');
-                    }
-                } catch (e) {
-                    console.log('URL 解析失败:', e);
+
+    let runtimeApi = (window.BrowserAPI && BrowserAPI.runtime) ||
+                     (typeof browser !== 'undefined' && browser.runtime) ||
+                     (typeof chrome !== 'undefined' && chrome.runtime);
+
+    try {
+        // 如果提供了 Promise 风格（Firefox 或 polyfill）直接 await
+        let tabs;
+        if (typeof browser !== 'undefined' && browser.tabs) {
+            tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        } else if (window.BrowserAPI && BrowserAPI.tabs && window.isExtension) {
+            tabs = await BrowserAPI.tabs.query({ active: true, currentWindow: true });
+        } else {
+            // Chrome 回调风格
+            tabs = await new Promise(function(resolve) {
+                chrome.tabs.query({ active: true, currentWindow: true }, function(result) {
+                    resolve(result);
+                });
+            });
+        }
+
+        if (runtimeApi && runtimeApi.lastError) {
+            console.error('扩展 API 错误:', runtimeApi.lastError.message || runtimeApi.lastError);
+            return;
+        }
+
+        console.log('获取到标签页数量:', (tabs && tabs.length) || 0);
+
+        if (!tabs || tabs.length === 0) {
+            console.log('没有获取到标签页');
+            return;
+        }
+
+        const tab = tabs[0];
+        console.log('当前页面信息:');
+        console.log('  - 标题:', tab.title);
+        console.log('  - URL:', tab.url);
+        console.log('  - favIconUrl:', tab.favIconUrl ? '有' : '无');
+
+        // 排除浏览器内部页面
+        if (!tab.url) {
+            console.log('页面无 URL，跳过');
+            return;
+        }
+        if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') ||
+            tab.url.startsWith('about:') || tab.url.startsWith('chrome-extension://') ||
+            tab.url.startsWith('moz-extension://')) {
+            console.log('浏览器内部页面，跳过:', tab.url);
+            return;
+        }
+
+        // 填充表单
+        const urlInput = document.getElementById('appUrl');
+        const nameInput = document.getElementById('appName');
+        const iconInput = document.getElementById('appIcon');
+
+        if (urlInput) {
+            urlInput.value = tab.url;
+            console.log('已填充 URL');
+        }
+        if (nameInput) {
+            nameInput.value = tab.title || '';
+            console.log('已填充标题');
+        }
+
+        // 获取图标
+        if (tab.favIconUrl && iconInput) {
+            iconInput.value = tab.favIconUrl;
+            updateIconPreview(tab.favIconUrl);
+            console.log('已使用页面 favicon');
+        } else if (tab.url) {
+            try {
+                const urlObj = new URL(tab.url);
+                const favicon = `https://favicon.im/${urlObj.hostname}`;
+                if (iconInput) {
+                    iconInput.value = favicon;
+                    updateIconPreview(favicon);
+                    console.log('已使用 Favicon 服务');
                 }
+            } catch (e) {
+                console.log('URL 解析失败:', e);
             }
-            
-            console.log('表单填充完成');
-            resolve();
-        });
-    });
+        }
+
+        console.log('表单填充完成');
+    } catch (err) {
+        console.error('获取当前标签页失败:', err);
+    }
 }
 
 // 更新图标预览

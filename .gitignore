@@ -47,3 +47,5 @@ temp/
 # Backup / history
 .history/
 *.bak
+
+build-firefox/*

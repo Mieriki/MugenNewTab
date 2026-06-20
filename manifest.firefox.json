@@ -1,0 +1,58 @@
+{
+    "manifest_version": 3,
+    "name": "MugenNewTab - 新标签页导航",
+    "short_name": "MugenNewTab",
+    "version": "1.0.0",
+    "description": "统一管理和快速访问各类开发者工具和外部链接的应用导航中心",
+    "author": "MugenNewTab",
+    "homepage_url": "https://github.com/MugenNewTab/MugenNewTab",
+    "icons": {
+        "16": "image/logo/mugen.png",
+        "32": "image/logo/mugen.png",
+        "48": "image/logo/mugen.png",
+        "128": "image/logo/mugen.png"
+    },
+    "chrome_url_overrides": {
+        "newtab": "index.html"
+    },
+    "action": {
+        "default_popup": "view/popup.html",
+        "default_title": "添加网站到 MugenNewTab",
+        "default_icon": {
+            "16": "image/logo/mugen.png",
+            "32": "image/logo/mugen.png"
+        }
+    },
+    "permissions": [
+        "storage",
+        "activeTab",
+        "tabs"
+    ],
+    "optional_permissions": [
+        "bookmarks"
+    ],
+    "host_permissions": [
+        "http://*/",
+        "https://*/"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "js/*",
+                "view/*",
+                "image/*",
+                "config/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "content_security_policy": "script-src 'self'; object-src 'self'",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "mugen-newtab@mugen.dev",
+            "strict_min_version": "115.0"
+        }
+    }
+}

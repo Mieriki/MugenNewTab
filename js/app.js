@@ -88,14 +88,14 @@
         }
     };
 
-    // ==================== 存储管理器（适配 Chrome Storage）====================
+    // ==================== 存储管理器（统一 Chrome/Firefox Storage）====================
     const StorageManager = {
-        isExtension: typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local,
+        isExtension: window.isExtension,
 
         async get(key) {
             if (this.isExtension) {
-                const result = await chrome.storage.local.get(key);
-                return result[key];
+                const result = await BrowserAPI.storage.local.get(key);
+                return result && typeof result === 'object' ? result[key] : result;
             } else {
                 const item = localStorage.getItem(key);
                 try {
@@ -108,7 +108,7 @@
 
         async set(key, value) {
             if (this.isExtension) {
-                await chrome.storage.local.set({ [key]: value });
+                await BrowserAPI.storage.local.set({ [key]: value });
             } else {
                 localStorage.setItem(key, JSON.stringify(value));
             }
@@ -116,7 +116,7 @@
 
         async remove(key) {
             if (this.isExtension) {
-                await chrome.storage.local.remove(key);
+                await BrowserAPI.storage.local.remove(key);
             } else {
                 localStorage.removeItem(key);
             }

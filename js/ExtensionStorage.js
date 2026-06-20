@@ -1,9 +1,9 @@
-// 封装 Chrome Storage API，兼容原有 localStorage 调用方式
+// 封装浏览器扩展 Storage API（统一 Chrome / Firefox），兼容原有 localStorage 调用方式
 const ExtensionStorage = {
     async get(key) {
         try {
-            const result = await chrome.storage.local.get(key);
-            return result[key];
+            const result = await BrowserAPI.storage.local.get(key);
+            return result && typeof result === 'object' ? result[key] : result;
         } catch (e) {
             console.error('Storage get error:', e);
             return null;
@@ -12,7 +12,7 @@ const ExtensionStorage = {
 
     async set(key, value) {
         try {
-            await chrome.storage.local.set({ [key]: value });
+            await BrowserAPI.storage.local.set({ [key]: value });
             return true;
         } catch (e) {
             console.error('Storage set error:', e);
@@ -22,7 +22,7 @@ const ExtensionStorage = {
 
     async remove(key) {
         try {
-            await chrome.storage.local.remove(key);
+            await BrowserAPI.storage.local.remove(key);
             return true;
         } catch (e) {
             console.error('Storage remove error:', e);
@@ -33,7 +33,7 @@ const ExtensionStorage = {
     // 批量获取（兼容对象格式）
     async getMulti(keys) {
         try {
-            return await chrome.storage.local.get(keys);
+            return await BrowserAPI.storage.local.get(keys);
         } catch (e) {
             console.error('Storage getMulti error:', e);
             return {};
@@ -43,7 +43,7 @@ const ExtensionStorage = {
     // 批量设置
     async setMulti(items) {
         try {
-            await chrome.storage.local.set(items);
+            await BrowserAPI.storage.local.set(items);
             return true;
         } catch (e) {
             console.error('Storage setMulti error:', e);
@@ -52,21 +52,24 @@ const ExtensionStorage = {
     }
 };
 
-// 检测是否在扩展环境中
-const isExtension = typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local;
+// 检测是否在扩展环境中（使用 polyfill 提供的统一判断）
+const isExtension = window.isExtension;
 
 // 调试信息
-console.log('ExtensionStorage 初始化:', { isExtension, hasChrome: typeof chrome !== 'undefined' });
+console.log('ExtensionStorage 初始化:', {
+    isExtension: isExtension,
+    hasBrowserAPI: typeof window.BrowserAPI !== 'undefined'
+});
 
-// ==================== StorageManager（适配 Chrome Storage）====================
+// ==================== StorageManager（统一 Chrome/Firefox Storage）====================
 const StorageManager = {
     isExtension: isExtension,
 
     async get(key) {
         try {
             if (this.isExtension) {
-                const result = await chrome.storage.local.get(key);
-                return result[key];
+                const result = await BrowserAPI.storage.local.get(key);
+                return result && typeof result === 'object' ? result[key] : result;
             } else {
                 const item = localStorage.getItem(key);
                 try {
@@ -89,7 +92,7 @@ const StorageManager = {
 
     async set(key, value) {
         if (this.isExtension) {
-            await chrome.storage.local.set({ [key]: value });
+            await BrowserAPI.storage.local.set({ [key]: value });
         } else {
             localStorage.setItem(key, JSON.stringify(value));
         }
@@ -97,7 +100,7 @@ const StorageManager = {
 
     async remove(key) {
         if (this.isExtension) {
-            await chrome.storage.local.remove(key);
+            await BrowserAPI.storage.local.remove(key);
         } else {
             localStorage.removeItem(key);
         }
@@ -130,20 +133,20 @@ const DataManager = {
     // 初始化
     async init() {
         if (this._initPromise) return this._initPromise;
-        
+
         this._initPromise = (async () => {
             try {
                 console.log('DataManager 初始化开始...');
-                
+
                 // 加载主数据
                 const data = await StorageManager.get(this.STORAGE_KEY);
                 console.log('从存储读取数据:', data);
-                
+
                 // 检查是否有有效数据（非空数组）
-                const hasValidData = data && 
+                const hasValidData = data &&
                     Array.isArray(data.categories) && data.categories.length > 0 &&
                     Array.isArray(data.apps);
-                
+
                 if (hasValidData) {
                     this._cache = data;
                     console.log('使用存储的数据');
@@ -152,7 +155,7 @@ const DataManager = {
                     this._cache = JSON.parse(JSON.stringify(this.defaultData));
                     await this.sync();
                 }
-                
+
                 // 只加载用户 UI，系统 UI 从配置实时读取
                 const userUiLib = await StorageManager.get(this.USER_UI_LIB_KEY);
                 if (userUiLib && userUiLib.categories) {
@@ -168,7 +171,7 @@ const DataManager = {
                 this._userUiLibCache = JSON.parse(JSON.stringify(this.defaultUserUiLib));
             }
         })();
-        
+
         return this._initPromise;
     },
 
@@ -183,7 +186,7 @@ const DataManager = {
         await this.init();
         const system = this.systemUiLib;
         const user = this._userUiLibCache;
-        
+
         // 合并系统 UI 和用户 UI
         const merged = {
             categories: [
@@ -195,7 +198,7 @@ const DataManager = {
                 ...user.items.map(item => ({ ...item, isSystem: false }))
             ]
         };
-        
+
         return JSON.parse(JSON.stringify(merged));
     },
 
@@ -306,13 +309,13 @@ const DataManager = {
         if (data.data && data.data.categories && data.data.apps) {
             this._cache = JSON.parse(JSON.stringify(data.data));
             await this.sync();
-        } 
+        }
         // 支持简化格式
         else if (data.categories && data.apps) {
             this._cache = JSON.parse(JSON.stringify(data));
             await this.sync();
         }
-        
+
         // 只导入用户 UI
         if (data.userUiLib) {
             this._userUiLibCache = data.userUiLib;
@@ -323,7 +326,7 @@ const DataManager = {
             const userItems = data.uiLib.items.filter(i => !systemIds.includes(i.id));
             const systemCatIds = this.systemUiLib.categories.map(c => c.id);
             const userCategories = data.uiLib.categories.filter(c => !systemCatIds.includes(c.id));
-            
+
             this._userUiLibCache = {
                 categories: userCategories,
                 items: userItems
@@ -343,9 +346,9 @@ const DataManager = {
     // ==================== UI 图标库管理（只操作用户 UI）====================
     async addUiCategory(name) {
         await this.init();
-        const category = { 
+        const category = {
             id: 'uicat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-            name 
+            name
         };
         this._userUiLibCache.categories.push(category);
         await this.syncUserUiLib();

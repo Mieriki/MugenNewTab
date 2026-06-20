@@ -4,12 +4,20 @@
 const ConfigLoader = {
     _cache: {},
 
-    // 基础路径（在 Chrome 扩展中使用绝对路径）
+    // 基础路径（在扩展环境中使用绝对路径）
     getBasePath() {
-        // 检测是否在扩展环境中
-        const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
-        if (isExtension) {
-            // Chrome 扩展中使用相对于扩展根目录的路径
+        // 检测是否在扩展环境中（支持 Chrome 和 Firefox）
+        const inExtension = typeof window.isExtension !== 'undefined'
+            ? window.isExtension
+            : (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) ||
+              (typeof browser !== 'undefined' && browser.runtime && browser.runtime.id);
+        if (inExtension && typeof BrowserAPI !== 'undefined' && BrowserAPI.runtime) {
+            return BrowserAPI.runtime.getURL('config/');
+        }
+        if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.getURL) {
+            return browser.runtime.getURL('config/');
+        }
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
             return chrome.runtime.getURL('config/');
         }
         // 普通网页环境使用相对路径
