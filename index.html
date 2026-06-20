@@ -2609,6 +2609,57 @@
             opacity: 0.5;
         }
 
+        .search-suggestions {
+            max-height: 240px;
+            overflow-y: auto;
+            background: var(--md-sys-color-surface);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: none;
+        }
+
+        .search-suggestions.has-suggestions {
+            display: block;
+        }
+
+        .suggestion-list {
+            padding: 4px;
+        }
+
+        .suggestion-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--md-sys-color-on-surface);
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+        }
+
+        .suggestion-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            filter: var(--icon-filter, none);
+            opacity: 0.6;
+        }
+
+        .suggestion-item:hover .suggestion-icon,
+        .suggestion-item.active .suggestion-icon {
+            opacity: 1;
+        }
+
         .search-submit-btn {
             width: 44px;
             height: 44px;
@@ -2723,13 +2774,17 @@
         }
 
         .history-icon {
-            width: 16px;
-            height: 16px;
-            color: var(--md-sys-color-on-surface-variant);
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
+            filter: var(--icon-filter, none);
             justify-content: center;
-            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .history-item:hover .history-icon {
+            opacity: 1;
         }
 
         .history-text {
@@ -2877,6 +2932,7 @@
             </button>
             <button class="search-close" data-action="close-search" title="关闭 (ESC)" aria-label="关闭搜索">✕</button>
         </div>
+        <div class="search-suggestions" id="searchSuggestions" style="display: none;" role="listbox" aria-label="搜索建议"></div>
         <div class="search-history" id="searchHistory" style="display: none;">
             <div class="search-history-header">
                 <span>最近搜索</span>

@@ -142,10 +142,11 @@ window.openSearchModal = function() {
     const modal = document.getElementById('searchModal');
     const input = document.getElementById('searchInput');
     if (!modal) return;
-    
+
+    clearSearchSuggestions();
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
-    
+
     setTimeout(() => input?.focus(), 100);
     renderSearchHistory();
 };
@@ -153,7 +154,8 @@ window.openSearchModal = function() {
 window.closeSearchModal = function() {
     const modal = document.getElementById('searchModal');
     if (!modal) return;
-    
+
+    clearSearchSuggestions();
     modal.classList.remove('active');
     document.body.style.overflow = '';
 };
@@ -667,7 +669,7 @@ window.renderSearchHistory = function() {
     container.style.display = 'block';
     listContainer.innerHTML = history.map((item, i) => `
         <div class="history-item" data-action="use-history" data-history-index="${i}" role="listitem" tabindex="0">
-            <span class="history-icon">🕐</span>
+            <img class="history-icon" src="./image/icons/history.svg" alt="" width="20" height="20">
             <span class="history-text">${escapeHtml(item.query)}</span>
         </div>
     `).join('');
@@ -679,6 +681,204 @@ window.clearSearchHistory = function() {
     renderSearchHistory();
     showToast('搜索历史已清空');
 };
+
+// ==================== 搜索关键字补全 ====================
+let searchSuggestionIndex = -1;
+let searchSuggestionsAbortController = null;
+
+function debounce(fn, delay) {
+    let timer = null;
+    return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+async function getLocalSearchSuggestions(query) {
+    const lowerQuery = query.toLowerCase();
+    const local = new Set();
+
+    // 从历史搜索匹配
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+    } catch (e) {}
+    history.forEach(item => {
+        const q = typeof item === 'string' ? item : item?.query;
+        if (q && q.toLowerCase().includes(lowerQuery)) local.add(q);
+    });
+
+    // 从应用名称和描述匹配
+    if (typeof DataManager !== 'undefined' && DataManager.getData) {
+        try {
+            const data = await DataManager.getData();
+            if (data && Array.isArray(data.apps)) {
+                data.apps.forEach(app => {
+                    if (app.name && app.name.toLowerCase().includes(lowerQuery)) local.add(app.name);
+                    if (app.description && app.description.toLowerCase().includes(lowerQuery)) local.add(app.description);
+                });
+            }
+        } catch (e) {}
+    }
+
+    return Array.from(local).slice(0, 5);
+}
+
+window.fetchSearchSuggestions = async function(query) {
+    if (!query || query.trim().length === 0) {
+        clearSearchSuggestions();
+        return;
+    }
+
+    // 先显示本地建议（应用名称、描述、搜索历史）
+    const localSuggestions = await getLocalSearchSuggestions(query);
+    if (localSuggestions.length > 0) {
+        renderSearchSuggestions(localSuggestions);
+    }
+
+    if (searchSuggestionsAbortController) {
+        searchSuggestionsAbortController.abort();
+    }
+    searchSuggestionsAbortController = new AbortController();
+
+    try {
+        // 使用百度 sugrec JSONP 接口，手动解析避免 eval/CSP 问题
+        const response = await fetch(`https://www.baidu.com/sugrec?prod=pc&wd=${encodeURIComponent(query)}&cb=cb`, {
+            signal: searchSuggestionsAbortController.signal,
+            headers: { 'Accept': '*/*' }
+        });
+        if (!response.ok) return;
+        const text = await response.text();
+        const match = text.match(/^cb\((.*)\);?$/s);
+        if (!match) return;
+        const data = JSON.parse(match[1]);
+        const remoteSuggestions = (data.g || []).map(item => item.q).filter(Boolean);
+        // 合并去重，本地优先
+        const merged = [...new Set([...localSuggestions, ...remoteSuggestions])].slice(0, 8);
+        if (merged.length > 0) {
+            renderSearchSuggestions(merged);
+        }
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error('获取搜索建议失败:', err);
+        }
+    }
+};
+
+window.renderSearchSuggestions = function(suggestions) {
+    const container = document.getElementById('searchSuggestions');
+    if (!container) return;
+
+    searchSuggestionIndex = -1;
+
+    if (!suggestions || suggestions.length === 0) {
+        clearSearchSuggestions();
+        return;
+    }
+
+    container.innerHTML = `<div class="suggestion-list">${suggestions.map((item, i) => {
+        const text = typeof item === 'string' ? item : (item.phrase || '');
+        return `
+            <div class="suggestion-item" data-suggestion-index="${i}" data-suggestion-query="${escapeHtml(text)}" role="option" tabindex="-1">
+                <img class="suggestion-icon" src="./image/icons/search.svg" alt="" width="18" height="18">
+                <span class="suggestion-text">${escapeHtml(text)}</span>
+            </div>
+        `;
+    }).join('')}</div>`;
+
+    container.classList.add('has-suggestions');
+    container.style.display = 'block';
+};
+
+window.clearSearchSuggestions = function() {
+    const container = document.getElementById('searchSuggestions');
+    if (container) {
+        container.innerHTML = '';
+        container.classList.remove('has-suggestions');
+        container.style.display = 'none';
+    }
+    searchSuggestionIndex = -1;
+};
+
+window.selectSearchSuggestion = function(query) {
+    const input = document.getElementById('searchInput');
+    if (input) input.value = query;
+    clearSearchSuggestions();
+    doSearch();
+};
+
+function updateActiveSuggestion(items) {
+    items.forEach((item, i) => {
+        if (i === searchSuggestionIndex) {
+            item.classList.add('active');
+            item.setAttribute('aria-selected', 'true');
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.classList.remove('active');
+            item.setAttribute('aria-selected', 'false');
+        }
+    });
+}
+
+window.debouncedFetchSearchSuggestions = debounce(fetchSearchSuggestions, 250);
+
+// 绑定搜索输入事件
+function initSearchAutocomplete() {
+    const input = document.getElementById('searchInput');
+    const container = document.getElementById('searchSuggestions');
+    if (!input || !container) return;
+
+    input.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        if (!query) {
+            clearSearchSuggestions();
+        } else {
+            debouncedFetchSearchSuggestions(query);
+        }
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = container.querySelectorAll('.suggestion-item');
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            searchSuggestionIndex = Math.min(searchSuggestionIndex + 1, items.length - 1);
+            updateActiveSuggestion(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            searchSuggestionIndex = Math.max(searchSuggestionIndex - 1, -1);
+            updateActiveSuggestion(items);
+        } else if (e.key === 'Enter') {
+            if (searchSuggestionIndex >= 0 && items[searchSuggestionIndex]) {
+                e.preventDefault();
+                e.stopPropagation();
+                const query = items[searchSuggestionIndex].dataset.suggestionQuery;
+                selectSearchSuggestion(query);
+            }
+        } else if (e.key === 'Escape') {
+            if (container.classList.contains('has-suggestions')) {
+                e.preventDefault();
+                e.stopPropagation();
+                clearSearchSuggestions();
+            }
+        }
+    });
+
+    // 点击选择建议
+    container.addEventListener('click', (e) => {
+        const item = e.target.closest('.suggestion-item');
+        if (item) {
+            selectSearchSuggestion(item.dataset.suggestionQuery);
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSearchAutocomplete);
+} else {
+    initSearchAutocomplete();
+}
 
 window.selectEngine = async function(index) {
     if (typeof searchEngines === 'undefined') return;
@@ -1351,6 +1551,7 @@ async function handleDataAction(action, element, event) {
             if (delUiCatId && typeof deleteUiCategory === 'function') deleteUiCategory(delUiCatId);
             break;
         case 'delete-ui-item':
+            event?.stopPropagation();
             const itemId = element.dataset.itemId;
             if (itemId && typeof deleteUiItem === 'function') deleteUiItem(itemId);
             break;

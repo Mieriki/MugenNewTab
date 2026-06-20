@@ -1867,7 +1867,7 @@
                             <div class="cat-name">${Utils.escapeHtml(item.name)}</div>
                             <div class="cat-count">${cat ? Utils.escapeHtml(cat.name) : '未分类'}${item.isSystem ? ' · 系统' : ''}</div>
                         </div>
-                        <div class="cat-actions" onclick="event.stopPropagation();">
+                        <div class="cat-actions">
                             ${deleteBtn}
                         </div>
                     </div>
@@ -2184,7 +2184,7 @@
 
         listDiv.innerHTML = history.map((item, index) => `
                 <div class="history-item" data-action="use-history" data-history-index="${index}" role="listitem" tabindex="0" data-keydown-action="use-history">
-                    <div class="history-icon" aria-hidden="true">🕐</div>
+                    <img class="history-icon" src="./image/icons/history.svg" alt="" width="20" height="20">
                     <div class="history-text">${Utils.escapeHtml(item.query)}</div>
                     <div class="history-time">${Utils.formatTime(item.time)}</div>
                 </div>
