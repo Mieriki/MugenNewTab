@@ -10,7 +10,7 @@
     document.documentElement.setAttribute('data-theme-loading', 'true');
     
     // 尝试从 localStorage 读取保存的主题
-    const savedThemeId = localStorage.getItem('selectedTheme');
+    const savedThemeId = window.StorageManager?.getSync('selectedTheme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     // 确定要应用的主题
@@ -124,7 +124,7 @@
     window.ThemeLoader = {
         applyTheme: applyThemeColors,
         getSavedTheme: function() {
-            return localStorage.getItem('selectedTheme') || 'material-rose';
+            return window.StorageManager?.getSync('selectedTheme') || 'material-rose';
         }
     };
 })();

@@ -29,7 +29,8 @@ const CloudSyncManager = {
         'searchHistory',
         'selectedSearchEngine',
         'appNavigator_showHiddenApps',
-        'appNavigator_hiddenTipDismissed'
+        'appNavigator_hiddenTipDismissed',
+        'appNavigator_dataUpdatedAt'
     ],
 
     async init() {
@@ -182,6 +183,7 @@ const CloudSyncManager = {
 
     // 收集本地所有需要同步的数据
     async _collectLocalData() {
+        await DataManager.syncNow();
         const data = {};
         for (const key of this.SYNC_DATA_KEYS) {
             data[key] = await StorageManager.get(key);
@@ -276,19 +278,13 @@ const CloudSyncManager = {
     async applyDownloadedData(syncData) {
         if (!syncData || !syncData.data) return false;
 
+        const snapshot = {};
         for (const key of this.SYNC_DATA_KEYS) {
-            if (syncData.data.hasOwnProperty(key)) {
-                await StorageManager.set(key, syncData.data[key]);
+            if (Object.prototype.hasOwnProperty.call(syncData.data, key)) {
+                snapshot[key] = syncData.data[key];
             }
         }
-
-        // 更新 DataManager 缓存（无论缓存是否已初始化都强制覆盖）
-        if (syncData.data['appNavigator_data']) {
-            DataManager._cache = syncData.data['appNavigator_data'];
-        }
-        if (syncData.data['appNavigator_user_uiLib']) {
-            DataManager._userUiLibCache = syncData.data['appNavigator_user_uiLib'];
-        }
+        await DataManager.applyStorageSnapshot(snapshot);
 
         this._lastSyncTime = syncData.lastModified || Date.now();
         await StorageManager.set(this.STORAGE_KEYS.lastSyncTime, this._lastSyncTime);

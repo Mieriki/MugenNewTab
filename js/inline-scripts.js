@@ -19,7 +19,7 @@ function initSearchEngine() {
     if (typeof searchEngines === 'undefined') return;
     
     try {
-        const savedIndex = localStorage.getItem('selectedSearchEngine');
+        const savedIndex = window.StorageManager?.getSync('selectedSearchEngine');
         let index = 0; // 默认使用第一个搜索引擎
         
         if (savedIndex !== null) {
@@ -52,7 +52,7 @@ function initThemeUI() {
                                 window.ThemeLoader !== undefined;
     
     // 获取当前主题信息，确保深色模式类正确应用
-    const themeId = localStorage.getItem('selectedTheme') || 'material-rose';
+    const themeId = window.StorageManager?.getSync('selectedTheme') || 'material-rose';
     if (typeof themeConfig !== 'undefined' && themeConfig.themes) {
         const theme = themeConfig.themes.find(t => t.id === themeId);
         if (theme && theme.isDark) {
@@ -107,13 +107,13 @@ window.toggleSidebarCollapse = async function() {
         return;
     }
     
-    // 否则使用本地实现（仅 localStorage）
+    // AppNavigator 尚未就绪时仍通过统一存储层保存。
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
     
     sidebar.classList.toggle('collapsed');
     const isCollapsed = sidebar.classList.contains('collapsed');
-    localStorage.setItem('sidebarCollapsed', isCollapsed);
+    await StorageManager.set('sidebarCollapsed', isCollapsed);
     
     // 触发重绘以调整布局
     window.dispatchEvent(new Event('resize'));
@@ -633,8 +633,9 @@ window.doSearch = function() {
     input.value = '';
 };
 
-window.saveSearchHistory = function(query) {
-    let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+window.saveSearchHistory = async function(query) {
+    let history = await StorageManager.get('searchHistory') || [];
+    if (!Array.isArray(history)) history = [];
     // 兼容旧格式（字符串数组）和新格式（对象数组）
     history = history.filter(item => {
         const itemQuery = typeof item === 'string' ? item : item?.query;
@@ -642,7 +643,7 @@ window.saveSearchHistory = function(query) {
     });
     history.unshift({ query: query, time: Date.now() });
     if (history.length > 10) history = history.slice(0, 10);
-    localStorage.setItem('searchHistory', JSON.stringify(history));
+    await StorageManager.set('searchHistory', history);
     window.searchHistory = history;
 };
 
@@ -651,7 +652,8 @@ window.renderSearchHistory = function() {
     const listContainer = document.getElementById('historyList');
     if (!container || !listContainer) return;
     
-    let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+    let history = StorageManager.getSync('searchHistory') || [];
+    if (!Array.isArray(history)) history = [];
     // 兼容旧格式（字符串数组）
     history = history.map(item => {
         if (typeof item === 'string') {
@@ -675,8 +677,8 @@ window.renderSearchHistory = function() {
     `).join('');
 };
 
-window.clearSearchHistory = function() {
-    localStorage.removeItem('searchHistory');
+window.clearSearchHistory = async function() {
+    await StorageManager.remove('searchHistory');
     window.searchHistory = [];
     renderSearchHistory();
     showToast('搜索历史已清空');
@@ -705,7 +707,7 @@ async function getLocalSearchSuggestions(query) {
     // 从历史搜索匹配
     let history = [];
     try {
-        history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
+        history = StorageManager.getSync('searchHistory') || [];
     } catch (e) {}
     history.forEach(item => {
         const q = typeof item === 'string' ? item : item?.query;
@@ -908,9 +910,9 @@ window.selectEngine = async function(index) {
         footerName.textContent = searchEngines[index].name;
     }
     
-    // 保存到 localStorage
+    // 保存到统一存储后端
     try {
-        localStorage.setItem('selectedSearchEngine', index);
+        await StorageManager.set('selectedSearchEngine', index);
     } catch (e) {
         console.error('保存搜索引擎失败:', e);
     }

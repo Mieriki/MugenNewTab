@@ -64,7 +64,8 @@ MugenNewTab/
 │   ├── data.config.js          # 数据配置工具
 │   ├── searchEngines.js        # 搜索引擎工具
 │   ├── ThemeManager.js         # 主题管理器
-│   ├── ExtensionStorage.js     # Chrome Storage 兼容层
+│   ├── storage.js              # 页面与 popup 共用的存储/数据管理层
+│   ├── ExtensionStorage.js     # 旧存储入口兼容层
 │   ├── inline-scripts.js       # 全局函数与事件委托
 │   └── theme-loader.js         # 主题防闪烁加载
 ├── view/                       # 扩展弹出窗口
@@ -97,10 +98,17 @@ MugenNewTab/
 <script src="js/data.config.js"></script>
 <script src="js/themes.config.js"></script>
 <script src="js/searchEngines.js"></script>
+<script src="js/storage.js"></script>
 <script src="js/ThemeManager.js"></script>
 <script src="js/theme-loader.js"></script>
 <script src="js/inline-scripts.js"></script>
 <script src="js/app.js"></script>
+```
+
+### 运行存储回归测试
+
+```bash
+node --test tests/storage.test.js
 ```
 
 ### 常用快捷键

@@ -32,19 +32,23 @@
      * 例如: promisifyCall(chrome.storage.local, 'get', [key]) -> Promise(result)
      */
     function promisifyCall(obj, method, args) {
-        return new Promise(function (resolve) {
+        return new Promise(function (resolve, reject) {
             try {
                 const fn = obj[method];
                 if (typeof fn !== 'function') {
-                    resolve();
+                    reject(new Error(`浏览器 API 不支持 ${method}`));
                     return;
                 }
                 fn.apply(obj, args.concat(function (result) {
+                    const lastError = apiRoot?.runtime?.lastError;
+                    if (lastError) {
+                        reject(new Error(lastError.message || String(lastError)));
+                        return;
+                    }
                     resolve(result);
                 }));
             } catch (e) {
-                console.warn('[browserPolyfill] 调用', method, '失败:', e);
-                resolve();
+                reject(e);
             }
         });
     }
@@ -63,7 +67,7 @@
             return {
                 local: {
                     get: function (key) {
-                        return new Promise(function (resolve) {
+                        return new Promise(function (resolve, reject) {
                             if (key === null || typeof key === 'undefined') {
                                 // 返回整个存储
                                 const all = {};
@@ -77,38 +81,52 @@
                                             all[k] = raw;
                                         }
                                     }
-                                } catch (_) { /* ignore */ }
+                                } catch (error) {
+                                    reject(error);
+                                    return;
+                                }
                                 resolve(all);
                             } else {
                                 const result = {};
-                                const raw = localStorage.getItem(key);
-                                if (raw !== null) {
-                                    try {
-                                        result[key] = JSON.parse(raw);
-                                    } catch (_) {
-                                        result[key] = raw;
+                                try {
+                                    const raw = localStorage.getItem(key);
+                                    if (raw !== null) {
+                                        try {
+                                            result[key] = JSON.parse(raw);
+                                        } catch (_) {
+                                            result[key] = raw;
+                                        }
                                     }
+                                } catch (error) {
+                                    reject(error);
+                                    return;
                                 }
                                 resolve(result);
                             }
                         });
                     },
                     set: function (items) {
-                        return new Promise(function (resolve) {
+                        return new Promise(function (resolve, reject) {
                             try {
                                 Object.keys(items).forEach(function (k) {
                                     const val = items[k];
                                     localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
                                 });
-                            } catch (_) { /* ignore */ }
+                            } catch (error) {
+                                reject(error);
+                                return;
+                            }
                             resolve();
                         });
                     },
                     remove: function (key) {
-                        return new Promise(function (resolve) {
+                        return new Promise(function (resolve, reject) {
                             try {
                                 localStorage.removeItem(key);
-                            } catch (_) { /* ignore */ }
+                            } catch (error) {
+                                reject(error);
+                                return;
+                            }
                             resolve();
                         });
                     }

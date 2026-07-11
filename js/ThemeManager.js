@@ -1,6 +1,6 @@
 class ThemeManager {
         constructor(options = {}) {
-            this.currentTheme = localStorage.getItem('selectedTheme') || 'material-rose';
+            this.currentTheme = window.StorageManager?.getSync('selectedTheme') || 'material-rose';
             // options.skipApply: 如果主题已由 theme-loader.js 应用，跳过重复应用
             this.skipApply = options.skipApply || false;
             this.init();
@@ -53,7 +53,9 @@ class ThemeManager {
                 if (themeNameEl) themeNameEl.textContent = theme.name;
                 
                 this.currentTheme = themeId;
-                localStorage.setItem('selectedTheme', themeId);
+                window.StorageManager?.set('selectedTheme', themeId).catch(error => {
+                    console.error('保存主题失败:', error);
+                });
             } catch (error) {
                 console.error('应用派生变量失败:', error);
             }
@@ -113,7 +115,9 @@ class ThemeManager {
                 if (themeNameEl) themeNameEl.textContent = theme.name;
 
                 this.currentTheme = themeId;
-                localStorage.setItem('selectedTheme', themeId);
+                window.StorageManager?.set('selectedTheme', themeId).catch(error => {
+                    console.error('保存主题失败:', error);
+                });
             } catch (error) {
                 console.error('应用主题失败:', error);
             }
@@ -127,7 +131,7 @@ class ThemeManager {
         }
 
         getCurrentTheme() {
-            const themeId = localStorage.getItem('selectedTheme') || 'material-rose';
+            const themeId = window.StorageManager?.getSync('selectedTheme') || 'material-rose';
             return themeConfig.themes.find(t => t.id === themeId);
         }
 

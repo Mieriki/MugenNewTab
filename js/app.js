@@ -88,324 +88,9 @@
         }
     };
 
-    // ==================== 存储管理器（统一 Chrome/Firefox Storage）====================
-    const StorageManager = {
-        isExtension: window.isExtension,
-
-        async get(key) {
-            if (this.isExtension) {
-                const result = await BrowserAPI.storage.local.get(key);
-                return result && typeof result === 'object' ? result[key] : result;
-            } else {
-                const item = localStorage.getItem(key);
-                try {
-                    return item ? JSON.parse(item) : null;
-                } catch (e) {
-                    return item;
-                }
-            }
-        },
-
-        async set(key, value) {
-            if (this.isExtension) {
-                await BrowserAPI.storage.local.set({ [key]: value });
-            } else {
-                localStorage.setItem(key, JSON.stringify(value));
-            }
-        },
-
-        async remove(key) {
-            if (this.isExtension) {
-                await BrowserAPI.storage.local.remove(key);
-            } else {
-                localStorage.removeItem(key);
-            }
-        }
-    };
-
-    // ==================== 数据管理（带内存缓存）====================
-    const DataManager = {
-        _cache: null,
-        _userUiLibCache: null,  // 只保存用户自定义 UI
-        _dirty: false,
-        _syncTimer: null,
-
-        // 从配置文件获取默认数据（config/defaultData.json）
-        get defaultData() {
-            return DefaultData?.appNavigator || { categories: [], apps: [] };
-        },
-
-        // 系统 UI 库（从配置读取，不保存到 storage）
-        get systemUiLib() {
-            return DefaultData?.systemUiLib || { categories: [], items: [] };
-        },
-
-        // 用户 UI 默认空结构
-        get defaultUserUiLib() {
-            return { categories: [], items: [] };
-        },
-
-        async init() {
-            // 一次性加载到内存
-            const savedData = await StorageManager.get('appNavigator_data');
-            // 检查是否有有效数据（非空数组）
-            const hasValidData = savedData && 
-                Array.isArray(savedData.categories) && savedData.categories.length > 0 &&
-                Array.isArray(savedData.apps);
-            
-            if (hasValidData) {
-                this._cache = savedData;
-            } else {
-                // 使用默认数据初始化
-                this._cache = JSON.parse(JSON.stringify(this.defaultData));
-                // 立即同步到存储
-                await this.sync();
-            }
-            
-            // 只加载用户 UI，系统 UI 从配置实时读取
-            const savedUserUiLib = await StorageManager.get('appNavigator_user_uiLib');
-            if (savedUserUiLib && Array.isArray(savedUserUiLib.categories)) {
-                this._userUiLibCache = savedUserUiLib;
-            } else {
-                this._userUiLibCache = JSON.parse(JSON.stringify(this.defaultUserUiLib));
-                this._dirty = true;
-                await this.sync();
-            }
-
-            // 页面卸载时同步
-            window.addEventListener('beforeunload', () => this.sync());
-
-            // 定期同步（每30秒）
-            setInterval(() => this.sync(), 30000);
-        },
-
-        async getData() {
-            // 返回深拷贝防止直接修改
-            return JSON.parse(JSON.stringify(this._cache));
-        },
-
-        // 获取完整的 UI 库（系统 + 用户）
-        async getUiLib() {
-            const system = this.systemUiLib;
-            const user = this._userUiLibCache;
-            
-            // 合并系统 UI 和用户 UI
-            const merged = {
-                categories: [
-                    ...system.categories,
-                    ...user.categories
-                ],
-                items: [
-                    ...system.items.map(item => ({ ...item, isSystem: true })),
-                    ...user.items.map(item => ({ ...item, isSystem: false }))
-                ]
-            };
-            
-            return JSON.parse(JSON.stringify(merged));
-        },
-
-        // 只获取用户 UI（用于导出）
-        async getUserUiLib() {
-            return JSON.parse(JSON.stringify(this._userUiLibCache));
-        },
-
-        async saveData(data) {
-            this._cache = data;
-            this._dirty = true;
-            // 防抖同步
-            if (this._syncTimer) clearTimeout(this._syncTimer);
-            this._syncTimer = setTimeout(() => this.sync(), 1000);
-        },
-
-        async saveUserUiLib(data) {
-            this._userUiLibCache = data;
-            this._dirty = true;
-            if (this._syncTimer) clearTimeout(this._syncTimer);
-            this._syncTimer = setTimeout(() => this.sync(), 1000);
-        },
-
-        async sync() {
-            if (!this._dirty) return;
-            try {
-                await StorageManager.set('appNavigator_data', this._cache);
-                await StorageManager.set('appNavigator_user_uiLib', this._userUiLibCache);
-                this._dirty = false;
-                console.log('DataManager: 数据已同步到存储');
-
-                // 触发云同步自动上传
-                if (typeof CloudSyncManager !== 'undefined' && CloudSyncManager.scheduleAutoSync) {
-                    CloudSyncManager.scheduleAutoSync();
-                }
-            } catch (e) {
-                console.error('Sync failed:', e);
-            }
-        },
-
-        // 强制立即同步（用于关键操作后）
-        async syncNow() {
-            if (this._syncTimer) clearTimeout(this._syncTimer);
-            await this.sync();
-        },
-
-        async addApp(app) {
-            app.id = Utils.generateId();
-            this._cache.apps.push(app);
-            await this.saveData(this._cache);
-            return app;
-        },
-
-        async updateApp(id, updates) {
-            const index = this._cache.apps.findIndex(a => a.id === id);
-            if (index !== -1) {
-                this._cache.apps[index] = { ...this._cache.apps[index], ...updates };
-                await this.saveData(this._cache);
-                return this._cache.apps[index];
-            }
-            return null;
-        },
-
-        async deleteApp(id) {
-            this._cache.apps = this._cache.apps.filter(a => a.id !== id);
-            await this.saveData(this._cache);
-        },
-
-        async updateAppsOrder(orderedIds) {
-            // 根据传入的 ID 顺序重新排序应用
-            const appsMap = new Map(this._cache.apps.map(a => [a.id, a]));
-            const newApps = [];
-            for (const id of orderedIds) {
-                const app = appsMap.get(id);
-                if (app) {
-                    newApps.push(app);
-                    appsMap.delete(id);
-                }
-            }
-            // 将剩余的应用（不在排序列表中的）添加到末尾
-            appsMap.forEach(app => newApps.push(app));
-            this._cache.apps = newApps;
-            await this.saveData(this._cache);
-        },
-
-        async addCategory(category) {
-            category.id = Utils.generateId();
-            this._cache.categories.push(category);
-            await this.saveData(this._cache);
-            return category;
-        },
-
-        async updateCategoriesOrder(orderedIds) {
-            // 确保 'all' 始终排在第一位
-            const allCategory = this._cache.categories.find(c => c.id === 'all');
-            const otherCategories = orderedIds
-                .map(id => this._cache.categories.find(c => c.id === id))
-                .filter(c => c && c.id !== 'all');
-            
-            // 重新构建分类数组：all 在前，其他按新顺序
-            this._cache.categories = allCategory ? [allCategory, ...otherCategories] : otherCategories;
-            await this.saveData(this._cache);
-        },
-
-        async updateCategory(id, updates) {
-            const index = this._cache.categories.findIndex(c => c.id === id);
-            if (index !== -1) {
-                this._cache.categories[index] = { ...this._cache.categories[index], ...updates };
-                await this.saveData(this._cache);
-                return this._cache.categories[index];
-            }
-            return null;
-        },
-
-        async deleteCategory(id) {
-            this._cache.categories = this._cache.categories.filter(c => c.id !== id);
-            this._cache.apps = this._cache.apps.filter(a => a.category !== id);
-            await this.saveData(this._cache);
-        },
-
-        // UI 分类管理（只能操作用户分类）
-        async addUiCategory(name) {
-            const category = { id: Utils.generateId(), name };
-            this._userUiLibCache.categories.push(category);
-            await this.saveUserUiLib(this._userUiLibCache);
-            return category;
-        },
-
-        async deleteUiCategory(id) {
-            // 检查是否是系统分类
-            const systemCategory = this.systemUiLib.categories.find(c => c.id === id);
-            if (systemCategory) {
-                console.warn('不能删除系统分类');
-                return;
-            }
-            this._userUiLibCache.categories = this._userUiLibCache.categories.filter(c => c.id !== id);
-            this._userUiLibCache.items = this._userUiLibCache.items.filter(i => i.category !== id);
-            await this.saveUserUiLib(this._userUiLibCache);
-        },
-
-        // UI 图标管理（只能操作用户图标）
-        async addUiItem(item) {
-            item.id = Utils.generateId();
-            this._userUiLibCache.items.push(item);
-            await this.saveUserUiLib(this._userUiLibCache);
-            return item;
-        },
-
-        async deleteUiItem(id) {
-            // 检查是否是系统图标
-            const systemItem = this.systemUiLib.items.find(i => i.id === id);
-            if (systemItem) {
-                console.warn('不能删除系统图标');
-                return;
-            }
-            this._userUiLibCache.items = this._userUiLibCache.items.filter(i => i.id !== id);
-            await this.saveUserUiLib(this._userUiLibCache);
-        },
-
-        // 导出数据（只导出用户数据）
-        async export() {
-            await this.sync(); // 确保数据已保存
-            return {
-                data: this._cache,
-                userUiLib: this._userUiLibCache,  // 只导出用户 UI
-                exportTime: new Date().toISOString(),
-                version: '1.0'
-            };
-        },
-
-        // 导入数据（只导入用户 UI）
-        async import(jsonData) {
-            // 导入应用数据
-            if (jsonData.data && jsonData.data.categories && jsonData.data.apps) {
-                this._cache = jsonData.data;
-                await StorageManager.set('appNavigator_data', this._cache);
-            } 
-            // 支持简化格式
-            else if (jsonData.categories && jsonData.apps) {
-                this._cache = jsonData;
-                await StorageManager.set('appNavigator_data', this._cache);
-            }
-            
-            // 只导入用户 UI（不导入系统 UI）
-            if (jsonData.userUiLib) {
-                this._userUiLibCache = jsonData.userUiLib;
-                await StorageManager.set('appNavigator_user_uiLib', this._userUiLibCache);
-            } else if (jsonData.uiLib) {
-                // 兼容旧格式：如果导入的是 uiLib，只导入其中的用户分类和图标
-                // 过滤掉与系统 UI id 冲突的项目
-                const systemIds = this.systemUiLib.items.map(i => i.id);
-                const userItems = jsonData.uiLib.items.filter(i => !systemIds.includes(i.id));
-                const systemCatIds = this.systemUiLib.categories.map(c => c.id);
-                const userCategories = jsonData.uiLib.categories.filter(c => !systemCatIds.includes(c.id));
-                
-                this._userUiLibCache = {
-                    categories: userCategories,
-                    items: userItems
-                };
-                await StorageManager.set('appNavigator_user_uiLib', this._userUiLibCache);
-            }
-            
-            this._dirty = false;
-        }
-    };
+    // 主页面与 popup 共用统一实现；所有写操作在 Promise 完成前已持久化。
+    const StorageManager = window.StorageManager;
+    const DataManager = window.DataManager;
 
     // ==================== 应用导航器 ====================
     class AppNavigator {
@@ -478,7 +163,7 @@
             const logoContainer = Utils.get('headerLogo');
             if (!logoContainer || typeof themeConfig === 'undefined') return;
 
-            const currentThemeId = localStorage.getItem('selectedTheme') || themeConfig.defaultTheme || 'material-rose';
+            const currentThemeId = StorageManager.getSync('selectedTheme') || themeConfig.defaultTheme || 'material-rose';
             const currentTheme = themeConfig.themes.find(t => t.id === currentThemeId);
 
             if (currentTheme && currentTheme.logo) {
@@ -730,6 +415,19 @@
             };
             document.addEventListener('themeChanged', themeHandler);
             this.eventListeners.push({ element: document, event: 'themeChanged', handler: themeHandler });
+
+            // popup、其他新标签页或云同步更新数据后，立即刷新当前页面缓存与界面。
+            const dataChangedHandler = async event => {
+                if (event.detail?.kind !== 'data') return;
+                const data = await DataManager.getData();
+                if (!data.categories.some(category => category.id === this.currentCategory)) {
+                    this.currentCategory = 'all';
+                }
+                await this.renderNavigation();
+                await this.renderApps();
+            };
+            window.addEventListener('appNavigator:data-changed', dataChangedHandler);
+            this.eventListeners.push({ element: window, event: 'appNavigator:data-changed', handler: dataChangedHandler });
 
             // 内容区域点击
             const contentArea = Utils.get('contentArea');
@@ -2322,7 +2020,7 @@
         const container = Utils.get('themeOptions');
         if (!container || typeof themeConfig === 'undefined') return;
 
-        const currentTheme = localStorage.getItem('selectedTheme') || themeConfig.defaultTheme || 'material-rose';
+        const currentTheme = StorageManager.getSync('selectedTheme') || themeConfig.defaultTheme || 'material-rose';
 
         container.innerHTML = themeConfig.themes.map(theme => {
             const color = theme.colors && theme.colors['--md-sys-color-primary'] ? theme.colors['--md-sys-color-primary'] : '#B14A6B';
@@ -2343,8 +2041,8 @@
         }).join('');
     }
 
-    function selectTheme(themeId) {
-        localStorage.setItem('selectedTheme', themeId);
+    async function selectTheme(themeId) {
+        await StorageManager.set('selectedTheme', themeId);
 
         if (typeof themeConfig !== 'undefined' && themeConfig.themes) {
             const theme = themeConfig.themes.find(t => t.id === themeId);
