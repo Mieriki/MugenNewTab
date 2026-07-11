@@ -1182,6 +1182,79 @@ window.closeConfirmModal = function() {
     }
 }
 
+// 输入对话框（替代原生 prompt）
+window.showPrompt = async function(message, options = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('promptModal');
+        const messageEl = document.getElementById('promptModalMessage');
+        const titleEl = document.getElementById('promptModalTitle');
+        const inputEl = document.getElementById('promptModalInput');
+        const okBtn = document.getElementById('promptOkBtn');
+        const cancelBtn = document.getElementById('promptCancelBtn');
+
+        if (!modal || !messageEl) {
+            resolve(prompt(message));
+            return;
+        }
+
+        messageEl.textContent = message;
+        titleEl.textContent = options.title || '请输入';
+        okBtn.textContent = options.confirmText || '确定';
+        cancelBtn.textContent = options.cancelText || '取消';
+        inputEl.value = options.defaultValue || '';
+        inputEl.placeholder = options.inputPlaceholder || '';
+        inputEl.type = options.inputType || 'text';
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => inputEl.focus(), 50);
+
+        const handleOk = () => {
+            cleanup();
+            resolve(inputEl.value);
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve(null);
+        };
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') {
+                cleanup();
+                resolve(null);
+            } else if (e.key === 'Enter') {
+                cleanup();
+                resolve(inputEl.value);
+            }
+        };
+
+        const handleOverlayClick = (e) => {
+            if (e.target === modal) {
+                cleanup();
+                resolve(null);
+            }
+        };
+
+        const cleanup = () => {
+            modal.classList.remove('active');
+            const anyActive = document.querySelector('.modal-overlay.active');
+            if (!anyActive) {
+                document.body.style.overflow = '';
+            }
+            okBtn.removeEventListener('click', handleOk);
+            cancelBtn.removeEventListener('click', handleCancel);
+            modal.removeEventListener('click', handleOverlayClick);
+            document.removeEventListener('keydown', handleKeydown);
+        };
+
+        okBtn.addEventListener('click', handleOk);
+        cancelBtn.addEventListener('click', handleCancel);
+        modal.addEventListener('click', handleOverlayClick);
+        document.addEventListener('keydown', handleKeydown);
+    });
+}
+
 function showToast(message, type = 'success') {
     // 复用 index.html 中的 showToast 或创建新的
     if (typeof window.showToast === 'function' && window.showToast !== showToast) {
@@ -1474,6 +1547,28 @@ async function handleDataAction(action, element, event) {
         case 'handle-import':
             handleImport(event);
             break;
+
+        // 云同步
+        case 'cloud-sync-login':
+            if (typeof cloudSyncLogin === 'function') cloudSyncLogin();
+            else showToast('云同步功能加载中...');
+            break;
+        case 'cloud-sync-upload':
+            if (typeof cloudSyncUpload === 'function') cloudSyncUpload();
+            else showToast('云同步功能加载中...');
+            break;
+        case 'cloud-sync-download':
+            if (typeof cloudSyncDownload === 'function') cloudSyncDownload();
+            else showToast('云同步功能加载中...');
+            break;
+        case 'cloud-sync-logout':
+            if (typeof cloudSyncLogout === 'function') cloudSyncLogout();
+            else showToast('云同步功能加载中...');
+            break;
+        case 'cloud-sync-toggle-auto':
+            if (typeof cloudSyncToggleAuto === 'function') cloudSyncToggleAuto(element);
+            break;
+
         case 'close-and-add-cat':
             closeModal('manageCategoriesModal');
             openAddCategoryModal();

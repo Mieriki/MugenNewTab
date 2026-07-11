@@ -517,7 +517,8 @@
             z-index: 1002;
             width: 520px;
             max-height: 70vh;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             backdrop-filter: blur(10px);
             contain: layout paint;
         }
@@ -1795,6 +1796,195 @@
             color: var(--md-sys-color-on-primary);
         }
 
+        /* 云同步区域 */
+        .cloud-sync-section {
+            border-top: 1px solid var(--md-sys-color-outline-variant);
+            padding: 14px 16px;
+        }
+
+        .cloud-sync-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--md-sys-color-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cloud-sync-hint {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            line-height: 1.4;
+        }
+
+        .cloud-sync-logged {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cloud-sync-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cloud-sync-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--md-sys-color-surface-variant);
+        }
+
+        .cloud-sync-user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cloud-sync-user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cloud-sync-last-time {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .cloud-sync-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--md-sys-color-on-surface);
+            cursor: pointer;
+        }
+
+        .cloud-sync-toggle input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--md-sys-color-primary);
+        }
+
+        .cloud-sync-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cloud-sync-actions .wallpaper-btn {
+            flex: 1;
+            font-size: 12px;
+            padding: 8px 4px;
+        }
+
+        .cloud-sync-logout {
+            align-self: flex-start;
+            font-size: 12px;
+            color: var(--md-sys-color-error);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 2px 0;
+        }
+
+        .cloud-sync-logout:hover {
+            text-decoration: underline;
+        }
+
+        /* 输入对话框 */
+        .prompt-modal-content {
+            max-width: 360px !important;
+            border-radius: 16px !important;
+            background: var(--md-sys-color-surface) !important;
+            overflow: hidden;
+        }
+
+        .prompt-modal-body {
+            padding: 24px 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .prompt-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+        }
+
+        .prompt-message {
+            font-size: 0.9rem;
+            color: var(--md-sys-color-on-surface-variant);
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .prompt-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 10px;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .prompt-input:focus {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.08);
+        }
+
+        .prompt-modal-footer {
+            padding: 12px 24px 20px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .prompt-cancel-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+        .prompt-cancel-btn:hover {
+            background: var(--md-sys-color-surface-variant);
+        }
+
+        .prompt-ok-btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            cursor: pointer;
+        }
+
+        .prompt-ok-btn:hover {
+            opacity: 0.9;
+        }
+
         /* 表单样式 */
         .form-group {
             margin-bottom: 20px;
@@ -3061,6 +3251,18 @@
                     </div>
                 </div>
             </div>
+            <div class="cloud-sync-section">
+                <div class="cloud-sync-header">
+                    <span aria-hidden="true">☁️</span>
+                    <span>云同步</span>
+                </div>
+                <div id="cloudSyncStatus">
+                    <div class="cloud-sync-hint">使用 GitHub Gist 备份和同步你的数据</div>
+                    <button class="wallpaper-btn wallpaper-btn-primary" data-action="cloud-sync-login" style="width: 100%; margin-top: 8px;">
+                        🔗 连接 GitHub
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </header>
@@ -3361,6 +3563,21 @@
     </div>
 </div>
 
+<!-- 输入对话框 -->
+<div class="modal-overlay" id="promptModal" role="dialog" aria-modal="true" aria-labelledby="promptModalTitle" style="z-index: 3000;">
+    <div class="modal-content prompt-modal-content" role="document">
+        <div class="prompt-modal-body">
+            <h3 class="prompt-title" id="promptModalTitle">提示</h3>
+            <p class="prompt-message" id="promptModalMessage"></p>
+            <input type="text" class="prompt-input" id="promptModalInput" autocomplete="off">
+        </div>
+        <div class="prompt-modal-footer">
+            <button class="prompt-cancel-btn" id="promptCancelBtn" type="button">取消</button>
+            <button class="prompt-ok-btn" id="promptOkBtn" type="button">确定</button>
+        </div>
+    </div>
+</div>
+
 <!-- 隐藏站点提示对话框 -->
 <div class="modal-overlay" id="hiddenTipModal" role="dialog" aria-modal="true" aria-labelledby="hiddenTipTitle" style="z-index: 3000;">
     <div class="modal-content confirm-modal-content" role="document">
@@ -3379,5 +3596,6 @@
 </div>
 
 <script src="js/app.js?v=5"></script>
+<script src="js/cloudSync.js?v=1"></script>
 </body>
 </html>

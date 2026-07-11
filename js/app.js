@@ -231,6 +231,11 @@
                 await StorageManager.set('appNavigator_user_uiLib', this._userUiLibCache);
                 this._dirty = false;
                 console.log('DataManager: 数据已同步到存储');
+
+                // 触发云同步自动上传
+                if (typeof CloudSyncManager !== 'undefined' && CloudSyncManager.scheduleAutoSync) {
+                    CloudSyncManager.scheduleAutoSync();
+                }
             } catch (e) {
                 console.error('Sync failed:', e);
             }
@@ -2662,6 +2667,14 @@
         async save() {
             await StorageManager.set('appNavigator_wallpaper', this.settings);
         }
+
+        async loadSavedWallpaper() {
+            const saved = await StorageManager.get('appNavigator_wallpaper');
+            if (saved) {
+                this.settings = { ...this.defaults, ...saved };
+            }
+            await this.applySettings();
+        }
     }
 
     let wallpaperManager;
@@ -2784,6 +2797,7 @@
         console.log('app.js: AppNavigator 初始化完成');
 
         wallpaperManager = new WallpaperManager();
+        window.wallpaperManager = wallpaperManager;
 
         // 加载保存的搜索引擎设置
         try {
