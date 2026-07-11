@@ -48,7 +48,9 @@
             ]
         }
     ],
-    "content_security_policy": "script-src 'self'; object-src 'self'",
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    },
     "browser_specific_settings": {
         "gecko": {
             "id": "mugen-newtab@mugen.dev",
