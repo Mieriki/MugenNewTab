@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "description": "统一管理和快速访问各类开发者工具和外部链接的应用导航中心",
     "author": "MugenNewTab",
-    "homepage_url": "https://github.com/MugenNewTab/MugenNewTab",
+    "homepage_url": "https://github.com/Mieriki/MugenNewTab",
     "icons": {
         "16": "image/logo/mugen.png",
         "32": "image/logo/mugen.png",
