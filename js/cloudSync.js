@@ -297,6 +297,8 @@ const CloudSyncManager = {
     },
 
     // 拉取并应用（带冲突检测）
+    // force=true：用户主动点击"恢复云端"，直接恢复（仅二次确认）
+    // force=false：自动拉取，仅在云端确实更新时提示
     async pullAndApply({ force = false, silent = false } = {}) {
         if (!this._token) {
             if (!silent) showToast('请先配置 GitHub Token', 'error');
@@ -310,22 +312,29 @@ const CloudSyncManager = {
         }
 
         const remote = result.data;
-        const local = await this._collectLocalData();
-
-        // 如果时间差在 5 秒内，视为同时修改，默认保留本地
-        const TIME_BUFFER = 5000;
-        const remoteNewer = remote.lastModified > local.lastModified + TIME_BUFFER;
-
-        if (!force && !remoteNewer) {
-            if (!silent) showToast('云端数据不是最新，无需恢复');
-            return { success: true, applied: false, message: '本地数据已是最新' };
-        }
+        const remoteTime = new Date(remote.lastModified).toLocaleString();
+        const localSyncTime = this._lastSyncTime
+            ? new Date(this._lastSyncTime).toLocaleString()
+            : '从未上传';
 
         if (!force) {
-            const remoteTime = new Date(remote.lastModified).toLocaleString();
-            const localTime = new Date(local.lastModified).toLocaleString();
+            // 自动场景：仅当云端确实比上次上传更新时才提示
+            const TIME_BUFFER = 5000;
+            const remoteNewer = remote.lastModified > (this._lastSyncTime || 0) + TIME_BUFFER;
+            if (!remoteNewer) {
+                // 云端没有新数据，静默跳过
+                return { success: true, applied: false, message: '本地数据已是最新' };
+            }
+
             const confirmed = await showConfirm(
-                `检测到云端数据更新（云端 ${remoteTime}，本地 ${localTime}），是否用云端数据覆盖本地？`,
+                `检测到云端数据更新（云端 ${remoteTime}，本地上次上传 ${localSyncTime}），是否用云端数据覆盖本地？`,
+                { title: '恢复云端数据', okText: '覆盖本地', isDanger: true }
+            );
+            if (!confirmed) return { success: true, applied: false, message: '用户取消' };
+        } else {
+            // 用户主动恢复：显示信息并二次确认
+            const confirmed = await showConfirm(
+                `将用云端数据覆盖本地（云端更新时间：${remoteTime}），此操作不可撤销，是否继续？`,
                 { title: '恢复云端数据', okText: '覆盖本地', isDanger: true }
             );
             if (!confirmed) return { success: true, applied: false, message: '用户取消' };
@@ -373,12 +382,13 @@ const CloudSyncManager = {
         if (!result.success) return;
 
         const remote = result.data;
-        const local = await this._collectLocalData();
         const TIME_BUFFER = 5000;
 
-        if (remote.lastModified > local.lastModified + TIME_BUFFER) {
+        // 用上次上传时间比较，而不是当前时间
+        if (remote.lastModified > (this._lastSyncTime || 0) + TIME_BUFFER) {
+            const remoteTime = new Date(remote.lastModified).toLocaleString();
             const confirmed = await showConfirm(
-                `检测到其他设备上的更新（${new Date(remote.lastModified).toLocaleString()}），是否恢复？`,
+                `检测到其他设备上的更新（${remoteTime}），是否恢复到本地？`,
                 { title: '发现云端更新', okText: '恢复', isDanger: false }
             );
             if (confirmed) {
@@ -529,7 +539,7 @@ window.cloudSyncUpload = function() {
 };
 
 window.cloudSyncDownload = function() {
-    CloudSyncManager.pullAndApply();
+    CloudSyncManager.pullAndApply({ force: true });
 };
 
 window.cloudSyncLogout = function() {
