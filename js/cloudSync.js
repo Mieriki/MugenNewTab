@@ -282,11 +282,11 @@ const CloudSyncManager = {
             }
         }
 
-        // 更新 DataManager 缓存
-        if (syncData.data['appNavigator_data'] && DataManager._cache) {
+        // 更新 DataManager 缓存（无论缓存是否已初始化都强制覆盖）
+        if (syncData.data['appNavigator_data']) {
             DataManager._cache = syncData.data['appNavigator_data'];
         }
-        if (syncData.data['appNavigator_user_uiLib'] && DataManager._userUiLibCache) {
+        if (syncData.data['appNavigator_user_uiLib']) {
             DataManager._userUiLibCache = syncData.data['appNavigator_user_uiLib'];
         }
 
