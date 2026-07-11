@@ -1008,18 +1008,6 @@ window.resetWallpaper = function() {
     if (overlayValue) overlayValue.textContent = '85%';
 };
 
-window.saveWallpaperSettings = function() {
-    const settings = {
-        url: document.getElementById('wallpaperUrl')?.value,
-        opacity: document.getElementById('opacitySlider')?.value,
-        blur: document.getElementById('blurSlider')?.value,
-        overlay: document.getElementById('overlaySlider')?.value
-    };
-    
-    localStorage.setItem('wallpaperSettings', JSON.stringify(settings));
-    showToast('壁纸设置已保存');
-};
-
 // UI 库管理
 window.openUiLibManager = async function() {
     // 关闭其他模态框

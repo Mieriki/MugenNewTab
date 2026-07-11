@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "MugenNewTab - 新标签页导航",
     "short_name": "MugenNewTab",
-    "version": "1.0.0.104",
+    "version": "1.0.0.105",
     "description": "统一管理和快速访问各类开发者工具和外部链接的应用导航中心",
     "author": "MugenNewTab",
     "homepage_url": "https://github.com/MugenNewTab/MugenNewTab",
@@ -52,7 +52,9 @@
         "extension_pages": "script-src 'self'; object-src 'self'"
     },
     "background": {
-        "scripts": ["js/background-firefox.js"]
+        "scripts": [
+            "js/background-firefox.js"
+        ]
     },
     "browser_specific_settings": {
         "gecko": {
