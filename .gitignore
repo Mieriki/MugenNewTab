@@ -34,6 +34,7 @@ release/
 *.crx
 *.pem
 *.xpi
+.firefox-build-num
 
 # Temporary files
 tmp/

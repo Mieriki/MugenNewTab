@@ -22,38 +22,50 @@ echo "✅ API 密钥已检测到"
 echo "   API Key: ${WEB_EXT_API_KEY:0:10}..."
 echo ""
 
+# ====== 步骤 1：构建 ======
 echo "📦 重新构建 build-firefox 目录..."
 ./build-firefox.sh > /dev/null
 echo "   构建完成"
 
-# 自动递增版本号（避免 AMO "upload already submitted" 错误）
-# 规则：基础版本号 + git 提交计数，例如 1.0.0.42
-# 同时更新源码和构建目录中的 manifest
-BASE_VERSION="1.0.0"
-GIT_REV=$(git rev-list --count HEAD 2>/dev/null || echo "0")
-NEW_VERSION="${BASE_VERSION}.${GIT_REV}"
+# ====== 步骤 2：版本号管理 ======
+BUILD_NUM_FILE=".firefox-build-num"
 
-# 更新源码 manifest 和构建目录中的 manifest
+# 读取当前构建号（如果文件不存在则初始化）
+if [ -f "$BUILD_NUM_FILE" ]; then
+    BUILD_NUM=$(cat "$BUILD_NUM_FILE")
+else
+    # 首次运行，从较高的起始值开始（避免与旧版本冲突）
+    BUILD_NUM=100
+fi
+
+# 递增构建号
+BUILD_NUM=$((BUILD_NUM + 1))
+VERSION="1.0.0.${BUILD_NUM}"
+
+# 更新 manifest 版本号
 update_manifest_version() {
     local file="$1"
     if [ -f "$file" ]; then
-        # 使用 node 精确修改 JSON（保持格式）
         node -e "
             const fs = require('fs');
             const p = process.argv[1];
             const j = JSON.parse(fs.readFileSync(p, 'utf8'));
             j.version = process.argv[2];
             fs.writeFileSync(p, JSON.stringify(j, null, 4) + '\n');
-        " "$file" "$NEW_VERSION"
-        echo "   已更新 $(basename "$file") -> v${NEW_VERSION}"
+        " "$file" "$VERSION"
+        echo "   $(basename "$file") -> v${VERSION}"
     fi
 }
 
-echo "🔧 设置版本号: v${NEW_VERSION}"
+echo "🔧 设置版本号: v${VERSION}"
 update_manifest_version "manifest.firefox.json"
 update_manifest_version "manifest.json"
 update_manifest_version "build-firefox/manifest.json"
 
+# 保存构建号
+echo "$BUILD_NUM" > "$BUILD_NUM_FILE"
+
+# ====== 步骤 3：签名 ======
 echo ""
 echo "🔐 开始签名..."
 echo ""
@@ -70,8 +82,10 @@ echo "=========================================="
 echo "  ✅ 签名完成！"
 echo "=========================================="
 echo ""
-echo "版本: v${NEW_VERSION}"
+echo "版本: v${VERSION}"
+echo "构建号: ${BUILD_NUM}"
+echo ""
 echo "签名后的扩展文件位于当前目录，文件名类似："
-echo "  mugen_newtab-${NEW_VERSION}-an+fx.xpi"
+echo "  mugen_newtab-${VERSION}-an+fx.xpi"
 echo ""
 echo "可以直接在 Firefox 中打开安装。"
