@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "MugenNewTab - 新标签页导航",
     "short_name": "MugenNewTab",
-    "version": "1.0.0.52",
+    "version": "1.0.0.101",
     "description": "统一管理和快速访问各类开发者工具和外部链接的应用导航中心",
     "author": "MugenNewTab",
     "homepage_url": "https://github.com/MugenNewTab/MugenNewTab",
