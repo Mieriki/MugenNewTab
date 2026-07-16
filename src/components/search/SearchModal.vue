@@ -8,6 +8,7 @@
  * 快捷键：
  * - Enter：执行搜索 / 选中高亮建议
  * - ArrowDown/ArrowUp：移动建议高亮
+ * - ArrowRight/Tab：光标在末尾时补全到建议词（输入框内有幽灵文本预览）
  * - Escape：关闭模态框（有建议时先清空建议）
  */
 import { computed, nextTick, ref, watch } from 'vue';
@@ -58,8 +59,9 @@ const {
     clearHistory,
     moveSuggestionDown,
     moveSuggestionUp,
-    selectActiveSuggestion
-} = useSearch({ debounceMs: 200, maxSuggestions: 8, maxLocalSuggestions: 5 });
+    selectActiveSuggestion,
+    getCompletionCandidate
+} = useSearch({ debounceMs: 200, maxSuggestions: 10, maxLocalSuggestions: 5 });
 
 const inputRef = ref<InstanceType<typeof BaseInput> | null>(null);
 const isVisible = computed({
@@ -68,6 +70,22 @@ const isVisible = computed({
 });
 
 const showHistory = computed(() => !query.value.trim() && history.value.length > 0);
+const showEmptyState = computed(() => !query.value.trim() && history.value.length === 0);
+
+/**
+ * 幽灵文本预览的补全后缀：
+ * 仅当补全候选以当前 query 为前缀时展示剩余部分（高亮项未必是前缀匹配）。
+ */
+const ghostSuffix = computed(() => {
+    const candidate = getCompletionCandidate();
+    if (!candidate) {
+        return '';
+    }
+    if (!candidate.toLowerCase().startsWith(query.value.toLowerCase())) {
+        return '';
+    }
+    return candidate.slice(query.value.length);
+});
 
 /**
  * 聚焦输入框
@@ -91,9 +109,11 @@ function close(): void {
  * 提交搜索
  */
 async function submitSearch(rawQuery?: string): Promise<void> {
+    // executeSearch 成功后会清空 query，提前捕获保证事件载荷不丢关键词
+    const text = (rawQuery ?? query.value).trim();
     const success = await executeSearch(rawQuery);
     if (success && currentEngine.value) {
-        emit('search', { query: query.value || rawQuery || '', engine: currentEngine.value });
+        emit('search', { query: text, engine: currentEngine.value });
         close();
     }
 }
@@ -125,10 +145,37 @@ async function handleHistorySelect(historyQuery: string): Promise<void> {
 }
 
 /**
+ * 尝试用补全候选填充输入框（右箭头 / Tab）。
+ * 仅在光标位于文本末尾时生效，返回是否已执行补全。
+ */
+function tryCompleteQuery(event: KeyboardEvent): boolean {
+    const target = event.target as HTMLInputElement | null;
+    if (!target || typeof target.selectionStart !== 'number') {
+        return false;
+    }
+
+    const atEnd =
+        target.selectionStart === target.value.length &&
+        target.selectionEnd === target.value.length;
+    if (!atEnd) {
+        return false;
+    }
+
+    const candidate = getCompletionCandidate();
+    if (!candidate) {
+        return false;
+    }
+
+    event.preventDefault();
+    query.value = candidate;
+    return true;
+}
+
+/**
  * 处理输入框键盘事件
  */
 function handleKeydown(event: KeyboardEvent): void {
-    if (!isVisible.value) return;
+    if (!isVisible.value || event.defaultPrevented) return;
 
     switch (event.key) {
         case 'ArrowDown':
@@ -142,6 +189,12 @@ function handleKeydown(event: KeyboardEvent): void {
                 event.preventDefault();
                 moveSuggestionUp();
             }
+            break;
+        case 'ArrowRight':
+            tryCompleteQuery(event);
+            break;
+        case 'Tab':
+            tryCompleteQuery(event);
             break;
         case 'Enter':
             event.preventDefault();
@@ -183,15 +236,17 @@ watch(
 );
 
 const closeIconPath = 'M18 6L6 18M6 6l12 12';
+const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
 
+// 注意：ModalOverlay 经 Teleport 渲染，scoped 样式命不中容器，
+// 容器样式以内联方式下发；下方 scoped 中的 &__content / &__body 仅作同步备份。
 const modalContentStyle = {
-    background: 'rgba(var(--md-sys-color-surface-rgb), 0.9)',
+    background: 'rgba(var(--md-sys-color-surface-rgb), 0.92)',
     border: '1px solid var(--md-sys-color-outline-variant)',
-    borderRadius: '20px',
-    boxShadow: '0 24px 80px rgba(0, 0, 0, 0.12)',
-    backdropFilter: 'blur(20px)',
-    overflow: 'visible',
-    minHeight: '380px'
+    borderRadius: '24px',
+    boxShadow: '0 24px 64px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08)',
+    backdropFilter: 'blur(24px)',
+    overflow: 'visible'
 };
 
 const modalBodyStyle = {
@@ -218,32 +273,41 @@ const modalBodyStyle = {
     >
         <div class="search-modal" @keydown="handleKeydown">
             <div class="search-modal__header">
-                <EngineSelector
-                    :engines="engines"
-                    :model-value="currentEngineIndex"
-                    @update:model-value="handleEngineSelect"
-                />
+                <div class="search-modal__bar">
+                    <EngineSelector
+                        :engines="engines"
+                        :model-value="currentEngineIndex"
+                        @update:model-value="handleEngineSelect"
+                    />
 
-                <span class="search-modal__divider" aria-hidden="true" />
+                    <span class="search-modal__divider" aria-hidden="true" />
 
-                <BaseInput
-                    ref="inputRef"
-                    v-model="query"
-                    class="search-modal__input"
-                    type="search"
-                    :placeholder="placeholder"
-                    autocomplete="off"
-                    @keydown="handleKeydown"
-                />
+                    <div class="search-modal__input-wrap">
+                        <BaseInput
+                            ref="inputRef"
+                            v-model="query"
+                            class="search-modal__input"
+                            type="search"
+                            :placeholder="placeholder"
+                            autocomplete="off"
+                            @keydown="handleKeydown"
+                        />
+                        <span
+                            v-if="ghostSuffix"
+                            class="search-modal__ghost"
+                            aria-hidden="true"
+                        ><span class="search-modal__ghost-query">{{ query }}</span><span class="search-modal__ghost-suffix">{{ ghostSuffix }}</span></span>
+                    </div>
 
-                <button
-                    type="button"
-                    class="search-modal__submit"
-                    aria-label="搜索"
-                    @click="() => submitSearch()"
-                >
-                    <IconSvg name="search" :size="20" alt="" />
-                </button>
+                    <button
+                        type="button"
+                        class="search-modal__submit"
+                        aria-label="搜索"
+                        @click="() => submitSearch()"
+                    >
+                        <IconSvg name="search" :size="18" alt="" />
+                    </button>
+                </div>
 
                 <button
                     type="button"
@@ -251,7 +315,7 @@ const modalBodyStyle = {
                     aria-label="关闭搜索"
                     @click="close"
                 >
-                    <IconSvg :path="closeIconPath" :size="20" alt="" />
+                    <IconSvg :path="closeIconPath" :size="18" alt="" />
                 </button>
             </div>
 
@@ -273,6 +337,14 @@ const modalBodyStyle = {
                     @remove="removeHistory"
                     @clear="clearHistory"
                 />
+
+                <div v-if="showEmptyState" class="search-modal__empty">
+                    <span class="search-modal__empty-icon">
+                        <IconSvg :path="searchIconPath" :size="26" alt="" />
+                    </span>
+                    <p class="search-modal__empty-title">搜索全网，一触即达</p>
+                    <p class="search-modal__empty-text">输入关键词开始搜索，历史记录会显示在这里</p>
+                </div>
             </div>
 
             <div class="search-modal__footer">
@@ -280,6 +352,15 @@ const modalBodyStyle = {
                     <span>
                         <kbd>↵</kbd>
                         搜索
+                    </span>
+                    <span>
+                        <kbd>↑</kbd>
+                        <kbd>↓</kbd>
+                        选择
+                    </span>
+                    <span>
+                        <kbd>→</kbd>
+                        补全
                     </span>
                     <span>
                         <kbd>ESC</kbd>
@@ -303,14 +384,14 @@ const modalBodyStyle = {
     flex-direction: column;
     min-height: 0;
 
+    // 同步备份：实际生效的是内联 modalContentStyle（见脚本注释）
     &__content {
-        background: rgba(var(--md-sys-color-surface-rgb), 0.9);
+        background: rgba(var(--md-sys-color-surface-rgb), 0.92);
         border: 1px solid var(--md-sys-color-outline-variant);
-        border-radius: 20px;
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.12);
-        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(24px);
         overflow: visible;
-        min-height: 380px;
     }
 
     &__body {
@@ -325,34 +406,84 @@ const modalBodyStyle = {
         min-height: 0;
         overflow-y: auto;
         overflow-x: hidden;
-        border-radius: 0 0 20px 20px;
+        border-radius: 0 0 24px 24px;
         @include hide-scrollbar;
     }
 
     &__header {
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 8px 12px;
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        gap: 8px;
+        padding: 12px 14px 10px;
+    }
+
+    // 胶囊搜索栏：引擎选择 + 输入 + 提交按钮整合为一体
+    &__bar {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 4px 4px 12px;
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 5%, transparent);
+        border: 1px solid transparent;
+        @include md-transition(all, var(--md-transition-fast));
+
+        &:focus-within {
+            background: rgba(var(--md-sys-color-surface-rgb), 0.85);
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+        }
     }
 
     &__divider {
         width: 1px;
-        height: 24px;
+        height: 20px;
         background: var(--md-sys-color-outline-variant);
         flex-shrink: 0;
         margin: 0 2px;
     }
 
-    &__input {
+    &__input-wrap {
+        position: relative;
         flex: 1;
+        min-width: 0;
+    }
+
+    // 幽灵文本：镜像输入框的字体与内边距，仅展示补全后缀
+    // 注意：与下方 __input 的 padding/font-size 联动，改动时需同步
+    &__ghost {
+        position: absolute;
+        left: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        max-width: calc(100% - 12px);
+        overflow: hidden;
+        font-size: 15px;
+        line-height: normal;
+        white-space: pre;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    &__ghost-query {
+        visibility: hidden;
+    }
+
+    &__ghost-suffix {
+        color: var(--md-sys-color-on-surface-variant);
+        opacity: 0.55;
+    }
+
+    &__input {
+        width: 100%;
         min-width: 0;
 
         :deep(.mnt-base-input__wrapper) {
             border: none;
             border-radius: 12px;
-            padding: 10px 12px;
+            padding: 8px 6px;
             background: transparent;
             box-shadow: none;
         }
@@ -362,22 +493,21 @@ const modalBodyStyle = {
         }
 
         :deep(.mnt-base-input__field) {
-            font-size: 16px;
+            font-size: 15px;
 
+            // 焦点指示由 __bar 的 focus-within 光晕承担
             &:focus-visible {
-                outline: 2px solid var(--md-sys-color-primary);
-                outline-offset: 2px;
-                border-radius: 4px;
+                outline: none;
             }
         }
     }
 
     &__submit {
         @include button-reset;
-        width: 44px;
-        height: 44px;
+        width: 36px;
+        height: 36px;
         padding: 0;
-        border-radius: 12px;
+        border-radius: 10px;
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -388,9 +518,9 @@ const modalBodyStyle = {
         @include focus-ring;
 
         &:hover {
-            opacity: 0.9;
+            opacity: 0.92;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(177, 74, 107, 0.3);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
         }
 
         &:active {
@@ -403,8 +533,8 @@ const modalBodyStyle = {
         }
 
         .icon-svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             filter: brightness(0) invert(1);
         }
     }
@@ -413,7 +543,7 @@ const modalBodyStyle = {
         @include button-reset;
         width: 36px;
         height: 36px;
-        border-radius: 10px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -423,16 +553,53 @@ const modalBodyStyle = {
         @include focus-ring;
 
         &:hover {
-            background: var(--md-sys-color-surface-variant);
+            background: color-mix(in srgb, var(--md-sys-color-error) 10%, transparent);
             color: var(--md-sys-color-error);
         }
+    }
+
+    // 无历史记录时的空状态
+    &__empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 40px 24px 44px;
+        text-align: center;
+    }
+
+    &__empty-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+        margin-bottom: 6px;
+    }
+
+    &__empty-title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface);
+    }
+
+    &__empty-text {
+        margin: 0;
+        font-size: 12px;
+        color: var(--md-sys-color-on-surface-variant);
+        opacity: 0.8;
     }
 
     &__footer {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 12px;
+        padding: 9px 16px;
         background: transparent;
         font-size: 12px;
         color: var(--md-sys-color-on-surface-variant);
@@ -441,7 +608,7 @@ const modalBodyStyle = {
 
     &__hints {
         display: flex;
-        gap: 12px;
+        gap: 14px;
         flex-wrap: wrap;
 
         span {
@@ -451,12 +618,15 @@ const modalBodyStyle = {
         }
 
         kbd {
-            background: rgba(var(--md-sys-color-surface-rgb), 0.8);
-            padding: 2px 6px;
-            border-radius: 4px;
+            min-width: 20px;
+            padding: 2px 5px;
+            border-radius: 6px;
             font-family: monospace;
             font-size: 11px;
-            border: 1px solid var(--md-sys-color-outline-variant);
+            text-align: center;
+            background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
+            border: 1px solid color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+            border-bottom-width: 2px;
         }
     }
 
@@ -466,24 +636,23 @@ const modalBodyStyle = {
     }
 }
 
-// 深色模式
+// 深色模式（tonal 变量随主题自适应，仅需覆盖容器背景）
 :global(html.dark-mode),
 :global(body.dark-mode) {
     .search-modal__content {
         background: rgba(30, 30, 30, 0.88);
         border-color: rgba(255, 255, 255, 0.1);
     }
-
-    .search-modal__hints kbd {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
 }
 
 @include respond-to(mobile) {
     .search-modal__header {
-        padding: 8px 12px;
+        padding: 10px 12px 8px;
         gap: 6px;
+    }
+
+    .search-modal__bar {
+        padding-left: 8px;
     }
 
     .search-modal__divider {
@@ -491,12 +660,12 @@ const modalBodyStyle = {
     }
 
     .search-modal__submit {
-        width: 40px;
-        height: 40px;
+        width: 34px;
+        height: 34px;
     }
 
-    .search-modal__close {
-        margin-right: 0;
+    .search-modal__empty {
+        padding: 32px 20px 36px;
     }
 
     .search-modal__footer {
@@ -505,7 +674,7 @@ const modalBodyStyle = {
     }
 
     .search-modal__hints {
-        gap: 8px;
+        gap: 10px;
     }
 }
 </style>

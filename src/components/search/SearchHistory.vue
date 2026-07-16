@@ -88,7 +88,6 @@ function formatRelativeTime(time: number): string {
     return formatAbsoluteTime(time);
 }
 
-const clockIconPath = 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z';
 const deleteIconPath = 'M18 6L6 18M6 6l12 12';
 </script>
 
@@ -122,7 +121,7 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
             >
                 <slot name="item" :query="item.query" :index="index" :time="item.time">
                     <span class="search-history__item-icon">
-                        <IconSvg :path="clockIconPath" :size="14" alt="" />
+                        <IconSvg name="history" :size="14" alt="" monochrome />
                     </span>
                     <span class="search-history__item-text">{{ item.query }}</span>
                     <span class="search-history__item-time">{{ formatRelativeTime(item.time) }}</span>
@@ -155,7 +154,7 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 12px 4px;
+        padding: 10px 14px 6px;
         font-size: 12px;
         font-weight: 600;
         color: var(--md-sys-color-on-surface-variant);
@@ -180,7 +179,7 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
     }
 
     &__list {
-        padding: 2px 6px 6px;
+        padding: 4px 8px 10px;
     }
 
     &__item {
@@ -189,11 +188,11 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 7px 10px;
-        border-radius: 8px;
+        gap: 12px;
+        padding: 9px 10px;
+        border-radius: 12px;
         color: var(--md-sys-color-on-surface);
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 500;
         text-align: left;
         @include md-transition(all, var(--md-transition-fast));
@@ -203,6 +202,10 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
         &:focus-visible {
             background: var(--md-sys-color-primary-container);
             color: var(--md-sys-color-primary);
+
+            .search-history__item-icon {
+                background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);
+            }
 
             .search-history__item-time {
                 opacity: 0;
@@ -216,14 +219,15 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
     }
 
     &__item-icon {
-        width: 14px;
-        height: 14px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.65;
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
+        @include md-transition(all, var(--md-transition-fast));
     }
 
     &__item-text {

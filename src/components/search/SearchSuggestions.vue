@@ -3,9 +3,13 @@
  * SearchSuggestions - 搜索建议列表
  *
  * 展示本地历史 + 远程搜索引擎返回的关键词补全建议，支持高亮当前项、
- * 鼠标悬停与键盘上下键导航。
+ * 鼠标悬停与键盘上下键导航（循环跳转时高亮项自动滚动到可见区域）。
+ *
+ * 加载表现（配合 useSearch 的 SWR 策略）：
+ * - 已有建议时刷新：列表半透明过渡，不清空，避免高度跳变；
+ * - 无建议时加载：显示骨架屏占位。
  */
-import { computed } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { escapeHtml } from '@/utils/escape.util';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
@@ -42,11 +46,33 @@ const emit = defineEmits<{
 
 const hasSuggestions = computed(() => props.suggestions.length > 0);
 const shouldShow = computed(() => props.visible && (hasSuggestions.value || props.loading));
+/** 刷新中：已有旧建议，等待新结果替换（保持列表不清空） */
+const isRefreshing = computed(() => props.loading && hasSuggestions.value);
 
 const contentStyle = computed(() => {
     const height = typeof props.maxHeight === 'number' ? `${props.maxHeight}px` : props.maxHeight;
     return { maxHeight: height };
 });
+
+/** 骨架屏文本条宽度（制造错落感） */
+const skeletonWidths = ['52%', '74%', '61%'];
+
+/** 建议列表容器（用于高亮项跟随滚动） */
+const listRef = ref<HTMLElement | null>(null);
+
+// 高亮项变化时滚动到可见区域（含循环跳转后回滚到顶部/底部）
+watch(
+    () => props.activeIndex,
+    (index) => {
+        if (index < 0) {
+            return;
+        }
+        nextTick(() => {
+            const items = listRef.value?.querySelectorAll('.search-suggestions__item');
+            (items?.[index] as HTMLElement | undefined)?.scrollIntoView?.({ block: 'nearest' });
+        });
+    }
+);
 
 function handleSelect(suggestion: string): void {
     emit('select', suggestion);
@@ -80,31 +106,35 @@ function highlightMatch(suggestion: string): string {
 
     return `${before}<mark class="search-suggestions__mark">${match}</mark>${after}`;
 }
-
-const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
-const loadingIconPath = 'M12 2v4m0 12v4M2 12h4m12 0h4';
 </script>
 
 <template>
     <div
         v-show="shouldShow"
         class="search-suggestions"
+        :class="{ 'is-refreshing': isRefreshing }"
         :style="contentStyle"
         role="listbox"
         aria-label="搜索建议"
     >
         <div
             v-if="loading && !hasSuggestions"
-            class="search-suggestions__loading"
+            class="search-suggestions__skeleton"
+            aria-hidden="true"
         >
-            <span class="search-suggestions__spinner">
-                <IconSvg :path="loadingIconPath" :size="18" alt="" />
-            </span>
-            <span>正在获取建议…</span>
+            <div
+                v-for="(width, index) in skeletonWidths"
+                :key="index"
+                class="search-suggestions__skeleton-item"
+            >
+                <span class="search-suggestions__skeleton-icon" />
+                <span class="search-suggestions__skeleton-text" :style="{ width }" />
+            </div>
         </div>
 
         <div
             v-else-if="hasSuggestions"
+            ref="listRef"
             class="search-suggestions__list"
         >
             <button
@@ -127,7 +157,7 @@ const loadingIconPath = 'M12 2v4m0 12v4M2 12h4m12 0h4';
                     :highlight="highlightMatch(suggestion)"
                 >
                     <span class="search-suggestions__icon">
-                        <IconSvg :path="searchIconPath" :size="16" alt="" />
+                        <IconSvg name="search" :size="15" alt="" monochrome />
                     </span>
                     <span
                         class="search-suggestions__text"
@@ -145,31 +175,66 @@ const loadingIconPath = 'M12 2v4m0 12v4M2 12h4m12 0h4';
 
 .search-suggestions {
     overflow-y: auto;
-    background: var(--md-sys-color-surface);
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    @include hide-scrollbar;
+    background: transparent;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--md-sys-color-on-surface) 20%, transparent) transparent;
 
-    &__loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 16px;
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 13px;
+    &::-webkit-scrollbar {
+        width: 8px;
     }
 
-    &__spinner {
-        width: 18px;
-        height: 18px;
+    &::-webkit-scrollbar-thumb {
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 20%, transparent);
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &__skeleton {
+        padding: 4px 8px 10px;
+    }
+
+    &__skeleton-item {
         display: flex;
         align-items: center;
-        justify-content: center;
-        animation: mnt-spin 1s linear infinite;
+        gap: 12px;
+        padding: 9px 10px;
+    }
+
+    &__skeleton-icon,
+    &__skeleton-text {
+        background: linear-gradient(
+            90deg,
+            color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent) 25%,
+            color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent) 50%,
+            color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent) 75%
+        );
+        background-size: 200% 100%;
+        animation: mnt-skeleton-shimmer 1.4s ease infinite;
+    }
+
+    &__skeleton-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    &__skeleton-text {
+        height: 14px;
+        border-radius: 7px;
     }
 
     &__list {
-        padding: 2px 6px 6px;
+        padding: 4px 8px 10px;
+        @include md-transition(opacity, var(--md-transition-fast));
+    }
+
+    // 刷新中：旧列表保持显示，半透明提示正在更新，避免高度跳变
+    &.is-refreshing &__list {
+        opacity: 0.55;
     }
 
     &__item {
@@ -177,9 +242,9 @@ const loadingIconPath = 'M12 2v4m0 12v4M2 12h4m12 0h4';
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 8px 10px;
-        border-radius: 8px;
+        gap: 12px;
+        padding: 9px 10px;
+        border-radius: 12px;
         color: var(--md-sys-color-on-surface);
         font-size: 14px;
         font-weight: 500;
@@ -193,7 +258,7 @@ const loadingIconPath = 'M12 2v4m0 12v4M2 12h4m12 0h4';
             color: var(--md-sys-color-primary);
 
             .search-suggestions__icon {
-                opacity: 1;
+                background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);
             }
         }
 
@@ -203,15 +268,15 @@ const loadingIconPath = 'M12 2v4m0 12v4M2 12h4m12 0h4';
     }
 
     &__icon {
-        width: 16px;
-        height: 16px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        opacity: 0.6;
-        color: var(--md-sys-color-on-surface-variant);
-        @include md-transition(opacity, var(--md-transition-fast));
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
+        @include md-transition(all, var(--md-transition-fast));
     }
 
     &__text {
@@ -227,21 +292,13 @@ const loadingIconPath = 'M12 2v4m0 12v4M2 12h4m12 0h4';
     }
 }
 
-@keyframes mnt-spin {
+@keyframes mnt-skeleton-shimmer {
     from {
-        transform: rotate(0deg);
+        background-position: 200% 0;
     }
 
     to {
-        transform: rotate(360deg);
-    }
-}
-
-// 深色模式
-:global(html.dark-mode),
-:global(body.dark-mode) {
-    .search-suggestions {
-        background: rgba(40, 40, 40, 0.98);
+        background-position: -200% 0;
     }
 }
 

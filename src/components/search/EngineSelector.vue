@@ -236,8 +236,8 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 4px;
-        border-radius: 8px;
+        padding: 6px 8px;
+        border-radius: 10px;
         background: transparent;
         color: var(--md-sys-color-on-surface);
         font-size: 14px;
@@ -248,6 +248,7 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         @include focus-ring;
 
         &:hover:not(:disabled) {
+            background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
             color: var(--md-sys-color-primary);
         }
 
@@ -297,7 +298,7 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         overflow-y: auto;
         background: var(--md-sys-color-surface);
         border: 1px solid var(--md-sys-color-outline-variant);
-        border-radius: 12px;
+        border-radius: 14px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         padding: 6px;
         z-index: 3000;
@@ -311,7 +312,7 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         align-items: center;
         gap: 10px;
         padding: 8px 10px;
-        border-radius: 8px;
+        border-radius: 10px;
         color: var(--md-sys-color-on-surface);
         font-size: 13px;
         font-weight: 500;

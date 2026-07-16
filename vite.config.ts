@@ -13,7 +13,14 @@ export default defineConfig({
     },
     server: {
         port: 5173,
-        strictPort: false
+        strictPort: false,
+        proxy: {
+            // 开发环境代理百度 sugrec 搜索建议接口，规避浏览器 CORS 限制
+            '/sugrec': {
+                target: 'https://www.baidu.com',
+                changeOrigin: true
+            }
+        }
     },
     build: {
         outDir: 'dist',

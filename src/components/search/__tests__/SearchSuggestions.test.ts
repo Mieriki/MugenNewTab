@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import SearchSuggestions from '@/components/search/SearchSuggestions.vue';
 
@@ -21,12 +22,20 @@ describe('SearchSuggestions', () => {
         expect(wrapper.find('.search-suggestions').isVisible()).toBe(false);
     });
 
-    it('加载中且没有建议时显示加载状态', () => {
+    it('加载中且没有建议时显示骨架屏占位', () => {
         const wrapper = mount(SearchSuggestions, {
             props: { suggestions: [], loading: true }
         });
         expect(wrapper.find('.search-suggestions').isVisible()).toBe(true);
-        expect(wrapper.text()).toContain('正在获取建议');
+        expect(wrapper.findAll('.search-suggestions__skeleton-item')).toHaveLength(3);
+    });
+
+    it('已有建议时刷新中追加 is-refreshing 类且保留旧列表', () => {
+        const wrapper = mount(SearchSuggestions, {
+            props: { suggestions: mockSuggestions, loading: true }
+        });
+        expect(wrapper.find('.search-suggestions').classes()).toContain('is-refreshing');
+        expect(wrapper.findAll('.search-suggestions__item')).toHaveLength(3);
     });
 
     it('点击建议项触发 select 事件', async () => {
@@ -69,5 +78,24 @@ describe('SearchSuggestions', () => {
             props: { suggestions: mockSuggestions }
         });
         expect(wrapper.text()).not.toMatch(/\p{Extended_Pictographic}/u);
+    });
+
+    it('activeIndex 变化时高亮项滚动到可见区域', async () => {
+        const scrollSpy = vi.fn();
+        const original = Element.prototype.scrollIntoView;
+        Element.prototype.scrollIntoView = scrollSpy;
+
+        try {
+            const wrapper = mount(SearchSuggestions, {
+                props: { suggestions: mockSuggestions, activeIndex: -1 }
+            });
+            await wrapper.setProps({ activeIndex: 2 });
+            await nextTick();
+            await nextTick();
+
+            expect(scrollSpy).toHaveBeenCalled();
+        } finally {
+            Element.prototype.scrollIntoView = original;
+        }
     });
 });

@@ -4,7 +4,7 @@
  * 整合 search store 与 SearchEngineService，为搜索组件提供：
  * - 当前搜索引擎与切换
  * - 搜索关键词执行与历史记录
- * - 基于本地历史/应用与百度 sugrec 的搜索建议补全
+ * - 基于本地历史/应用与百度 sugrec 的搜索建议补全（带会话级缓存与防抖）
  *
  * 副作用清理：组件卸载时自动取消未完成的防抖调用与网络请求。
  */
@@ -92,11 +92,39 @@ export interface UseSearchReturn {
     moveSuggestionUp: () => void;
     /** 选中当前高亮的建议并返回其文本，未选中时返回 null */
     selectActiveSuggestion: () => string | null;
+    /** 计算右箭头/Tab 补全候选词，无候选时返回 null */
+    getCompletionCandidate: () => string | null;
 }
 
 /** 百度 sugrec 响应结构 */
 interface BaiduSuggestionResponse {
     g?: Array<{ q?: string }>;
+}
+
+/** 远程建议缓存有效期（5 分钟） */
+const SUGGESTION_CACHE_TTL = 5 * 60 * 1000;
+/** 远程建议缓存最大条数（超出时按插入顺序淘汰最旧条目） */
+const SUGGESTION_CACHE_MAX = 100;
+
+/**
+ * 远程建议缓存（会话级，模块内共享）。
+ * key 为 trim + 小写后的关键词；本地建议不缓存，保证新历史即时可见。
+ */
+const suggestionCache = new Map<string, { items: string[]; time: number }>();
+
+/** 清空远程建议缓存（测试隔离与手动失效用） */
+export function clearSuggestionCache(): void {
+    suggestionCache.clear();
+}
+
+/**
+ * 构建百度 sugrec 请求地址。
+ * dev 环境使用同源相对路径（由 Vite dev 代理转发，规避 CORS）；
+ * 生产环境直连百度（扩展端依赖 host_permissions 跨域，网页版跨域失败时优雅降级为仅本地建议）。
+ */
+export function buildSuggestionUrl(rawQuery: string, isDev: boolean): string {
+    const base = isDev ? '/sugrec' : 'https://www.baidu.com/sugrec';
+    return `${base}?prod=pc&wd=${encodeURIComponent(rawQuery)}&cb=cb`;
 }
 
 export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
@@ -145,12 +173,22 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     }
 
     /**
-     * 从百度 sugrec 接口获取远程建议
+     * 从百度 sugrec 接口获取远程建议（带会话级缓存）
      */
     async function fetchRemoteSuggestions(rawQuery: string, signal: AbortSignal): Promise<string[]> {
+        const cacheKey = rawQuery.trim().toLowerCase();
+
+        const cached = suggestionCache.get(cacheKey);
+        if (cached) {
+            if (Date.now() - cached.time < SUGGESTION_CACHE_TTL) {
+                return cached.items;
+            }
+            suggestionCache.delete(cacheKey);
+        }
+
         try {
             const response = await fetch(
-                `https://www.baidu.com/sugrec?prod=pc&wd=${encodeURIComponent(rawQuery)}&cb=cb`,
+                buildSuggestionUrl(rawQuery, import.meta.env.DEV),
                 { signal }
             );
             if (!response.ok) {
@@ -164,9 +202,19 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
             }
 
             const data = JSON.parse(match[1]) as BaiduSuggestionResponse;
-            return (data.g || [])
+            const items = (data.g || [])
                 .map((item) => item.q)
                 .filter((item): item is string => typeof item === 'string' && item.length > 0);
+
+            if (suggestionCache.size >= SUGGESTION_CACHE_MAX) {
+                const oldestKey = suggestionCache.keys().next().value;
+                if (oldestKey !== undefined) {
+                    suggestionCache.delete(oldestKey);
+                }
+            }
+            suggestionCache.set(cacheKey, { items, time: Date.now() });
+
+            return items;
         } catch (error) {
             if ((error as Error).name !== 'AbortError') {
                 suggestionError.value = error instanceof Error ? error.message : String(error);
@@ -196,8 +244,10 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
 
         const localSuggestions = collectLocalSuggestions(trimmedQuery);
 
+        // SWR：加载期间保留旧建议列表，避免列表清空-重建造成的高度跳变（闪烁），
+        // 待远程结果返回后一次性替换为合并结果；失败时 fetchRemoteSuggestions 返回 []，
+        // 合并结果即本地建议，行为与原先一致。
         if (abortController.value === controller) {
-            suggestions.value = localSuggestions;
             isLoadingSuggestions.value = true;
         }
 
@@ -294,6 +344,8 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
 
         window.open(url, '_blank');
         clearSuggestions();
+        // 搜索跳转后清空输入框，下次打开搜索时不残留上次的关键词
+        query.value = '';
         await searchStore.addHistory(trimmedQuery);
         return true;
     }
@@ -340,18 +392,27 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
         await searchStore.clearHistory();
     }
 
+    /**
+     * 高亮下一个建议（循环：最后一项后跳回第一项）
+     */
     function moveSuggestionDown(): void {
         if (suggestions.value.length === 0) {
             return;
         }
-        activeSuggestionIndex.value = Math.min(
-            activeSuggestionIndex.value + 1,
-            suggestions.value.length - 1
-        );
+        activeSuggestionIndex.value = (activeSuggestionIndex.value + 1) % suggestions.value.length;
     }
 
+    /**
+     * 高亮上一个建议（循环：第一项前跳到最后一项）
+     */
     function moveSuggestionUp(): void {
-        activeSuggestionIndex.value = Math.max(activeSuggestionIndex.value - 1, -1);
+        if (suggestions.value.length === 0) {
+            return;
+        }
+        activeSuggestionIndex.value =
+            activeSuggestionIndex.value <= 0
+                ? suggestions.value.length - 1
+                : activeSuggestionIndex.value - 1;
     }
 
     function selectActiveSuggestion(): string | null {
@@ -364,6 +425,29 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
         activeSuggestionIndex.value = -1;
         suggestions.value = [];
         return selected;
+    }
+
+    /**
+     * 计算右箭头/Tab 补全候选词：
+     * 优先当前高亮建议；否则取第一个以当前 query 为前缀（忽略大小写）且更长的建议。
+     * 无候选时返回 null。
+     */
+    function getCompletionCandidate(): string | null {
+        const current = query.value;
+        if (!current.trim() || suggestions.value.length === 0) {
+            return null;
+        }
+
+        const active = suggestions.value[activeSuggestionIndex.value];
+        if (active && active !== current) {
+            return active;
+        }
+
+        const lowerCurrent = current.toLowerCase();
+        const matched = suggestions.value.find(
+            (item) => item.toLowerCase().startsWith(lowerCurrent) && item.length > current.length
+        );
+        return matched ?? null;
     }
 
     /**
@@ -418,5 +502,6 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
         moveSuggestionDown,
         moveSuggestionUp,
         selectActiveSuggestion,
+        getCompletionCandidate,
     };
 }

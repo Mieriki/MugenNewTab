@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } fr
 import { mount, flushPromises } from '@vue/test-utils';
 import { ref, computed, nextTick } from 'vue';
 import SearchModal from '@/components/search/SearchModal.vue';
+import { useSearch } from '@/composables/useSearch';
 import type { SearchEngine } from '@/types/config';
 import type { UseSearchReturn } from '@/composables/useSearch';
 import type { SearchHistoryItem } from '@/stores/search.store';
@@ -50,11 +51,11 @@ function createMockUseSearch(overrides: Partial<UseSearchReturn> = {}): UseSearc
         executeSearch: vi.fn(async (rawQuery?: string) => {
             const trimmed = (rawQuery ?? query.value).trim();
             if (!trimmed || !currentEngine.value) return false;
-            query.value = trimmed;
+            query.value = '';
             return true;
         }),
-        executeSearchWithSuggestion: vi.fn(async (suggestion: string) => {
-            query.value = suggestion;
+        executeSearchWithSuggestion: vi.fn(async (_suggestion: string) => {
+            query.value = '';
             return true;
         }),
         loadSuggestions: vi.fn(),
@@ -91,6 +92,18 @@ function createMockUseSearch(overrides: Partial<UseSearchReturn> = {}): UseSearc
             activeSuggestionIndex.value = -1;
             suggestions.value = [];
             return selected;
+        }),
+        getCompletionCandidate: vi.fn(() => {
+            const current = query.value;
+            if (!current.trim() || suggestions.value.length === 0) return null;
+            const active = suggestions.value[activeSuggestionIndex.value];
+            if (active && active !== current) return active;
+            const lower = current.toLowerCase();
+            return (
+                suggestions.value.find(
+                    (item) => item.toLowerCase().startsWith(lower) && item.length > current.length
+                ) ?? null
+            );
         }),
         ...overrides
     } as UseSearchReturn;
@@ -267,5 +280,95 @@ describe('SearchModal', () => {
         await flushPromises();
 
         expect(mockUseSearch.clearHistory).toHaveBeenCalled();
+    });
+
+    it('光标在末尾时按 → 补全到候选词', async () => {
+        mount(SearchModal, {
+            props: { modelValue: true },
+            attachTo: document.body
+        });
+
+        await wait();
+        mockUseSearch.suggestions.value = ['vue3', 'vite'];
+        mockUseSearch.query.value = 'vu';
+        await flushPromises();
+
+        const input = document.querySelector('input[type="search"]') as HTMLInputElement;
+        input.value = 'vu';
+        input.setSelectionRange(2, 2);
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        await flushPromises();
+
+        expect(mockUseSearch.query.value).toBe('vue3');
+    });
+
+    it('光标不在末尾时按 → 不补全', async () => {
+        mount(SearchModal, {
+            props: { modelValue: true },
+            attachTo: document.body
+        });
+
+        await wait();
+        mockUseSearch.suggestions.value = ['vue3'];
+        mockUseSearch.query.value = 'vu';
+        await flushPromises();
+
+        const input = document.querySelector('input[type="search"]') as HTMLInputElement;
+        input.value = 'vu';
+        input.setSelectionRange(0, 0);
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        await flushPromises();
+
+        expect(mockUseSearch.query.value).toBe('vu');
+    });
+
+    it('存在前缀匹配候选时显示幽灵文本后缀', async () => {
+        mount(SearchModal, {
+            props: { modelValue: true },
+            attachTo: document.body
+        });
+
+        await wait();
+        mockUseSearch.suggestions.value = ['vue3'];
+        mockUseSearch.query.value = 'vu';
+        await flushPromises();
+
+        const ghostSuffix = document.querySelector('.search-modal__ghost-suffix');
+        expect(ghostSuffix?.textContent).toBe('e3');
+    });
+
+    it('建议数量上限配置为 10 条', async () => {
+        mount(SearchModal, {
+            props: { modelValue: true },
+            attachTo: document.body
+        });
+
+        await wait();
+
+        expect(vi.mocked(useSearch)).toHaveBeenCalledWith(
+            expect.objectContaining({ maxSuggestions: 10 })
+        );
+    });
+
+    it('点击搜索按钮后清空输入框且 search 事件携带原关键词', async () => {
+        const wrapper = mount(SearchModal, {
+            props: { modelValue: true },
+            attachTo: document.body
+        });
+
+        await wait();
+        const input = document.querySelector('input[type="search"]') as HTMLInputElement;
+        input.value = 'vue3';
+        input.dispatchEvent(new Event('input'));
+        await flushPromises();
+
+        document.querySelector('.search-modal__submit')?.dispatchEvent(new Event('click'));
+        await flushPromises();
+
+        expect(mockUseSearch.executeSearch).toHaveBeenCalled();
+        expect(mockUseSearch.query.value).toBe('');
+        expect(wrapper.emitted('search')?.[0]).toEqual([
+            { query: 'vue3', engine: mockEngines[0] }
+        ]);
     });
 });
