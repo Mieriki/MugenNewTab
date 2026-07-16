@@ -29,17 +29,20 @@ bower_components/
 # Build / distribution (if generated)
 dist/
 build/
+build-*/
 release/
 *.zip
 *.crx
 *.pem
 *.xpi
 .firefox-build-num
+.build-num
 
 # Temporary files
 tmp/
 temp/
 .cache/
+.vite/
 
 # Local environment / secrets
 .env

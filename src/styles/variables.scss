@@ -1,0 +1,99 @@
+// =====================================================
+// variables.scss - 全局 CSS 变量与布局变量
+// 从 index.legacy.html 的 :root 与深色模式覆盖迁移而来
+// 默认值对应 material-rose，运行时会由 ThemeManager 动态覆盖
+// =====================================================
+
+:root {
+    // Material 3 动态颜色变量
+    --md-sys-color-primary: #B14A6B;
+    --md-sys-color-on-primary: #FFFFFF;
+    --md-sys-color-primary-container: #FFD8E1;
+    --md-sys-color-on-primary-container: #3D001F;
+    --md-sys-color-secondary: #7D5F65;
+    --md-sys-color-on-secondary: #FFFFFF;
+    --md-sys-color-secondary-container: #FFD8E1;
+    --md-sys-color-on-secondary-container: #2A1519;
+    --md-sys-color-tertiary: #8B6E3D;
+    --md-sys-color-on-tertiary: #FFFFFF;
+    --md-sys-color-tertiary-container: #FFDEA7;
+    --md-sys-color-on-tertiary-container: #2A1800;
+    --md-sys-color-surface: #FFF8F9;
+    --md-sys-color-surface-variant: #F3DDE2;
+    --md-sys-color-on-surface: #201A1A;
+    --md-sys-color-on-surface-variant: #534345;
+    --md-sys-color-background: #FFF8F9;
+    --md-sys-color-on-background: #201A1A;
+    --md-sys-color-outline: #E0D0D3;
+    --md-sys-color-outline-variant: #F0E5E7;
+    --md-sys-color-error: #BA1A1A;
+    --md-sys-color-error-container: #FFDAD6;
+    --md-sys-color-success: #376B2F;
+    --md-sys-color-inverse-surface: #201A1A;
+    --md-sys-color-inverse-on-surface: #F3DDE2;
+
+    // RGB 版本，用于半透明混合
+    --md-sys-color-surface-rgb: 255, 248, 249;
+    --md-sys-color-background-rgb: 255, 248, 249;
+
+    // 组件颜色变量 - 深色模式下会被覆盖
+    --card-bg: rgba(200, 200, 200, 0.25);
+    --card-border: rgba(175, 175, 175, 0.2);
+    --card-shadow: 0 2px 8px rgba(1, 1, 1, 0.1);
+    --hover-bg: rgba(255, 255, 255, 0.9);
+
+    // 动效变量
+    --md-easing: cubic-bezier(0.4, 0, 0.2, 1);
+    --md-transition-fast: 0.15s;
+    --md-transition-medium: 0.25s;
+
+    // 布局尺寸变量
+    --sidebar-width: 200px;
+    --sidebar-collapsed-width: 56px;
+    --header-height: 52px;
+    --fab-size: 56px;
+    --fab-bottom: 24px;
+    --fab-right: 24px;
+
+    // 图标滤镜：浅色模式显示黑色，深色模式反转为白色
+    --icon-filter: brightness(0) saturate(0);
+
+    // 派生变量（由 ThemeManager 动态设置，提供默认回退）
+    --md-primary: var(--md-sys-color-primary);
+    --md-primary-dark: #963D59;
+    --md-primary-light: #C96785;
+    --md-primary-container: var(--md-sys-color-primary-container);
+    --md-secondary: var(--md-sys-color-secondary);
+    --md-secondary-container: var(--md-sys-color-secondary-container);
+    --md-background: var(--md-sys-color-surface);
+    --md-surface: rgba(255, 248, 249, 0.85);
+    --md-surface-variant: var(--md-sys-color-surface-variant);
+    --md-surface-2: rgba(255, 248, 249, 0.7);
+    --md-on-primary: var(--md-sys-color-on-primary);
+    --md-on-background: var(--md-sys-color-on-surface);
+    --md-on-surface: var(--md-sys-color-on-surface-variant);
+    --md-outline: var(--md-sys-color-surface-variant);
+    --md-shadow: rgba(177, 74, 107, 0.15);
+}
+
+// 深色模式变量覆盖
+html.dark-mode,
+body.dark-mode {
+    --card-bg: rgba(255, 255, 255, 0.08);
+    --card-border: transparent;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --hover-bg: rgba(255, 255, 255, 0.08);
+    --icon-filter: invert(1) brightness(2);
+
+    --md-sys-color-outline: rgba(255, 255, 255, 0.12);
+    --md-sys-color-outline-variant: rgba(255, 255, 255, 0.08);
+    --md-sys-color-surface-rgb: 30, 30, 30;
+    --md-sys-color-background-rgb: 20, 20, 20;
+}
+
+// 响应式布局变量
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 220px;
+    }
+}

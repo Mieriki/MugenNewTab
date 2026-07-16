@@ -1,0 +1,26 @@
+{
+  "name": "mugen-newtab",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build && node scripts/postbuild.js --target=chromium",
+    "build:chromium": "npm run build",
+    "build:firefox": "npm run build && node scripts/postbuild.js --target=firefox",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/test-utils": "^2.4.0",
+    "jsdom": "^24.0.0",
+    "pinia": "^2.1.0",
+    "sass": "^1.70.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vite-svg-loader": "^5.1.0",
+    "vitest": "^1.2.0",
+    "vue": "^3.4.0",
+    "vue-tsc": "^2.0.0"
+  }
+}
