@@ -246,8 +246,62 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
     let currentElement: HTMLElement | null = null;
     /** 拖拽开始时元素原位的下一个兄弟节点，用于取消拖拽时还原 DOM 位置 */
     let originalNextSibling: Node | null = null;
+    /** 跟随指针的拖拽幽灵（克隆节点） */
+    let ghostElement: HTMLElement | null = null;
+    /** 按下时指针在元素内的相对位置（幽灵跟随偏移） */
+    let grabOffsetX = 0;
+    let grabOffsetY = 0;
     let abortedByLeave = false;
     let controller: AbortController | null = null;
+
+    /**
+     * 创建跟随指针的幽灵克隆
+     */
+    function createGhost(element: HTMLElement, point: PointerPoint): void {
+        removeGhost();
+        if (typeof document === 'undefined') return;
+
+        const rect = element.getBoundingClientRect();
+        grabOffsetX = point.clientX - rect.left;
+        grabOffsetY = point.clientY - rect.top;
+
+        const ghost = element.cloneNode(true) as HTMLElement;
+        ghost.classList.add('drag-ghost');
+        Object.assign(ghost.style, {
+            position: 'fixed',
+            left: `${rect.left}px`,
+            top: `${rect.top}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+            margin: '0',
+            pointerEvents: 'none',
+            zIndex: '10000',
+            opacity: '0.9',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+            // 覆盖克隆节点继承的 transition/animation，保证幽灵实时跟手
+            transition: 'none',
+            animation: 'none',
+        });
+        document.body.appendChild(ghost);
+        ghostElement = ghost;
+    }
+
+    /**
+     * 按抓取偏移移动幽灵
+     */
+    function moveGhost(point: PointerPoint): void {
+        if (!ghostElement) return;
+        ghostElement.style.left = `${point.clientX - grabOffsetX}px`;
+        ghostElement.style.top = `${point.clientY - grabOffsetY}px`;
+    }
+
+    /**
+     * 移除幽灵
+     */
+    function removeGhost(): void {
+        ghostElement?.remove();
+        ghostElement = null;
+    }
 
     /**
      * 重置所有内部状态
@@ -266,6 +320,7 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
         startPoint = null;
         currentElement = null;
         originalNextSibling = null;
+        removeGhost();
         abortedByLeave = false;
     }
 
@@ -303,6 +358,9 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
 
         // 记录原始位置，拖拽取消时还原
         originalNextSibling = currentElement.nextSibling;
+
+        // 创建跟随指针的幽灵克隆
+        createGhost(currentElement, point);
 
         isDragging.value = true;
         isPressing.value = false;
@@ -343,6 +401,9 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
                 container.insertBefore(currentElement, reference);
             }
         }
+
+        // 幽灵跟随指针
+        moveGhost(point);
 
         const pos: DragSortPosition = {
             x: point.clientX,

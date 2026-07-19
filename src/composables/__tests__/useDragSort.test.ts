@@ -538,4 +538,31 @@ describe('useDragSort', () => {
             Array.from(container.querySelectorAll<HTMLElement>('.sortable-item')).map((el) => el.dataset.id)
         ).toEqual(['item-0', 'item-1', 'item-2']);
     });
+
+    it('拖拽时幽灵克隆跟随指针并在结束后移除', async () => {
+        const { container, items } = createContainer();
+        mockLayout(container);
+        mountDragSort(container);
+        await nextTick();
+
+        // 按下点 (25,25)，元素矩形左上角 (0,0) → 抓取偏移 (25,25)
+        dispatchMouseEvent('mousedown', items[0], { clientX: 25, clientY: 25 });
+        await advanceTime(300);
+
+        const ghost = document.body.querySelector('.drag-ghost') as HTMLElement | null;
+        expect(ghost).not.toBeNull();
+        expect(ghost?.style.position).toBe('fixed');
+        expect(ghost?.style.pointerEvents).toBe('none');
+        expect(ghost?.style.transition).toBe('none');
+
+        // 指针移动到 (100,120) → 幽灵位于 (100-25, 120-25)
+        dispatchMouseEvent('mousemove', container, { clientX: 100, clientY: 120 });
+        await nextTick();
+        expect(ghost?.style.left).toBe('75px');
+        expect(ghost?.style.top).toBe('95px');
+
+        dispatchMouseEvent('mouseup', container, { clientX: 100, clientY: 120 });
+        await nextTick();
+        expect(document.body.querySelector('.drag-ghost')).toBeNull();
+    });
 });
