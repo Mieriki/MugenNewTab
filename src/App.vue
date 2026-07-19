@@ -37,6 +37,8 @@ import PersonalizationPanel from '@/components/personalization/PersonalizationPa
 import ToastContainer from '@/components/common/ToastContainer.vue';
 import CategorySection from '@/components/app/CategorySection.vue';
 import AppCardDragGhost from '@/components/app/AppCardDragGhost.vue';
+import ModalOverlay from '@/components/common/ModalOverlay.vue';
+import CloudSyncPanel from '@/components/personalization/CloudSyncPanel.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
 // ==================== 初始化与全局能力 ====================
@@ -66,6 +68,7 @@ const categoryEditOpen = ref(false);
 const categoryManagerOpen = ref(false);
 const uiLibPickerOpen = ref(false);
 const uiLibManagerOpen = ref(false);
+const cloudSyncOpen = ref(false);
 const fabOpen = ref(false);
 
 const editingApp = ref<AppItem | null>(null);
@@ -331,6 +334,9 @@ function handleFabSelect(action: string): void {
         case 'ui-lib':
             uiLibPickerOpen.value = true;
             break;
+        case 'cloud-sync':
+            cloudSyncOpen.value = true;
+            break;
         case 'export':
             void handleExport();
             break;
@@ -416,6 +422,7 @@ const fabItems = [
     { action: 'manage-categories', label: '管理分类', icon: 'setting' },
     { divider: true },
     { section: '数据' },
+    { action: 'cloud-sync', label: '云同步', icon: 'cloud' },
     { action: 'ui-lib', label: '图标库', icon: 'picture' },
     { action: 'export', label: '导出数据', icon: 'download' },
     { action: 'import', label: '导入数据', icon: 'upload' },
@@ -538,6 +545,10 @@ const fabItems = [
         />
 
         <UiLibManager v-model="uiLibManagerOpen" />
+
+        <ModalOverlay v-model="cloudSyncOpen" title="云同步" :max-width="420" close-on-overlay>
+            <CloudSyncPanel />
+        </ModalOverlay>
 
         <PersonalizationPanel v-model="personalizationOpen" />
 

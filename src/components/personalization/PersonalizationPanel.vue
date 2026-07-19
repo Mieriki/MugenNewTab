@@ -2,14 +2,13 @@
 /**
  * PersonalizationPanel - 个性化设置总面板
  *
- * 整合主题选择、壁纸设置与云同步三个子面板。
+ * 整合主题选择与壁纸设置两个子面板。
  * 通过 v-model 控制显示/隐藏，点击遮罩层可关闭。
  */
 import { computed } from 'vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 import ThemeSelector from './ThemeSelector.vue';
 import WallpaperSettings from './WallpaperSettings.vue';
-import CloudSyncPanel from './CloudSyncPanel.vue';
 
 export interface PersonalizationPanelProps {
     /** 是否显示面板，支持 v-model */
@@ -98,9 +97,6 @@ function handleEsc(event: KeyboardEvent): void {
                                 <div class="panel-column wallpaper-column">
                                     <WallpaperSettings :auto-init="autoInit" />
                                 </div>
-                            </div>
-                            <div class="panel-column cloud-sync-column">
-                                <CloudSyncPanel />
                             </div>
                         </slot>
                     </div>
@@ -213,12 +209,6 @@ function handleEsc(event: KeyboardEvent): void {
             flex: 0 0 55%;
         }
     }
-}
-
-.cloud-sync-column {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .personalization-panel-enter-active,

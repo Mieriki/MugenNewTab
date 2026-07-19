@@ -56,7 +56,7 @@ describe('PersonalizationPanel', () => {
         expect(document.body.querySelector('.personalization-dropdown')).toBeNull();
     });
 
-    it('打开时渲染三个子面板', async () => {
+    it('打开时渲染主题与壁纸子面板', async () => {
         mount(PersonalizationPanel, {
             props: { modelValue: true, autoInit: false }
         });
@@ -67,7 +67,6 @@ describe('PersonalizationPanel', () => {
         expect(dropdown).not.toBeNull();
         expect(dropdown!.querySelector('.theme-selector')).not.toBeNull();
         expect(dropdown!.querySelector('.wallpaper-settings')).not.toBeNull();
-        expect(dropdown!.querySelector('.cloud-sync-panel')).not.toBeNull();
     });
 
     it('点击遮罩层触发 update:modelValue 与 close', async () => {

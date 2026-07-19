@@ -328,6 +328,17 @@ describe('App.vue', () => {
         expect(modal.props('category')).toBeUndefined();
     });
 
+    it('FAB 菜单点击"云同步"打开云同步弹窗', async () => {
+        const wrapper = mountApp();
+        await flushPromises();
+
+        const fab = wrapper.findComponent(FabMenu);
+        await fab.vm.$emit('select', 'cloud-sync');
+        await flushPromises();
+
+        expect(wrapper.find('.cloud-sync-panel').exists()).toBe(true);
+    });
+
     it('点击应用卡片在新标签页打开链接', async () => {
         const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
         const wrapper = mountApp();
