@@ -6,9 +6,10 @@
  * 长按拖拽由 useAppCardDrag 单例统一调度（幽灵卡片跟手 + 占位符落点 + 跨分类移动）：
  * 本组件负责 pointerdown 委托、拖拽期间排除被拖卡片并渲染占位符。
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { AppItem } from '@/types/app';
 import { useAppCardDrag } from '@/composables/useAppCardDrag';
+import { useLayoutStore } from '@/stores/layout.store';
 import AppCard from './AppCard.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
@@ -45,15 +46,61 @@ const emit = defineEmits<{
 
 const gridRef = ref<HTMLElement | null>(null);
 const cardDrag = useAppCardDrag();
+const layoutStore = useLayoutStore();
 
 /** 占位符在渲染列表中的标记 */
 const PLACEHOLDER_KEY = '__drag_placeholder__';
 
+// ==================== 列数（页面布局设置） ====================
+
+/** 网格列样式：'auto' 时回退到 CSS 的 minmax 自适应规则 */
+const gridStyle = computed(() => {
+    const columns = layoutStore.isMobile ? 'auto' : layoutStore.columns;
+    if (columns === 'auto') return undefined;
+    return { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` };
+});
+
+// ==================== 分页 ====================
+
+const currentPage = ref(0);
+
+const pageCount = computed(() => {
+    if (!layoutStore.paginate) return 1;
+    return Math.max(1, Math.ceil(props.apps.length / layoutStore.pageSize));
+});
+
+/** 当前页的应用列表（未开启分页时为全量） */
+const pagedApps = computed(() => {
+    if (!layoutStore.paginate) return props.apps;
+    const start = currentPage.value * layoutStore.pageSize;
+    return props.apps.slice(start, start + layoutStore.pageSize);
+});
+
+// 分类、分页设置或应用数量变化时回到第一页
+watch(
+    [() => props.categoryId, () => layoutStore.paginate, () => layoutStore.pageSize, () => props.apps.length],
+    () => {
+        currentPage.value = 0;
+    }
+);
+
+function prevPage(): void {
+    if (currentPage.value > 0) {
+        currentPage.value -= 1;
+    }
+}
+
+function nextPage(): void {
+    if (currentPage.value < pageCount.value - 1) {
+        currentPage.value += 1;
+    }
+}
+
 /** 拖拽期间从列表中排除被拖卡片（其视觉由幽灵卡片承担） */
 const displayedApps = computed(() =>
     cardDrag.state.phase === 'dragging'
-        ? props.apps.filter((app) => app.id !== cardDrag.state.app?.id)
-        : props.apps
+        ? pagedApps.value.filter((app) => app.id !== cardDrag.state.app?.id)
+        : pagedApps.value
 );
 
 /** 本网格是否为当前落点网格 */
@@ -131,6 +178,7 @@ function handleDelete(app: AppItem): void {
         ref="gridRef"
         class="app-grid"
         :data-category="categoryId"
+        :style="gridStyle"
         @pointerdown="handlePointerDown"
     >
         <template v-for="entry in displayEntries" :key="entry.type === 'app' ? entry.app.id : PLACEHOLDER_KEY">
@@ -154,6 +202,28 @@ function handleDelete(app: AppItem): void {
                 <p>该分类下暂无应用</p>
             </slot>
         </div>
+
+        <div v-if="layoutStore.paginate && pageCount > 1" class="app-grid__pager">
+            <button
+                type="button"
+                class="app-grid__pager-btn"
+                :disabled="currentPage === 0"
+                aria-label="上一页"
+                @click="prevPage"
+            >
+                <IconSvg name="arrow-left" :size="14" />
+            </button>
+            <span class="app-grid__pager-info">{{ currentPage + 1 }} / {{ pageCount }}</span>
+            <button
+                type="button"
+                class="app-grid__pager-btn"
+                :disabled="currentPage >= pageCount - 1"
+                aria-label="下一页"
+                @click="nextPage"
+            >
+                <IconSvg name="arrow-right" :size="14" />
+            </button>
+        </div>
     </div>
 </template>
 
@@ -173,6 +243,45 @@ function handleDelete(app: AppItem): void {
         border-radius: 12px;
         background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
         opacity: 0.7;
+    }
+
+    &__pager {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 4px;
+    }
+
+    &__pager-btn {
+        @include button-reset;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--md-sys-color-on-surface-variant);
+        background: var(--md-sys-color-surface-variant);
+        @include md-transition(all, var(--md-transition-fast));
+
+        &:hover:not(:disabled) {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+    }
+
+    &__pager-info {
+        font-size: 12px;
+        color: var(--md-sys-color-on-surface-variant);
+        min-width: 36px;
+        text-align: center;
     }
 
     &__empty {

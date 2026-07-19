@@ -97,7 +97,7 @@ function handleMenuClick(): void {
                 @click="handlePersonalizationClick"
             >
                 <span class="personalization-icon">
-                    <IconSvg name="setting" :size="18" />
+                    <IconSvg name="palette" :size="18" />
                 </span>
                 <span class="personalization-label">个性化</span>
                 <span class="dropdown-arrow">

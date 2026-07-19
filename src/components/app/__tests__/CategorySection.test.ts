@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import CategorySection from '@/components/app/CategorySection.vue';
 import AppGrid from '@/components/app/AppGrid.vue';
 import AppCard from '@/components/app/AppCard.vue';
@@ -26,6 +27,10 @@ function createApp(id: string): AppItem {
 }
 
 describe('CategorySection', () => {
+    beforeEach(() => {
+        setActivePinia(createPinia());
+    });
+
     it('渲染分类标题与图标', () => {
         const category = createCategory();
         const wrapper = mount(CategorySection, {

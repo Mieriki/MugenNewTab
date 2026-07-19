@@ -56,7 +56,7 @@ describe('PersonalizationPanel', () => {
         expect(document.body.querySelector('.personalization-dropdown')).toBeNull();
     });
 
-    it('打开时渲染主题与壁纸子面板', async () => {
+    it('打开时渲染栏目导航与各设置栏目', async () => {
         mount(PersonalizationPanel, {
             props: { modelValue: true, autoInit: false }
         });
@@ -65,8 +65,29 @@ describe('PersonalizationPanel', () => {
 
         const dropdown = document.body.querySelector('.personalization-dropdown');
         expect(dropdown).not.toBeNull();
+        expect(dropdown!.querySelectorAll('.panel-nav__item')).toHaveLength(3);
         expect(dropdown!.querySelector('.theme-selector')).not.toBeNull();
         expect(dropdown!.querySelector('.wallpaper-settings')).not.toBeNull();
+        expect(dropdown!.querySelector('.layout-settings')).not.toBeNull();
+        // 默认激活「主题」栏目
+        expect(dropdown!.querySelector('.panel-nav__item.active')?.textContent).toContain('主题');
+    });
+
+    it('点击导航切换激活栏目', async () => {
+        mount(PersonalizationPanel, {
+            props: { modelValue: true, autoInit: false }
+        });
+
+        await flushPromises();
+
+        const items = document.body.querySelectorAll('.panel-nav__item');
+        (items[1] as HTMLButtonElement).click();
+        await flushPromises();
+        expect(document.body.querySelector('.panel-nav__item.active')?.textContent).toContain('壁纸');
+
+        (items[2] as HTMLButtonElement).click();
+        await flushPromises();
+        expect(document.body.querySelector('.panel-nav__item.active')?.textContent).toContain('页面布局');
     });
 
     it('点击遮罩层触发 update:modelValue 与 close', async () => {

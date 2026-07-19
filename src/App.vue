@@ -18,6 +18,7 @@ import { useTheme } from '@/composables/useTheme';
 import { provideConfirm, MntConfirmHost } from '@/composables/useConfirm';
 import { useToast } from '@/composables/useToast';
 import { useAppCardDrag, type AppCardDragCommit } from '@/composables/useAppCardDrag';
+import { useLayoutStore } from '@/stores/layout.store';
 import { storageManager } from '@/services/storage.service';
 import { isJsonFile, readTextFile } from '@/utils/file.util';
 import { STORAGE_KEYS } from '@/types/storage';
@@ -148,6 +149,13 @@ onMounted(() => {
     loadSettings().catch((error) => {
         console.error('[App] 初始化设置失败:', error);
     });
+
+    // 加载页面布局设置（列数 / 分页）
+    useLayoutStore()
+        .init()
+        .catch((error) => {
+            console.error('[App] 初始化布局设置失败:', error);
+        });
 
     // 监听外部存储变更，同步侧边栏折叠与隐藏站点揭示状态（跨标签页/云同步）
     storageUnsubscribe = storageManager.subscribe((changes) => {

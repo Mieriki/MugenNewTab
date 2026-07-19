@@ -23,7 +23,8 @@ export const STORAGE_KEYS = {
     SEARCH_HISTORY: 'searchHistory',
     SELECTED_SEARCH_ENGINE: 'selectedSearchEngine',
     SHOW_HIDDEN_APPS: 'appNavigator_showHiddenApps',
-    HIDDEN_TIP_DISMISSED: 'appNavigator_hiddenTipDismissed'
+    HIDDEN_TIP_DISMISSED: 'appNavigator_hiddenTipDismissed',
+    LAYOUT_SETTINGS: 'appNavigator_layoutSettings'
 } as const;
 
 /** 需要同步镜像到 localStorage 的首屏设置键（防止 FOUC 闪烁） */
@@ -46,6 +47,7 @@ export const CLOUD_SYNC_DATA_KEYS: string[] = [
     STORAGE_KEYS.SELECTED_SEARCH_ENGINE,
     STORAGE_KEYS.SHOW_HIDDEN_APPS,
     STORAGE_KEYS.HIDDEN_TIP_DISMISSED,
+    STORAGE_KEYS.LAYOUT_SETTINGS,
     STORAGE_KEYS.DATA_UPDATED_AT
 ];
 
@@ -69,6 +71,16 @@ export interface WallpaperSettings {
     overlayOpacity: number;
     /** 是否为本地图片（Base64 存储） */
     isLocalImage?: boolean;
+}
+
+/** 页面布局设置 */
+export interface LayoutSettings {
+    /** 每行卡片列数，'auto' 表示按宽度自适应 */
+    columns: number | 'auto';
+    /** 是否开启分页模式 */
+    paginate: boolean;
+    /** 分页模式每页卡片数 */
+    pageSize: number;
 }
 
 /** 本地壁纸图片元数据 */

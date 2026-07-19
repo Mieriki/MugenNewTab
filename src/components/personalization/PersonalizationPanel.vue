@@ -2,13 +2,15 @@
 /**
  * PersonalizationPanel - 个性化设置总面板
  *
- * 整合主题选择与壁纸设置两个子面板。
+ * 「左侧导航 + 右侧内容」的可扩展栏目结构，当前栏目：主题 / 壁纸 / 页面布局。
+ * 新增设置页只需在 tabs 数组中注册一项并添加对应内容区块。
  * 通过 v-model 控制显示/隐藏，点击遮罩层可关闭。
  */
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 import ThemeSelector from './ThemeSelector.vue';
 import WallpaperSettings from './WallpaperSettings.vue';
+import LayoutSettings from './LayoutSettings.vue';
 
 export interface PersonalizationPanelProps {
     /** 是否显示面板，支持 v-model */
@@ -28,6 +30,18 @@ const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void;
     (e: 'close'): void;
 }>();
+
+/** 栏目导航项（新增设置页在此注册） */
+const tabs = [
+    { id: 'theme', label: '主题', icon: 'palette' },
+    { id: 'wallpaper', label: '壁纸', icon: 'picture' },
+    { id: 'layout', label: '页面布局', icon: 'sort' },
+] as const;
+
+type TabId = (typeof tabs)[number]['id'];
+
+/** 当前激活栏目 */
+const activeTab = ref<TabId>('theme');
 
 const isOpen = computed({
     get: () => props.modelValue,
@@ -74,7 +88,7 @@ function handleEsc(event: KeyboardEvent): void {
                 >
                     <div class="personalization-dropdown__header">
                         <div class="personalization-dropdown__title">
-                            <IconSvg name="setting" :size="18" color="var(--md-sys-color-primary)" />
+                            <IconSvg name="palette" :size="18" color="var(--md-sys-color-primary)" />
                             <h3>{{ title }}</h3>
                         </div>
 
@@ -90,12 +104,31 @@ function handleEsc(event: KeyboardEvent): void {
 
                     <div class="personalization-dropdown__body">
                         <slot>
-                            <div class="personalization-columns">
-                                <div class="panel-column theme-column">
-                                    <ThemeSelector :auto-init="autoInit" />
-                                </div>
-                                <div class="panel-column wallpaper-column">
-                                    <WallpaperSettings :auto-init="autoInit" />
+                            <div class="panel-layout">
+                                <nav class="panel-nav" aria-label="个性化栏目">
+                                    <button
+                                        v-for="tab in tabs"
+                                        :key="tab.id"
+                                        type="button"
+                                        class="panel-nav__item"
+                                        :class="{ active: activeTab === tab.id }"
+                                        @click="activeTab = tab.id"
+                                    >
+                                        <IconSvg :name="tab.icon" :size="16" />
+                                        <span>{{ tab.label }}</span>
+                                    </button>
+                                </nav>
+
+                                <div class="panel-content">
+                                    <div v-show="activeTab === 'theme'" class="panel-section">
+                                        <ThemeSelector :auto-init="autoInit" />
+                                    </div>
+                                    <div v-show="activeTab === 'wallpaper'" class="panel-section">
+                                        <WallpaperSettings :auto-init="autoInit" />
+                                    </div>
+                                    <div v-show="activeTab === 'layout'" class="panel-section">
+                                        <LayoutSettings />
+                                    </div>
                                 </div>
                             </div>
                         </slot>
@@ -132,7 +165,7 @@ function handleEsc(event: KeyboardEvent): void {
     position: fixed;
     top: calc(var(--header-height) + 8px);
     right: 16px;
-    width: 560px;
+    width: 640px;
     max-width: calc(100vw - 32px);
     max-height: calc(100vh - var(--header-height) - 16px);
     background: rgba(var(--md-sys-color-surface-rgb), 0.98);
@@ -193,22 +226,51 @@ function handleEsc(event: KeyboardEvent): void {
     }
 }
 
-.personalization-columns {
+.panel-layout {
     display: flex;
     gap: 16px;
+    min-height: 280px;
+}
 
-    .panel-column {
-        flex: 1;
-        min-width: 0;
+.panel-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 0 0 120px;
+    border-right: 1px solid var(--md-sys-color-outline-variant);
+    padding-right: 12px;
 
-        &.theme-column {
-            flex: 0 0 45%;
+    &__item {
+        @include button-reset;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--md-sys-color-on-surface-variant);
+        @include md-transition(all, var(--md-transition-fast));
+
+        &:hover {
+            background: var(--hover-bg);
+            color: var(--md-sys-color-primary);
         }
 
-        &.wallpaper-column {
-            flex: 0 0 55%;
+        &.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+
+            :deep(.icon-svg) {
+                filter: brightness(0) invert(1);
+            }
         }
     }
+}
+
+.panel-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .personalization-panel-enter-active,
@@ -249,12 +311,19 @@ body.dark-mode {
         border-radius: 20px 20px 0 0;
     }
 
-    .personalization-columns {
+    .panel-layout {
         flex-direction: column;
+        min-height: 0;
+    }
 
-        .panel-column {
-            flex: 1 1 auto !important;
-        }
+    .panel-nav {
+        flex-direction: row;
+        flex: none;
+        border-right: none;
+        border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        padding-right: 0;
+        padding-bottom: 8px;
+        overflow-x: auto;
     }
 }
 </style>
