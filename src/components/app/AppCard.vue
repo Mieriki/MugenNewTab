@@ -157,6 +157,8 @@ function handleDelete(event: MouseEvent): void {
     align-items: center;
     gap: 12px;
     padding: 12px;
+    // 固定等高：容纳两行简介，无简介时内容垂直居中
+    height: 76px;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: 12px;

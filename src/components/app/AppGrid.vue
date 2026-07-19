@@ -168,7 +168,7 @@ function handleDelete(app: AppItem): void {
     min-height: 50px;
 
     &__placeholder {
-        min-height: 66px;
+        min-height: 76px;
         border: 2px dashed var(--md-sys-color-primary);
         border-radius: 12px;
         background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
