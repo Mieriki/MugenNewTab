@@ -3,15 +3,23 @@ import { mount } from '@vue/test-utils';
 import AppHeader from '@/components/layout/AppHeader.vue';
 
 describe('AppHeader', () => {
-    it('渲染品牌标题与副标题', () => {
+    it('渲染品牌标题', () => {
         const wrapper = mount(AppHeader, {
             props: {
-                title: 'Mugen',
-                subtitle: 'Test Subtitle'
+                title: 'Mugen'
             }
         });
         expect(wrapper.text()).toContain('Mugen');
-        expect(wrapper.text()).toContain('Test Subtitle');
+    });
+
+    it('折叠按钮位于品牌区右侧', () => {
+        const wrapper = mount(AppHeader);
+        const children = Array.from(wrapper.find('.header-brand').element.children);
+        const brandIndex = children.findIndex((el) => el.classList.contains('brand'));
+        const collapseIndex = children.findIndex((el) => el.classList.contains('collapse-toggle-btn'));
+
+        expect(brandIndex).toBeGreaterThanOrEqual(0);
+        expect(collapseIndex).toBeGreaterThan(brandIndex);
     });
 
     it('点击折叠按钮触发 toggle-sidebar 事件', async () => {

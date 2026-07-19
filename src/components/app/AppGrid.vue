@@ -2,12 +2,13 @@
 /**
  * AppGrid - 应用卡片网格
  *
- * 在分类维度下渲染一组 AppCard，支持点击、编辑、删除事件透传，
- * 并可选启用同一分类内的拖拽排序。
+ * 在分类维度下渲染一组 AppCard，支持点击、编辑、删除事件透传。
+ * 长按拖拽由 useAppCardDrag 单例统一调度（幽灵卡片跟手 + 占位符落点 + 跨分类移动）：
+ * 本组件负责 pointerdown 委托、拖拽期间排除被拖卡片并渲染占位符。
  */
-import { computed, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import type { AppItem } from '@/types/app';
-import { useDragSort } from '@/composables/useDragSort';
+import { useAppCardDrag } from '@/composables/useAppCardDrag';
 import AppCard from './AppCard.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
@@ -40,50 +41,77 @@ const emit = defineEmits<{
     (e: 'edit-app', app: AppItem): void;
     /** 点击删除按钮 */
     (e: 'delete-app', app: AppItem): void;
-    /** 同一分类内排序完成，返回新的应用 ID 顺序 */
-    (e: 'order-change', payload: { categoryId: string; orderedIds: string[] }): void;
 }>();
 
 const gridRef = ref<HTMLElement | null>(null);
-const suppressClick = ref(false);
-let suppressTimer: ReturnType<typeof setTimeout> | null = null;
+const cardDrag = useAppCardDrag();
 
-const displayedApps = computed(() => props.apps);
+/** 占位符在渲染列表中的标记 */
+const PLACEHOLDER_KEY = '__drag_placeholder__';
 
-const hasApps = computed(() => displayedApps.value.length > 0);
+/** 拖拽期间从列表中排除被拖卡片（其视觉由幽灵卡片承担） */
+const displayedApps = computed(() =>
+    cardDrag.state.phase === 'dragging'
+        ? props.apps.filter((app) => app.id !== cardDrag.state.app?.id)
+        : props.apps
+);
 
-const { isDragging, isPressing, currentId } = useDragSort({
-    containerRef: gridRef,
-    itemSelector: '.app-card',
-    direction: 'grid',
-    disabled: computed(() => !props.draggable || displayedApps.value.length < 2),
-    onEnd: (event) => {
-        if (!gridRef.value || event.cancelled) {
-            return;
-        }
+/** 本网格是否为当前落点网格 */
+const isDropTarget = computed(
+    () => cardDrag.state.phase === 'dragging' && cardDrag.state.targetCategoryId === props.categoryId
+);
 
-        const cards = Array.from(
-            gridRef.value.querySelectorAll<HTMLElement>('.app-card')
-        );
-        const orderedIds = cards.map((card) => card.dataset.appId).filter((id): id is string => !!id);
+type DisplayEntry = { type: 'app'; app: AppItem } | { type: 'placeholder' };
 
-        emit('order-change', {
-            categoryId: props.categoryId,
-            orderedIds,
-        });
-
-        suppressClick.value = true;
-        if (suppressTimer) {
-            clearTimeout(suppressTimer);
-        }
-        suppressTimer = setTimeout(() => {
-            suppressClick.value = false;
-        }, 100);
+/** 渲染列表：应用卡片 + （目标网格内的）占位符 */
+const displayEntries = computed<DisplayEntry[]>(() => {
+    const entries: DisplayEntry[] = displayedApps.value.map((app) => ({ type: 'app', app }));
+    if (isDropTarget.value) {
+        const index = Math.min(Math.max(cardDrag.state.targetIndex, 0), entries.length);
+        entries.splice(index, 0, { type: 'placeholder' });
     }
+    return entries;
 });
 
+const hasApps = computed(() => props.apps.length > 0);
+
+// 注册网格：commit 时提供当前可见顺序（不含被拖卡片）
+onMounted(() => {
+    cardDrag.registerGrid(props.categoryId, () => displayedApps.value.map((app) => app.id));
+});
+
+onUnmounted(() => {
+    cardDrag.unregisterGrid(props.categoryId);
+});
+
+/**
+ * pointerdown 委托：命中卡片（操作按钮除外）时启动长按拖拽检测
+ */
+function handlePointerDown(event: PointerEvent): void {
+    if (!props.draggable) return;
+    if (event.button !== 0) return;
+
+    const target = event.target as HTMLElement | null;
+    if (!target || target.closest('.app-card__actions')) return;
+
+    const card = target.closest('.app-card') as HTMLElement | null;
+    if (!card) return;
+
+    const app = props.apps.find((item) => item.id === card.dataset.appId);
+    if (!app) return;
+
+    const rect = card.getBoundingClientRect();
+    cardDrag.press(
+        app,
+        props.categoryId,
+        { clientX: event.clientX, clientY: event.clientY },
+        { width: rect.width, height: rect.height }
+    );
+}
+
 function handleAppClick(app: AppItem): void {
-    if (suppressClick.value || isDragging.value) {
+    // 拖拽中或刚结束时抑制点击，防止误打开链接
+    if (cardDrag.state.phase !== 'idle' || cardDrag.state.justEnded) {
         return;
     }
     emit('app-click', app);
@@ -96,34 +124,29 @@ function handleEdit(app: AppItem): void {
 function handleDelete(app: AppItem): void {
     emit('delete-app', app);
 }
-
-onUnmounted(() => {
-    if (suppressTimer) {
-        clearTimeout(suppressTimer);
-    }
-});
 </script>
 
 <template>
     <div
         ref="gridRef"
         class="app-grid"
-        :class="{ 'is-dragging': isDragging }"
         :data-category="categoryId"
+        @pointerdown="handlePointerDown"
     >
-        <AppCard
-            v-for="app in displayedApps"
-            :key="app.id"
-            :app="app"
-            :draggable="draggable"
-            :dragging="isDragging && currentId === app.id"
-            :pressing="isPressing && currentId === app.id"
-            :editable="editable"
-            :deletable="deletable"
-            @click="handleAppClick"
-            @edit="handleEdit"
-            @delete="handleDelete"
-        />
+        <template v-for="entry in displayEntries" :key="entry.type === 'app' ? entry.app.id : PLACEHOLDER_KEY">
+            <div v-if="entry.type === 'placeholder'" class="app-grid__placeholder" />
+            <AppCard
+                v-else
+                :app="entry.app"
+                :draggable="draggable"
+                :pressing="cardDrag.state.phase === 'pressing' && cardDrag.state.app?.id === entry.app.id"
+                :editable="editable"
+                :deletable="deletable"
+                @click="handleAppClick"
+                @edit="handleEdit"
+                @delete="handleDelete"
+            />
+        </template>
 
         <div v-if="!hasApps" class="app-grid__empty">
             <slot name="empty">
@@ -144,10 +167,12 @@ onUnmounted(() => {
     gap: 12px;
     min-height: 50px;
 
-    &.is-dragging {
-        :deep(.app-card) {
-            transition: none;
-        }
+    &__placeholder {
+        min-height: 66px;
+        border: 2px dashed var(--md-sys-color-primary);
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+        opacity: 0.7;
     }
 
     &__empty {

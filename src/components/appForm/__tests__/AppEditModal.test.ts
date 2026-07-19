@@ -2,8 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { nextTick, computed } from 'vue';
 import AppEditModal from '../AppEditModal.vue';
+import HiddenTipModal from '../HiddenTipModal.vue';
 import { useDataManager } from '@/composables/useDataManager';
 import { useToast } from '@/composables/useToast';
+import { storageManager } from '@/services/storage.service';
+import { STORAGE_KEYS } from '@/types/storage';
 import type { AppItem } from '@/types/app';
 
 vi.mock('@/composables/useDataManager');
@@ -53,12 +56,15 @@ describe('AppEditModal', () => {
         document.body.innerHTML = '';
         vi.mocked(useDataManager).mockReturnValue(createMockDataManager() as unknown as ReturnType<typeof useDataManager>);
         vi.mocked(useToast).mockReturnValue(createMockToast() as unknown as ReturnType<typeof useToast>);
+        vi.spyOn(storageManager, 'get').mockResolvedValue(null);
+        vi.spyOn(storageManager, 'set').mockResolvedValue(undefined);
     });
 
     afterEach(() => {
         document.body.innerHTML = '';
         document.body.style.overflow = '';
         vi.clearAllMocks();
+        vi.restoreAllMocks();
     });
 
     function mountModal(props: Record<string, unknown> = {}) {
@@ -312,5 +318,70 @@ describe('AppEditModal', () => {
         await flushPromises();
 
         expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+    });
+
+    /** 填写必填项、勾选「隐藏该站点」并点击保存 */
+    async function saveHiddenApp() {
+        const nameInput = document.querySelector('input[placeholder="例如：GitHub"]') as HTMLInputElement;
+        const urlInput = document.querySelector('input[type="url"]') as HTMLInputElement;
+        const categorySelect = document.querySelector('#app-edit-category') as HTMLSelectElement;
+
+        nameInput.value = 'Secret';
+        nameInput.dispatchEvent(new Event('input'));
+        urlInput.value = 'example.com';
+        urlInput.dispatchEvent(new Event('input'));
+        categorySelect.value = 'dev';
+        categorySelect.dispatchEvent(new Event('change'));
+
+        const hiddenCheckbox = document.querySelector('.app-edit-form input[type="checkbox"]') as HTMLInputElement;
+        hiddenCheckbox.checked = true;
+        hiddenCheckbox.dispatchEvent(new Event('change'));
+        await flushPromises();
+
+        const saveBtn = document.querySelector('.mnt-base-button--primary') as HTMLButtonElement;
+        saveBtn.click();
+        await flushPromises();
+    }
+
+    it('保存隐藏站点后弹出显示方法提示', async () => {
+        const wrapper = mountModal();
+        await wait();
+
+        await saveHiddenApp();
+
+        expect(storageManager.get).toHaveBeenCalledWith(STORAGE_KEYS.HIDDEN_TIP_DISMISSED);
+        expect(wrapper.findComponent(HiddenTipModal).props('modelValue')).toBe(true);
+    });
+
+    it('已选择「不再提示」时保存隐藏站点不再弹出', async () => {
+        vi.mocked(storageManager.get).mockResolvedValue(true);
+        const wrapper = mountModal();
+        await wait();
+
+        await saveHiddenApp();
+
+        expect(wrapper.findComponent(HiddenTipModal).props('modelValue')).toBe(false);
+    });
+
+    it('提示弹窗勾选「不再提示」后关闭时写入存储', async () => {
+        const wrapper = mountModal();
+        await wait();
+
+        await saveHiddenApp();
+        expect(wrapper.findComponent(HiddenTipModal).props('modelValue')).toBe(true);
+
+        const dontRemindCheckbox = document.querySelector('.hidden-tip__checkbox input[type="checkbox"]') as HTMLInputElement;
+        dontRemindCheckbox.checked = true;
+        dontRemindCheckbox.dispatchEvent(new Event('change'));
+        await flushPromises();
+
+        const okBtn = Array.from(document.querySelectorAll('.mnt-base-button')).find(
+            (btn) => btn.textContent?.includes('我知道了')
+        ) as HTMLButtonElement;
+        okBtn.click();
+        await flushPromises();
+
+        expect(storageManager.set).toHaveBeenCalledWith(STORAGE_KEYS.HIDDEN_TIP_DISMISSED, true);
+        expect(wrapper.findComponent(HiddenTipModal).props('modelValue')).toBe(false);
     });
 });

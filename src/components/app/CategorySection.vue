@@ -46,8 +46,6 @@ const emit = defineEmits<{
     (e: 'edit-app', app: AppItem): void;
     /** 点击删除按钮 */
     (e: 'delete-app', app: AppItem): void;
-    /** 同一分类内排序完成 */
-    (e: 'order-change', payload: { categoryId: string; orderedIds: string[] }): void;
 }>();
 
 const iconIsImage = computed(() => isImageIcon(props.category.icon?.trim() || 'folder'));
@@ -62,10 +60,6 @@ function handleEdit(app: AppItem): void {
 
 function handleDelete(app: AppItem): void {
     emit('delete-app', app);
-}
-
-function handleOrderChange(payload: { categoryId: string; orderedIds: string[] }): void {
-    emit('order-change', payload);
 }
 </script>
 
@@ -97,7 +91,6 @@ function handleOrderChange(payload: { categoryId: string; orderedIds: string[] }
             @app-click="handleAppClick"
             @edit-app="handleEdit"
             @delete-app="handleDelete"
-            @order-change="handleOrderChange"
         >
             <template v-if="$slots.empty" #empty>
                 <slot name="empty" />

@@ -74,19 +74,4 @@ describe('CategorySection', () => {
         expect(wrapper.emitted('edit-app')).toHaveLength(1);
         expect(wrapper.emitted('delete-app')).toHaveLength(1);
     });
-
-    it('透传 order-change 事件', async () => {
-        const category = createCategory();
-        const apps = [createApp('app_1')];
-        const payload = { categoryId: 'cat_test', orderedIds: ['app_1'] };
-        const wrapper = mount(CategorySection, {
-            props: { category, apps }
-        });
-
-        const grid = wrapper.findComponent(AppGrid);
-        await grid.vm.$emit('order-change', payload);
-
-        expect(wrapper.emitted('order-change')).toHaveLength(1);
-        expect(wrapper.emitted('order-change')?.[0]).toEqual([payload]);
-    });
 });

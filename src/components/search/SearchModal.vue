@@ -236,7 +236,6 @@ watch(
 );
 
 const closeIconPath = 'M18 6L6 18M6 6l12 12';
-const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
 
 // 注意：ModalOverlay 经 Teleport 渲染，scoped 样式命不中容器，
 // 容器样式以内联方式下发；下方 scoped 中的 &__content / &__body 仅作同步备份。
@@ -339,9 +338,6 @@ const modalBodyStyle = {
                 />
 
                 <div v-if="showEmptyState" class="search-modal__empty">
-                    <span class="search-modal__empty-icon">
-                        <IconSvg :path="searchIconPath" :size="26" alt="" />
-                    </span>
                     <p class="search-modal__empty-title">搜索全网，一触即达</p>
                     <p class="search-modal__empty-text">输入关键词开始搜索，历史记录会显示在这里</p>
                 </div>
@@ -565,20 +561,8 @@ const modalBodyStyle = {
         align-items: center;
         justify-content: center;
         gap: 6px;
-        padding: 40px 24px 44px;
+        padding: 36px 24px;
         text-align: center;
-    }
-
-    &__empty-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
-        margin-bottom: 6px;
     }
 
     &__empty-title {
@@ -665,7 +649,7 @@ const modalBodyStyle = {
     }
 
     .search-modal__empty {
-        padding: 32px 20px 36px;
+        padding: 28px 20px;
     }
 
     .search-modal__footer {

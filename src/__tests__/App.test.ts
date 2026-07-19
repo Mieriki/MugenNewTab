@@ -71,7 +71,7 @@ function createMockDataManager() {
         importData: vi.fn(async () => undefined),
         resetToDefault: vi.fn(),
         getAppsByCategory: (categoryId: string) =>
-            apps.value.filter((app) => app.category === categoryId && !app.hidden),
+            apps.value.filter((app) => app.category === categoryId),
         getCategoryById: (id: string) => categories.value.find((c) => c.id === id),
     };
 }
@@ -235,32 +235,59 @@ describe('App.vue', () => {
         expect(wrapper.findComponent(SearchModal).props('modelValue')).toBe(true);
     });
 
-    it('点击"显示已隐藏站点"切换隐藏视图', async () => {
+    it('双击 Logo 切换隐藏站点揭示模式', async () => {
         const wrapper = mountApp();
         await flushPromises();
 
-        const hiddenToggle = wrapper.find('.hidden-apps-toggle');
-        expect(hiddenToggle.exists()).toBe(true);
-
-        await hiddenToggle.trigger('click');
-        await flushPromises();
-
-        expect(wrapper.find('.content-title').text()).toBe('已隐藏的站点');
-        expect(mockStorage.set).toHaveBeenCalledWith(STORAGE_KEYS.SHOW_HIDDEN_APPS, true);
-    });
-
-    it('双击 Logo 切换隐藏站点视图', async () => {
-        const wrapper = mountApp();
-        await flushPromises();
+        // 默认普通视图不渲染隐藏卡片，标题为当前分类名
+        expect(wrapper.text()).not.toContain('Secret');
+        expect(wrapper.find('.content-title').text()).toBe('全部应用');
 
         const header = wrapper.findComponent(AppHeader);
         const brand = header.find('.brand');
         expect(brand.exists()).toBe(true);
 
+        // 双击 Logo：隐藏卡片混入显示，标题保持不变，状态持久化
         await brand.trigger('dblclick');
         await flushPromises();
 
-        expect(wrapper.find('.content-title').text()).toBe('已隐藏的站点');
+        expect(wrapper.find('.content-title').text()).toBe('全部应用');
+        expect(wrapper.text()).toContain('Secret');
+        expect(mockStorage.set).toHaveBeenCalledWith(STORAGE_KEYS.SHOW_HIDDEN_APPS, true);
+
+        // 再次双击：恢复只显示未隐藏站点
+        await brand.trigger('dblclick');
+        await flushPromises();
+
+        expect(wrapper.text()).not.toContain('Secret');
+        expect(mockStorage.set).toHaveBeenCalledWith(STORAGE_KEYS.SHOW_HIDDEN_APPS, false);
+    });
+
+    it('揭示状态从存储中恢复', async () => {
+        await mockStorage.set(STORAGE_KEYS.SHOW_HIDDEN_APPS, true);
+
+        const wrapper = mountApp();
+        await flushPromises();
+
+        // 上次退出时处于揭示模式，刷新后隐藏卡片仍可见
+        expect(wrapper.text()).toContain('Secret');
+    });
+
+    it('Alt+Shift+H 切换隐藏站点揭示模式', async () => {
+        const wrapper = mountApp();
+        await flushPromises();
+
+        expect(wrapper.text()).not.toContain('Secret');
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'H', altKey: true, shiftKey: true }));
+        await flushPromises();
+
+        expect(wrapper.text()).toContain('Secret');
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'H', altKey: true, shiftKey: true }));
+        await flushPromises();
+
+        expect(wrapper.text()).not.toContain('Secret');
     });
 
     it('分类排序改变时调用 updateCategoriesOrder', async () => {

@@ -29,8 +29,6 @@ export interface SidebarProps {
     mobileOpen?: boolean;
     /** 是否启用分类拖拽排序 */
     enableDragSort?: boolean;
-    /** 是否显示已隐藏站点 */
-    showHiddenApps?: boolean;
 }
 
 const props = withDefaults(defineProps<SidebarProps>(), {
@@ -38,8 +36,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
     activeCategoryId: 'all',
     collapsed: false,
     mobileOpen: false,
-    enableDragSort: true,
-    showHiddenApps: false
+    enableDragSort: true
 });
 
 const emit = defineEmits<{
@@ -47,7 +44,6 @@ const emit = defineEmits<{
     (e: 'update:mobileOpen', value: boolean): void;
     (e: 'open-search'): void;
     (e: 'order-change', orderedIds: string[]): void;
-    (e: 'toggle-hidden-apps'): void;
 }>();
 
 const dataManager = useDataManager({ autoInit: false });
@@ -67,32 +63,25 @@ const { isDragging, isPressing, currentId } = useDragSort({
     disabled: dragDisabled,
     canDrag: (element) => element.dataset.draggable === 'true',
     onEnd: (event) => {
-        if (!menuRef.value) {
+        if (!menuRef.value || event.cancelled) {
             return;
         }
 
-        const draggableItems = Array.from(
+        // 拖拽过程中 DOM 已被实时重排，直接按 DOM 顺序提交
+        const orderedIds = Array.from(
             menuRef.value.querySelectorAll<HTMLElement>('.nav-item[data-draggable="true"]')
-        );
-        const fromId = draggableItems[event.fromIndex]?.dataset.id;
-        const toId = draggableItems[event.toIndex]?.dataset.id;
+        )
+            .map((element) => element.dataset.id)
+            .filter((id): id is string => !!id);
 
-        if (!fromId || !toId || fromId === toId) {
-            return;
-        }
-
-        const orderedIds = displayedCategories.value
+        const currentOrder = displayedCategories.value
             .filter((category) => category.id !== 'all')
             .map((category) => category.id);
-        const fromOrderIndex = orderedIds.indexOf(fromId);
-        const toOrderIndex = orderedIds.indexOf(toId);
 
-        if (fromOrderIndex === -1 || toOrderIndex === -1) {
+        // 顺序未变化时不触发保存
+        if (orderedIds.join('\0') === currentOrder.join('\0')) {
             return;
         }
-
-        const [moved] = orderedIds.splice(fromOrderIndex, 1);
-        orderedIds.splice(toOrderIndex, 0, moved);
 
         emit('order-change', orderedIds);
 
@@ -293,6 +282,7 @@ watch(
     position: relative;
     white-space: nowrap;
     border: 1px solid transparent;
+    user-select: none;
     @include md-transition(all, var(--md-transition-fast));
 
     &:hover {

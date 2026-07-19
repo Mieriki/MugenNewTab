@@ -16,8 +16,11 @@ import ModalOverlay from '@/components/common/ModalOverlay.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
+import HiddenTipModal from '@/components/appForm/HiddenTipModal.vue';
 import { useDataManager } from '@/composables/useDataManager';
 import { useToast } from '@/composables/useToast';
+import { storageManager } from '@/services/storage.service';
+import { STORAGE_KEYS } from '@/types/storage';
 import type { AppItem, AppInput } from '@/types/app';
 
 /** 新建分类选项的特殊值 */
@@ -70,6 +73,7 @@ const newCategoryName = ref('');
 const errors = ref<Record<string, string>>({});
 const isSubmitting = ref(false);
 const showIconPicker = ref(false);
+const hiddenTipOpen = ref(false);
 
 const isEdit = computed(() => !!props.app?.id);
 const modalTitle = computed(() => (isEdit.value ? '编辑网站' : '添加网站'));
@@ -234,10 +238,28 @@ async function handleSubmit(): Promise<void> {
 
         emit('saved', saved);
         close();
+        if (saved.hidden) {
+            void maybeShowHiddenTip();
+        }
     } catch (err) {
         error(err instanceof Error ? err.message : '保存失败');
     } finally {
         isSubmitting.value = false;
+    }
+}
+
+/**
+ * 站点被设为隐藏后，弹出「显示/恢复隐藏方法」提示。
+ * 用户已勾选「不再提示」时不再弹出；读取失败时默认提示（保守策略）。
+ */
+async function maybeShowHiddenTip(): Promise<void> {
+    try {
+        const dismissed = await storageManager.get(STORAGE_KEYS.HIDDEN_TIP_DISMISSED);
+        if (!dismissed) {
+            hiddenTipOpen.value = true;
+        }
+    } catch {
+        hiddenTipOpen.value = true;
     }
 }
 
@@ -424,6 +446,8 @@ watch(
             </BaseButton>
         </template>
     </ModalOverlay>
+
+    <HiddenTipModal v-model="hiddenTipOpen" />
 </template>
 
 <style scoped lang="scss">

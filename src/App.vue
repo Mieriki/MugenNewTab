@@ -17,6 +17,7 @@ import { useDataManager } from '@/composables/useDataManager';
 import { useTheme } from '@/composables/useTheme';
 import { provideConfirm, MntConfirmHost } from '@/composables/useConfirm';
 import { useToast } from '@/composables/useToast';
+import { useAppCardDrag, type AppCardDragCommit } from '@/composables/useAppCardDrag';
 import { storageManager } from '@/services/storage.service';
 import { isJsonFile, readTextFile } from '@/utils/file.util';
 import { STORAGE_KEYS } from '@/types/storage';
@@ -35,7 +36,7 @@ import UiLibManager from '@/components/uiLib/UiLibManager.vue';
 import PersonalizationPanel from '@/components/personalization/PersonalizationPanel.vue';
 import ToastContainer from '@/components/common/ToastContainer.vue';
 import CategorySection from '@/components/app/CategorySection.vue';
-import AppGrid from '@/components/app/AppGrid.vue';
+import AppCardDragGhost from '@/components/app/AppCardDragGhost.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
 // ==================== 初始化与全局能力 ====================
@@ -43,6 +44,11 @@ const dataManager = useDataManager({ autoInit: true });
 useTheme({ autoInit: true });
 const confirmManager = provideConfirm();
 const toast = useToast();
+
+// 卡片拖拽落下的统一提交入口
+useAppCardDrag().onCommit((payload) => {
+    void handleCardDragCommit(payload);
+});
 
 // ==================== 布局状态 ====================
 const sidebarCollapsed = ref(false);
@@ -75,28 +81,29 @@ const currentCategory = computed<Category | undefined>(() =>
     dataManager.getCategoryById(activeCategoryId.value)
 );
 
-const pageTitle = computed(() => {
-    if (showHiddenApps.value) {
-        return '已隐藏的站点';
-    }
-    return currentCategory.value?.name ?? '全部应用';
-});
+const pageTitle = computed(() => currentCategory.value?.name ?? '全部应用');
+
+/**
+ * 获取分类下用于展示的应用列表。
+ * 默认不显示隐藏站点；揭示模式（双击 Logo / Alt+Shift+H）下混入显示。
+ */
+function getDisplayApps(categoryId: string): AppItem[] {
+    const apps = dataManager.getAppsByCategory(categoryId);
+    return showHiddenApps.value ? apps : apps.filter((app) => !app.hidden);
+}
 
 const displayedApps = computed<AppItem[]>(() => {
-    if (showHiddenApps.value) {
-        return dataManager.hiddenApps.value;
-    }
     if (activeCategoryId.value === 'all') {
-        return dataManager.visibleApps.value;
+        return showHiddenApps.value ? dataManager.apps.value : dataManager.visibleApps.value;
     }
-    return dataManager.getAppsByCategory(activeCategoryId.value);
+    return getDisplayApps(activeCategoryId.value);
 });
 
 const hasApps = computed(() => displayedApps.value.length > 0);
 
 const categoriesWithVisibleApps = computed(() =>
     dataManager.userCategories.value.filter(
-        (category) => dataManager.getAppsByCategory(category.id).length > 0
+        (category) => getDisplayApps(category.id).length > 0
     )
 );
 
@@ -139,7 +146,7 @@ onMounted(() => {
         console.error('[App] 初始化设置失败:', error);
     });
 
-    // 监听外部存储变更，同步侧边栏折叠与隐藏站点状态
+    // 监听外部存储变更，同步侧边栏折叠与隐藏站点揭示状态（跨标签页/云同步）
     storageUnsubscribe = storageManager.subscribe((changes) => {
         const collapsedChange = changes[STORAGE_KEYS.SIDEBAR_COLLAPSED];
         if (collapsedChange && typeof collapsedChange.newValue === 'boolean') {
@@ -169,6 +176,12 @@ function handleGlobalKeydown(event: KeyboardEvent): void {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         openSearch();
+        return;
+    }
+    // Alt+Shift+H：切换隐藏站点揭示模式（与双击 Logo 等效）
+    if (event.altKey && event.shiftKey && event.key.toLowerCase() === 'h') {
+        event.preventDefault();
+        toggleHiddenApps();
     }
 }
 
@@ -201,15 +214,11 @@ function openSearch(): void {
 
 function toggleHiddenApps(): void {
     void saveShowHiddenApps(!showHiddenApps.value);
-    if (!showHiddenApps.value) {
-        // 切回全部应用视图
-        activeCategoryId.value = 'all';
-    }
 }
 
 function handleSelectCategory(categoryId: string): void {
     activeCategoryId.value = categoryId;
-    showHiddenApps.value = false;
+    void saveShowHiddenApps(false);
     closeMobileSidebar();
 }
 
@@ -224,15 +233,39 @@ function handleCategoryOrderChange(orderedIds: string[]): void {
         });
 }
 
-function handleAppOrderChange(payload: { categoryId: string; orderedIds: string[] }): void {
-    dataManager
-        .updateAppsOrder(payload.orderedIds)
-        .then(() => {
-            toast.success('应用排序已保存');
-        })
-        .catch((error) => {
-            toast.error(error instanceof Error ? error.message : '应用排序失败');
+/**
+ * 卡片拖拽落下后的统一提交（同分类排序 / 跨分类移动）
+ */
+async function handleCardDragCommit(payload: AppCardDragCommit): Promise<void> {
+    const { appId, sourceCategoryId, targetCategoryId, orderedIds } = payload;
+    try {
+        if (sourceCategoryId !== targetCategoryId) {
+            const updated = await dataManager.updateApp(appId, { category: targetCategoryId });
+            if (!updated) {
+                throw new Error('应用不存在');
+            }
+        }
+
+        // 与原项目一致：把目标分类的可见顺序合并回全局顺序，
+        // 未出现在列表中的应用（如未显示的隐藏站点）保持原相对位置
+        const orderedSet = new Set(orderedIds);
+        let cursor = 0;
+        const mergedIds = dataManager.apps.value.map((app) => {
+            if (app.category !== targetCategoryId || !orderedSet.has(app.id)) {
+                return app.id;
+            }
+            return orderedIds[cursor++];
         });
+
+        const currentIds = dataManager.apps.value.map((app) => app.id);
+        if (mergedIds.join('\0') !== currentIds.join('\0')) {
+            await dataManager.updateAppsOrder(mergedIds);
+        }
+
+        toast.success(sourceCategoryId !== targetCategoryId ? '应用已移动到新分类' : '应用排序已保存');
+    } catch (error) {
+        toast.error(error instanceof Error ? error.message : '拖拽排序失败');
+    }
 }
 
 function handleAppClick(app: AppItem): void {
@@ -370,7 +403,7 @@ async function handleImportFile(event: Event): Promise<void> {
         await dataManager.importData(backup);
         toast.success('数据已导入');
         activeCategoryId.value = 'all';
-        showHiddenApps.value = false;
+        void saveShowHiddenApps(false);
     } catch (error) {
         toast.error(error instanceof Error ? error.message : '导入失败');
     }
@@ -409,33 +442,16 @@ const fabItems = [
             :active-category-id="activeCategoryId"
             :collapsed="sidebarCollapsed"
             :mobile-open="mobileSidebarOpen"
-            :show-hidden-apps="showHiddenApps"
             @select-category="handleSelectCategory"
             @update:mobile-open="mobileSidebarOpen = $event"
             @open-search="openSearch"
             @order-change="handleCategoryOrderChange"
-        >
-            <template #footer>
-                <button
-                    type="button"
-                    class="hidden-apps-toggle"
-                    :class="{ active: showHiddenApps }"
-                    @click="toggleHiddenApps"
-                >
-                    <span class="nav-icon">
-                        <IconSvg name="eye" :size="20" />
-                    </span>
-                    <span class="nav-text">
-                        {{ showHiddenApps ? '隐藏已隐藏站点' : '显示已隐藏站点' }}
-                    </span>
-                </button>
-            </template>
-        </Sidebar>
+        />
 
         <MainContent :title="pageTitle" :collapsed="sidebarCollapsed">
             <template #header-extra>
                 <button
-                    v-if="activeCategoryId !== 'all' && !showHiddenApps"
+                    v-if="activeCategoryId !== 'all'"
                     type="button"
                     class="content-action-btn"
                     @click="openAddApp(activeCategoryId)"
@@ -452,9 +468,8 @@ const fabItems = [
 
             <div v-else-if="!hasApps" class="app-empty">
                 <IconSvg name="folder" :size="64" />
-                <p>{{ showHiddenApps ? '暂无已隐藏站点' : '该分类下暂无应用' }}</p>
+                <p>该分类下暂无应用</p>
                 <button
-                    v-if="!showHiddenApps"
                     type="button"
                     class="content-action-btn"
                     @click="openAddApp(activeCategoryId)"
@@ -463,31 +478,17 @@ const fabItems = [
                 </button>
             </div>
 
-            <template v-else-if="showHiddenApps">
-                <AppGrid
-                    :apps="displayedApps"
-                    :category-id="'hidden'"
-                    :draggable="false"
-                    :editable="true"
-                    :deletable="true"
-                    @app-click="handleAppClick"
-                    @edit-app="openEditApp"
-                    @delete-app="handleDeleteApp"
-                />
-            </template>
-
             <template v-else-if="activeCategoryId === 'all'">
                 <CategorySection
                     v-for="(category, index) in categoriesWithVisibleApps"
                     :key="category.id"
                     :category="category"
-                    :apps="dataManager.getAppsByCategory(category.id)"
+                    :apps="getDisplayApps(category.id)"
                     :draggable="true"
                     :animation-delay="index * 0.05"
                     @app-click="handleAppClick"
                     @edit-app="openEditApp"
                     @delete-app="handleDeleteApp"
-                    @order-change="handleAppOrderChange"
                 />
             </template>
 
@@ -500,7 +501,6 @@ const fabItems = [
                     @app-click="handleAppClick"
                     @edit-app="openEditApp"
                     @delete-app="handleDeleteApp"
-                    @order-change="handleAppOrderChange"
                 />
             </template>
         </MainContent>
@@ -544,6 +544,8 @@ const fabItems = [
         <MntConfirmHost />
         <ToastContainer position="top-right" />
 
+        <AppCardDragGhost />
+
         <input
             ref="fileInputRef"
             type="file"
@@ -561,49 +563,6 @@ const fabItems = [
 .app-root {
     min-height: 100vh;
     position: relative;
-}
-
-.hidden-apps-toggle {
-    @include button-reset;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    padding: 10px 12px;
-    margin: 4px 0;
-    border-radius: 8px;
-    color: var(--md-sys-color-on-surface);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 13px;
-    position: relative;
-    white-space: nowrap;
-    border: 1px solid transparent;
-    @include md-transition(all, var(--md-transition-fast));
-
-    &:hover {
-        background: var(--hover-bg);
-        color: var(--md-sys-color-primary);
-    }
-
-    &.active {
-        background: var(--md-sys-color-primary);
-        color: var(--md-sys-color-on-primary);
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-}
-
-.nav-icon {
-    margin-right: 12px;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.nav-text {
-    overflow: hidden;
 }
 
 .content-action-btn {
@@ -646,6 +605,12 @@ const fabItems = [
     animation: spin 1s linear infinite;
 }
 
+// 卡片拖拽期间禁止文本选择并显示抓取光标
+:global(body.is-dragging-cards) {
+    user-select: none;
+    cursor: grabbing;
+}
+
 .visually-hidden {
     position: absolute;
     width: 1px;
@@ -665,24 +630,6 @@ const fabItems = [
 
     to {
         transform: rotate(360deg);
-    }
-}
-
-:deep(.sidebar.collapsed) {
-    .hidden-apps-toggle {
-        justify-content: center;
-        padding-left: 0;
-        padding-right: 0;
-
-        .nav-icon {
-            margin-right: 0;
-        }
-
-        .nav-text {
-            opacity: 0;
-            width: 0;
-            display: none;
-        }
     }
 }
 </style>

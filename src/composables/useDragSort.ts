@@ -2,9 +2,9 @@
  * useDragSort
  * 长按拖拽排序逻辑（分类导航 / 应用卡片）
  *
- * 通过监听 pointer / mouse / touch 事件实现长按检测，
- * 在拖拽过程中输出 start / move / end 事件与当前位置，
- * 由调用组件根据事件更新数据顺序。
+ * 通过监听 pointer / mouse / touch 事件实现长按检测；
+ * 拖拽过程中实时 insertBefore 重排 DOM（与原项目 js/app.js 行为一致），
+ * 取消时还原到原始位置；落下后由调用组件按 DOM 顺序提交数据。
  */
 
 import {
@@ -244,6 +244,8 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
     let longPressTimer: ReturnType<typeof setTimeout> | null = null;
     let startPoint: PointerPoint | null = null;
     let currentElement: HTMLElement | null = null;
+    /** 拖拽开始时元素原位的下一个兄弟节点，用于取消拖拽时还原 DOM 位置 */
+    let originalNextSibling: Node | null = null;
     let abortedByLeave = false;
     let controller: AbortController | null = null;
 
@@ -263,6 +265,7 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
         position.value = null;
         startPoint = null;
         currentElement = null;
+        originalNextSibling = null;
         abortedByLeave = false;
     }
 
@@ -298,6 +301,9 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
             }
         }
 
+        // 记录原始位置，拖拽取消时还原
+        originalNextSibling = currentElement.nextSibling;
+
         isDragging.value = true;
         isPressing.value = false;
         currentId.value = id;
@@ -309,6 +315,9 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
 
     /**
      * 更新当前位置并触发 move 回调
+     *
+     * 拖拽过程中按指针位置实时 insertBefore 重排 DOM，
+     * 落下时调用组件直接读取 DOM 顺序提交。
      */
     function updatePosition(point: PointerPoint): void {
         const container = containerRef.value;
@@ -321,6 +330,19 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
             currentElement,
             direction
         );
+
+        // 实时重排：指针越过目标中点时，将拖拽元素移到目标前/后
+        if (overElement && overElement !== currentElement && overElement.parentNode === container) {
+            const rect = overElement.getBoundingClientRect();
+            const after =
+                direction === 'vertical'
+                    ? point.clientY >= rect.top + rect.height / 2
+                    : point.clientX >= rect.left + rect.width / 2;
+            const reference = after ? overElement.nextSibling : overElement;
+            if (reference !== currentElement) {
+                container.insertBefore(currentElement, reference);
+            }
+        }
 
         const pos: DragSortPosition = {
             x: point.clientX,
@@ -354,8 +376,23 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
         }
 
         const container = containerRef.value;
-        let toIndex = currentIndex.value ?? fromIndex.value;
         let finalPosition: DragSortPosition | null = position.value;
+
+        if (cancelled && container) {
+            // 取消拖拽：还原到原始位置
+            if (originalNextSibling && originalNextSibling.parentNode === container) {
+                container.insertBefore(currentElement, originalNextSibling);
+            } else if (!originalNextSibling) {
+                container.appendChild(currentElement);
+            }
+        }
+
+        // toIndex 取拖拽元素在当前 DOM 中的实际位置
+        const items = container ? getSortableItems(container, itemSelector) : [];
+        let toIndex = items.indexOf(currentElement);
+        if (toIndex === -1) {
+            toIndex = fromIndex.value;
+        }
 
         if (point && container) {
             const { overElement, overIndex } = resolveOverIndex(
@@ -365,7 +402,6 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
                 currentElement,
                 direction
             );
-            toIndex = overIndex ?? fromIndex.value;
             finalPosition = {
                 x: point.clientX,
                 y: point.clientY,
@@ -422,6 +458,8 @@ export function useDragSort(options: UseDragSortOptions): UseDragSortReturn {
 
         currentElement = item;
         startPoint = point;
+        // 按压即记录当前项 ID，供 pressing 按压态样式使用
+        currentId.value = getId(item);
         isPressing.value = true;
         abortedByLeave = false;
 

@@ -44,10 +44,10 @@ function createContainer(itemCount = 3): { container: HTMLElement; items: HTMLEl
     return { container, items };
 }
 
-function mockLayout(items: HTMLElement[], direction: 'vertical' | 'grid' = 'vertical'): void {
-    if (direction === 'vertical') {
-        items.forEach((item, index) => {
-            item.getBoundingClientRect = vi.fn(() => ({
+function mockLayout(container: HTMLElement, direction: 'vertical' | 'grid' = 'vertical'): void {
+    const rectForIndex = (index: number): DOMRect => {
+        if (direction === 'vertical') {
+            return {
                 top: index * 50,
                 left: 0,
                 width: 300,
@@ -57,28 +57,35 @@ function mockLayout(items: HTMLElement[], direction: 'vertical' | 'grid' = 'vert
                 x: 0,
                 y: index * 50,
                 toJSON: () => undefined,
-            } as DOMRect));
+            } as DOMRect;
+        }
+        const row = Math.floor(index / 2);
+        const col = index % 2;
+        return {
+            top: row * 50,
+            left: col * 150,
+            width: 150,
+            height: 50,
+            right: (col + 1) * 150,
+            bottom: (row + 1) * 50,
+            x: col * 150,
+            y: row * 50,
+            toJSON: () => undefined,
+        } as DOMRect;
+    };
+
+    // getBoundingClientRect 基于元素当前 DOM 位置动态计算，
+    // 模拟拖拽实时重排后的真实布局变化
+    container.querySelectorAll<HTMLElement>('.sortable-item').forEach((item) => {
+        item.getBoundingClientRect = vi.fn(() => {
+            const liveItems = Array.from(container.querySelectorAll<HTMLElement>('.sortable-item'));
+            return rectForIndex(liveItems.indexOf(item));
         });
-    } else {
-        items.forEach((item, index) => {
-            const row = Math.floor(index / 2);
-            const col = index % 2;
-            item.getBoundingClientRect = vi.fn(() => ({
-                top: row * 50,
-                left: col * 150,
-                width: 150,
-                height: 50,
-                right: (col + 1) * 150,
-                bottom: (row + 1) * 50,
-                x: col * 150,
-                y: row * 50,
-                toJSON: () => undefined,
-            } as DOMRect));
-        });
-    }
+    });
 
     document.elementFromPoint = vi.fn((x: number, y: number): Element | null => {
-        for (const item of items) {
+        const liveItems = Array.from(container.querySelectorAll<HTMLElement>('.sortable-item'));
+        for (const item of liveItems) {
             const rect = item.getBoundingClientRect();
             if (x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom) {
                 return item;
@@ -162,7 +169,7 @@ describe('useDragSort', () => {
 
     it('长按应触发拖拽开始并更新状态', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result, onStart, onMove } = mountDragSort(container);
         await nextTick();
 
@@ -187,7 +194,7 @@ describe('useDragSort', () => {
 
     it('短按抬起不应触发拖拽', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result, onStart, onEnd } = mountDragSort(container);
         await nextTick();
 
@@ -203,7 +210,7 @@ describe('useDragSort', () => {
 
     it('移动超过阈值应取消长按', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result, onStart } = mountDragSort(container);
         await nextTick();
 
@@ -218,7 +225,7 @@ describe('useDragSort', () => {
 
     it('拖拽移动应更新当前索引并触发 move 回调', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result, onMove } = mountDragSort(container);
         await nextTick();
 
@@ -235,7 +242,7 @@ describe('useDragSort', () => {
 
     it('拖拽结束应触发 end 回调并携带起止索引', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result: _result, onEnd } = mountDragSort(container);
         await nextTick();
 
@@ -258,7 +265,7 @@ describe('useDragSort', () => {
 
     it('canDrag 返回 false 时应阻止对应元素拖拽', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result, onStart } = mountDragSort(container, {
             canDrag: (el) => el.dataset.id !== 'item-0',
         });
@@ -284,7 +291,7 @@ describe('useDragSort', () => {
             delete item.dataset.id;
             item.dataset.customId = `custom-${i}`;
         });
-        mockLayout(items);
+        mockLayout(container);
         const { result, onStart } = mountDragSort(container, {
             getId: (el) => el.dataset.customId || null,
         });
@@ -301,7 +308,7 @@ describe('useDragSort', () => {
     it('onStart 返回 false 时应取消拖拽', async () => {
         const startSpy = vi.fn(() => false);
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result, onEnd } = mountDragSort(container, {
             onStart: startSpy,
         });
@@ -317,7 +324,7 @@ describe('useDragSort', () => {
 
     it('disabled 为 true 时不应响应按下事件', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result, onStart } = mountDragSort(container, {
             disabled: true,
         });
@@ -333,7 +340,7 @@ describe('useDragSort', () => {
 
     it('切换为 disabled 时应重置当前状态', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const disabled = ref(false);
         const { result } = mountDragSort(container, { disabled });
         await nextTick();
@@ -351,7 +358,7 @@ describe('useDragSort', () => {
 
     it('reset 应清空所有拖拽状态', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result } = mountDragSort(container);
         await nextTick();
 
@@ -372,7 +379,7 @@ describe('useDragSort', () => {
 
     it('mouseleave 应在拖拽时标记取消，并在抬起时以取消状态结束', async () => {
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { onEnd } = mountDragSort(container);
         await nextTick();
 
@@ -390,7 +397,7 @@ describe('useDragSort', () => {
 
     it('grid 方向应正确计算跨列索引', async () => {
         const { container, items } = createContainer(4);
-        mockLayout(items, 'grid');
+        mockLayout(container, 'grid');
         const { result, onMove } = mountDragSort(container, { direction: 'grid' });
         await nextTick();
 
@@ -406,8 +413,8 @@ describe('useDragSort', () => {
     it('容器引用变化时应重新绑定事件', async () => {
         const { container: containerA, items: itemsA } = createContainer();
         const { container: containerB, items: itemsB } = createContainer();
-        mockLayout(itemsA);
-        mockLayout(itemsB);
+        mockLayout(containerA);
+        mockLayout(containerB);
 
         const containerRef = ref<HTMLElement | null>(containerA);
         const onStart = vi.fn();
@@ -456,7 +463,7 @@ describe('useDragSort', () => {
         window.PointerEvent = undefined;
 
         const { container, items } = createContainer();
-        mockLayout(items);
+        mockLayout(container);
         const { result, onStart } = mountDragSort(container);
         await nextTick();
 
@@ -473,5 +480,62 @@ describe('useDragSort', () => {
         expect(onStart).toHaveBeenCalledOnce();
 
         window.PointerEvent = originalPointerEvent;
+    });
+
+    it('按压时即设置 currentId 以支持按压态样式', async () => {
+        const { container, items } = createContainer();
+        mockLayout(container);
+        const { result } = mountDragSort(container);
+        await nextTick();
+
+        dispatchMouseEvent('mousedown', items[1], { clientX: 25, clientY: 75 });
+        await nextTick();
+
+        expect(result.isPressing.value).toBe(true);
+        expect(result.currentId.value).toBe('item-1');
+        expect(result.isDragging.value).toBe(false);
+    });
+
+    it('拖拽移动时应实时重排 DOM 顺序', async () => {
+        const { container, items } = createContainer();
+        mockLayout(container);
+        mountDragSort(container);
+        await nextTick();
+
+        dispatchMouseEvent('mousedown', items[0], { clientX: 25, clientY: 25 });
+        await advanceTime(300);
+        dispatchMouseEvent('mousemove', container, { clientX: 25, clientY: 125 });
+        await nextTick();
+
+        const order = Array.from(container.querySelectorAll<HTMLElement>('.sortable-item')).map(
+            (el) => el.dataset.id
+        );
+        expect(order).toEqual(['item-1', 'item-2', 'item-0']);
+    });
+
+    it('取消拖拽时应恢复原始 DOM 顺序', async () => {
+        const { container, items } = createContainer();
+        mockLayout(container);
+        const { onEnd } = mountDragSort(container);
+        await nextTick();
+
+        dispatchMouseEvent('mousedown', items[0], { clientX: 25, clientY: 25 });
+        await advanceTime(300);
+        dispatchMouseEvent('mousemove', container, { clientX: 25, clientY: 125 });
+        await nextTick();
+
+        // 拖拽中 DOM 已被重排
+        expect(
+            Array.from(container.querySelectorAll<HTMLElement>('.sortable-item')).map((el) => el.dataset.id)
+        ).toEqual(['item-1', 'item-2', 'item-0']);
+
+        dispatchMouseEvent('mouseleave', container, { clientX: 25, clientY: 125 });
+        dispatchMouseEvent('mouseup', container, { clientX: 25, clientY: 125 });
+        await nextTick();
+
+        expect(onEnd.mock.calls[0][0].cancelled).toBe(true);
+        expect(
+            Array.from(container.querySelectorAll<HTMLElement>('.sortable-item')).map((el) => el.dataset.id)
+        ).toEqual(['item-0', 'item-1', 'item-2']);
     });
 });

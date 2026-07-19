@@ -2,7 +2,7 @@
 /**
  * AppHeader - 顶部应用栏
  *
- * 包含品牌区（Logo / 标题 / 副标题）、侧边栏折叠按钮、移动端菜单按钮、
+ * 包含品牌区（Logo / 标题）、侧边栏折叠按钮、移动端菜单按钮、
  * 右侧操作区插槽以及个性化设置入口。
  */
 import { computed } from 'vue';
@@ -11,8 +11,6 @@ import IconSvg from '@/components/icon/IconSvg.vue';
 export interface AppHeaderProps {
     /** 主标题 */
     title?: string;
-    /** 副标题 */
-    subtitle?: string;
     /** Logo 图片地址 */
     logoSrc?: string;
     /** 是否显示侧边栏折叠按钮 */
@@ -27,7 +25,6 @@ export interface AppHeaderProps {
 
 const props = withDefaults(defineProps<AppHeaderProps>(), {
     title: 'Mugen新标签页',
-    subtitle: '统一应用管理平台',
     logoSrc: '/image/logo/mugen.png',
     showCollapseToggle: true,
     sidebarCollapsed: false,
@@ -60,16 +57,6 @@ function handleMenuClick(): void {
     <header class="app-header">
         <div class="header-brand">
             <button
-                v-if="showCollapseToggle"
-                type="button"
-                class="collapse-toggle-btn"
-                :title="sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'"
-                @click="handleCollapseClick"
-            >
-                <IconSvg :name="collapseIconName" :size="18" />
-            </button>
-
-            <button
                 type="button"
                 class="menu-toggle"
                 title="打开菜单"
@@ -84,9 +71,18 @@ function handleMenuClick(): void {
                 </div>
                 <div class="brand-text">
                     <h1>{{ title }}</h1>
-                    <p v-if="subtitle">{{ subtitle }}</p>
                 </div>
             </div>
+
+            <button
+                v-if="showCollapseToggle"
+                type="button"
+                class="collapse-toggle-btn"
+                :title="sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'"
+                @click="handleCollapseClick"
+            >
+                <IconSvg :name="collapseIconName" :size="18" />
+            </button>
         </div>
 
         <div class="header-actions">
@@ -152,7 +148,6 @@ function handleMenuClick(): void {
 
 .collapse-toggle-btn {
     @include button-reset;
-    margin-left: 6px;
     color: rgba(255, 255, 255, 0.7);
     width: 28px;
     height: 28px;
@@ -230,14 +225,6 @@ function handleMenuClick(): void {
         color: #fff;
         margin: 0;
         letter-spacing: -0.3px;
-        line-height: 1.2;
-    }
-
-    p {
-        font-size: 0.7rem;
-        color: rgba(255, 255, 255, 0.8);
-        margin: 0;
-        font-weight: 400;
         line-height: 1.2;
     }
 }
@@ -340,10 +327,6 @@ function handleMenuClick(): void {
     .menu-toggle {
         display: flex;
         margin-right: 8px;
-    }
-
-    .brand-text p {
-        display: none;
     }
 
     .personalization-label,
