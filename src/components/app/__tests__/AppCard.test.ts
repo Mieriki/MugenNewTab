@@ -99,4 +99,34 @@ describe('AppCard', () => {
         expect(card.classes()).toContain('is-dragging');
         expect(card.classes()).toContain('is-pressing');
     });
+
+    it('iconBackground 为 false 时附加 no-icon-bg 类，默认不附加', () => {
+        const app = createApp();
+        const withTransparent = mount(AppCard, {
+            props: { app, iconBackground: false }
+        });
+        expect(withTransparent.find('.app-card').classes()).toContain('no-icon-bg');
+
+        const byDefault = mount(AppCard, { props: { app } });
+        expect(byDefault.find('.app-card').classes()).not.toContain('no-icon-bg');
+    });
+
+    it('未设置图标时显示默认站点图标（彩色，无单色滤镜）', () => {
+        const app = createApp({ icon: undefined });
+        const wrapper = mount(AppCard, { props: { app } });
+
+        const img = wrapper.find('.app-card__icon img');
+        expect(img.exists()).toBe(true);
+        expect(img.attributes('src')).toBe('/image/icons/site.svg');
+        expect(wrapper.find('.app-card__icon .icon-svg').classes()).not.toContain('is-monochrome');
+    });
+
+    it('图标加载失败时回退为默认站点图标', async () => {
+        const app = createApp({ icon: 'https://example.com/favicon.ico' });
+        const wrapper = mount(AppCard, { props: { app } });
+
+        const img = wrapper.find('.app-card__icon img');
+        await img.trigger('error');
+        expect(img.attributes('src')).toBe('/image/icons/site.svg');
+    });
 });

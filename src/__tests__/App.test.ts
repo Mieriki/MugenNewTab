@@ -14,6 +14,7 @@ import { useDataManager } from '@/composables/useDataManager';
 import { useTheme } from '@/composables/useTheme';
 import { useConfirm, provideConfirm } from '@/composables/useConfirm';
 import { useToast } from '@/composables/useToast';
+import { useLayoutStore } from '@/stores/layout.store';
 import { storageManager } from '@/services/storage.service';
 import { STORAGE_KEYS, type StorageValue, type StorageChangeListener } from '@/types/storage';
 
@@ -337,6 +338,38 @@ describe('App.vue', () => {
         await flushPromises();
 
         expect(wrapper.find('.cloud-sync-panel').exists()).toBe(true);
+    });
+
+    it('关闭「显示全部应用」后侧栏过滤该分类并切换当前分类', async () => {
+        const wrapper = mountApp();
+        await flushPromises();
+
+        const layoutStore = useLayoutStore();
+        layoutStore.showAllCategory = false;
+        await nextTick();
+
+        const sidebar = wrapper.findComponent(Sidebar);
+        const categoryIds = (sidebar.props('categories') as Array<{ id: string }>).map((c) => c.id);
+        expect(categoryIds).not.toContain('all');
+        expect(categoryIds).toEqual(['dev', 'media']);
+
+        // 当前分类自动切换到首个用户分类
+        expect(sidebar.props('activeCategoryId')).toBe('dev');
+        expect(wrapper.find('.content-title').text()).toBe('开发工具');
+    });
+
+    it('平铺模式渲染单个网格而非分类分组', async () => {
+        const wrapper = mountApp();
+        await flushPromises();
+
+        const layoutStore = useLayoutStore();
+        layoutStore.allViewFlat = true;
+        await nextTick();
+
+        // 无分类分组区块，仅一个网格，含全部可见应用（2 张卡片）
+        expect(wrapper.findAll('.category-section')).toHaveLength(0);
+        expect(wrapper.findAll('.app-grid')).toHaveLength(1);
+        expect(wrapper.findAll('.app-card')).toHaveLength(2);
     });
 
     it('点击应用卡片在新标签页打开链接', async () => {

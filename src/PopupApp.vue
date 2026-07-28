@@ -42,6 +42,8 @@ const form = ref<FormState>({
 
 const errors = ref<Record<string, string>>({});
 const isSubmitting = ref(false);
+/** 自动获取图标时是否请求高清图（favicon.im larger=true） */
+const fetchLargerIcon = ref(false);
 
 const isNewCategory = computed(() => form.value.category === NEW_CATEGORY_VALUE);
 const categoryOptions = computed(() => dataManager.userCategories.value);
@@ -55,12 +57,12 @@ function normalizeUrl(url: string): string {
     return `https://${trimmed}`;
 }
 
-/** 根据 URL 生成 favicon 服务地址 */
-function buildFaviconUrl(url: string): string | null {
+/** 根据 URL 生成 favicon 服务地址，larger 为 true 时请求高清图 */
+function buildFaviconUrl(url: string, larger = false): string | null {
     try {
         const normalized = normalizeUrl(url);
         const urlObj = new URL(normalized);
-        return `https://favicon.im/${urlObj.hostname}?l=${Date.now()}`;
+        return `https://favicon.im/${urlObj.hostname}?l=${Date.now()}${larger ? '&larger=true' : ''}`;
     } catch {
         return null;
     }
@@ -73,7 +75,7 @@ async function autoFetchIcon(): Promise<void> {
         toast.error('请先输入网站链接');
         return;
     }
-    const favicon = buildFaviconUrl(url);
+    const favicon = buildFaviconUrl(url, fetchLargerIcon.value);
     if (!favicon) {
         toast.error('无法解析网站链接');
         return;
@@ -97,6 +99,7 @@ function clearIcon(): void {
 /** 重置表单 */
 function resetForm(): void {
     errors.value = {};
+    fetchLargerIcon.value = false;
     form.value = {
         name: tabTitle.value,
         url: tabUrl.value,
@@ -329,6 +332,10 @@ watch(
                         >
                             清除
                         </BaseButton>
+                        <label class="icon-larger-toggle">
+                            <input v-model="fetchLargerIcon" type="checkbox" />
+                            <span>高清图标</span>
+                        </label>
                     </div>
                 </div>
             </form>
@@ -503,6 +510,24 @@ watch(
     display: flex;
     gap: 8px;
     margin-top: 2px;
+    align-items: center;
+}
+
+.icon-larger-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--md-sys-color-on-surface);
+    cursor: pointer;
+    margin-left: auto;
+
+    input[type='checkbox'] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: var(--md-sys-color-primary);
+    }
 }
 
 .popup-footer {

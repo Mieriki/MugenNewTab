@@ -27,6 +27,9 @@ describe('layout.store', () => {
         expect(store.columns).toBe('auto');
         expect(store.paginate).toBe(false);
         expect(store.pageSize).toBe(24);
+        expect(store.showAllCategory).toBe(true);
+        expect(store.allViewFlat).toBe(false);
+        expect(store.showIconBackground).toBe(true);
     });
 
     it('init 加载已保存的布局设置', async () => {
@@ -48,12 +51,29 @@ describe('layout.store', () => {
         await store.setColumns(3);
         await store.setPaginate(true);
         await store.setPageSize(12);
+        await store.setShowAllCategory(false);
+        await store.setAllViewFlat(true);
+        await store.setShowIconBackground(false);
 
         expect(storageManager.set).toHaveBeenCalledWith(STORAGE_KEYS.LAYOUT_SETTINGS, {
             columns: 3,
             paginate: true,
             pageSize: 12,
+            showAllCategory: false,
+            allViewFlat: true,
+            showIconBackground: false,
         });
+    });
+
+    it('旧数据缺少 showIconBackground 字段时保持默认显示', async () => {
+        vi.mocked(storageManager.get).mockResolvedValue({ columns: 4, allViewFlat: true });
+
+        const store = useLayoutStore();
+        await store.init();
+
+        expect(store.columns).toBe(4);
+        expect(store.allViewFlat).toBe(true);
+        expect(store.showIconBackground).toBe(true);
     });
 
     it('非法 pageSize 被忽略', async () => {

@@ -34,11 +34,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
     getSystemIconUrl,
     createPlaceholderSvg,
 } from '@/utils/image.util';
+import { iconCacheService } from '@/services/iconCache.service';
 
 /** 组件接收的属性 */
 interface Props {
@@ -178,10 +179,38 @@ const resolvedFallback = computed(() => {
     return resolved !== effectiveSource.value ? resolved : SYSTEM_PLACEHOLDER;
 });
 
+/** 当前源是否为可缓存的远程图标地址 */
+const isRemoteSource = computed(() => {
+    return !isInlineSvg.value && iconCacheService.isCacheableUrl(effectiveSource.value);
+});
+
+/** 从 IndexedDB 缓存解析出的对象地址（未命中时为 null） */
+const cachedObjectUrl = ref<string | null>(null);
+
+// 远程图标优先尝试命中缓存；缓存不可用时静默回退到网络加载
+watch(
+    effectiveSource,
+    source => {
+        cachedObjectUrl.value = null;
+        if (!iconCacheService.isCacheableUrl(source)) {
+            return;
+        }
+        void iconCacheService.resolve(source).then(objectUrl => {
+            if (objectUrl && effectiveSource.value === source) {
+                cachedObjectUrl.value = objectUrl;
+            }
+        });
+    },
+    { immediate: true }
+);
+
 /** 图片模式下的当前地址（内联模式为空） */
 const currentSrc = computed(() => {
     if (isInlineSvg.value) {
         return '';
+    }
+    if (imageErrorCount.value === 0 && cachedObjectUrl.value) {
+        return cachedObjectUrl.value;
     }
     return imageErrorCount.value > 0 && resolvedFallback.value
         ? resolvedFallback.value
@@ -211,8 +240,15 @@ const rootStyle = computed(() => {
 const imageErrorCount = ref(0);
 
 function onImageError(event: Event) {
-    imageErrorCount.value += 1;
     const img = event.target as HTMLImageElement | null;
+    if (img && cachedObjectUrl.value && img.src === cachedObjectUrl.value) {
+        // 缓存内容损坏：移除缓存并回退到原始网络地址重新加载
+        const source = effectiveSource.value;
+        cachedObjectUrl.value = null;
+        void iconCacheService.evict(source);
+        return;
+    }
+    imageErrorCount.value += 1;
     if (img && img.src !== resolvedFallback.value) {
         img.src = resolvedFallback.value;
     }
@@ -220,6 +256,11 @@ function onImageError(event: Event) {
 }
 
 function onImageLoad(event: Event) {
+    const img = event.target as HTMLImageElement | null;
+    if (isRemoteSource.value && img && img.src === effectiveSource.value) {
+        // 网络加载成功：后台写入 IndexedDB 缓存，供下次打开直接使用
+        void iconCacheService.cache(effectiveSource.value);
+    }
     emit('load', event);
 }
 </script>

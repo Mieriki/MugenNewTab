@@ -60,6 +60,39 @@ function handlePaginateChange(event: Event): void {
             <label class="layout-settings__toggle">
                 <input
                     type="checkbox"
+                    :checked="layoutStore.showAllCategory"
+                    @change="layoutStore.setShowAllCategory(($event.target as HTMLInputElement).checked)"
+                />
+                <span>显示「全部应用」分类（关闭后侧栏只按分类显示）</span>
+            </label>
+        </div>
+
+        <div class="layout-settings__group">
+            <label class="layout-settings__toggle">
+                <input
+                    type="checkbox"
+                    :checked="layoutStore.allViewFlat"
+                    @change="layoutStore.setAllViewFlat(($event.target as HTMLInputElement).checked)"
+                />
+                <span>「全部应用」平铺显示（不按分类分组）</span>
+            </label>
+        </div>
+
+        <div class="layout-settings__group">
+            <label class="layout-settings__toggle">
+                <input
+                    type="checkbox"
+                    :checked="layoutStore.showIconBackground"
+                    @change="layoutStore.setShowIconBackground(($event.target as HTMLInputElement).checked)"
+                />
+                <span>显示站点图标背景（关闭后图标背景透明）</span>
+            </label>
+        </div>
+
+        <div class="layout-settings__group">
+            <label class="layout-settings__toggle">
+                <input
+                    type="checkbox"
                     :checked="layoutStore.paginate"
                     @change="handlePaginateChange"
                 />

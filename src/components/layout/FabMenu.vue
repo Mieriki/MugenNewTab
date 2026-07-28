@@ -112,7 +112,7 @@ onUnmounted(() => {
                     @click="handleItemClick(item)"
                 >
                     <span v-if="item.icon" class="fab-item-icon">
-                        <IconSvg :name="item.icon" :size="20" />
+                        <IconSvg :name="item.icon" :size="20" monochrome />
                     </span>
                     <span class="fab-item-label">{{ item.label }}</span>
                 </li>

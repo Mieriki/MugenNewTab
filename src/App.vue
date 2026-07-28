@@ -11,6 +11,7 @@ import {
     onMounted,
     onUnmounted,
     ref,
+    watch,
 } from 'vue';
 import type { AppItem, Category } from '@/types/app';
 import { useDataManager } from '@/composables/useDataManager';
@@ -37,6 +38,7 @@ import UiLibManager from '@/components/uiLib/UiLibManager.vue';
 import PersonalizationPanel from '@/components/personalization/PersonalizationPanel.vue';
 import ToastContainer from '@/components/common/ToastContainer.vue';
 import CategorySection from '@/components/app/CategorySection.vue';
+import AppGrid from '@/components/app/AppGrid.vue';
 import AppCardDragGhost from '@/components/app/AppCardDragGhost.vue';
 import ModalOverlay from '@/components/common/ModalOverlay.vue';
 import CloudSyncPanel from '@/components/personalization/CloudSyncPanel.vue';
@@ -62,6 +64,7 @@ const searchOpen = ref(false);
 // ==================== 分类与应用状态 ====================
 const activeCategoryId = ref<string>('all');
 const showHiddenApps = ref(false);
+const layoutStore = useLayoutStore();
 
 // ==================== 模态框状态 ====================
 const appEditOpen = ref(false);
@@ -109,6 +112,32 @@ const categoriesWithVisibleApps = computed(() =>
     dataManager.userCategories.value.filter(
         (category) => getDisplayApps(category.id).length > 0
     )
+);
+
+/** 传给侧栏的分类列表（关闭「显示全部应用」时只按分类显示） */
+const visibleCategories = computed(() => {
+    if (layoutStore.showAllCategory) {
+        return dataManager.categories.value;
+    }
+    return dataManager.categories.value.filter((category) => category.id !== 'all');
+});
+
+/**
+ * 「全部应用」分类被隐藏时的当前分类兜底（切换到首个用户分类）
+ */
+function ensureActiveCategory(): void {
+    if (layoutStore.showAllCategory || activeCategoryId.value !== 'all') return;
+    const firstCategory = dataManager.userCategories.value[0];
+    if (firstCategory) {
+        activeCategoryId.value = firstCategory.id;
+    }
+}
+
+watch(
+    () => layoutStore.showAllCategory,
+    () => {
+        ensureActiveCategory();
+    }
 );
 
 // ==================== 生命周期与持久化 ====================
@@ -255,6 +284,17 @@ async function handleCardDragCommit(payload: AppCardDragCommit): Promise<void> {
             if (!updated) {
                 throw new Error('应用不存在');
             }
+        }
+
+        if (targetCategoryId === 'all') {
+            // 「全部应用」平铺视图：直接按可见顺序全局重排，
+            // 未出现的应用（如隐藏站点）保持相对顺序跟在后面
+            const currentIds = dataManager.apps.value.map((app) => app.id);
+            if (orderedIds.join('\0') !== currentIds.join('\0')) {
+                await dataManager.updateAppsOrder(orderedIds);
+            }
+            toast.success('应用排序已保存');
+            return;
         }
 
         // 与原项目一致：把目标分类的可见顺序合并回全局顺序，
@@ -416,7 +456,11 @@ async function handleImportFile(event: Event): Promise<void> {
         const backup = JSON.parse(text) as Record<string, unknown>;
         await dataManager.importData(backup);
         toast.success('数据已导入');
-        activeCategoryId.value = 'all';
+        if (layoutStore.showAllCategory) {
+            activeCategoryId.value = 'all';
+        } else {
+            activeCategoryId.value = dataManager.userCategories.value[0]?.id ?? 'all';
+        }
         void saveShowHiddenApps(false);
     } catch (error) {
         toast.error(error instanceof Error ? error.message : '导入失败');
@@ -425,7 +469,7 @@ async function handleImportFile(event: Event): Promise<void> {
 
 // ==================== FAB 菜单配置 ====================
 const fabItems = [
-    { action: 'add-app', label: '添加网站', icon: 'add' },
+    { action: 'add-app', label: '添加网站', icon: 'plus' },
     { action: 'add-category', label: '添加分类', icon: 'folder' },
     { action: 'manage-categories', label: '管理分类', icon: 'setting' },
     { divider: true },
@@ -453,7 +497,7 @@ const fabItems = [
         </div>
 
         <Sidebar
-            :categories="dataManager.categories.value"
+            :categories="visibleCategories"
             :active-category-id="activeCategoryId"
             :collapsed="sidebarCollapsed"
             :mobile-open="mobileSidebarOpen"
@@ -471,7 +515,7 @@ const fabItems = [
                     class="content-action-btn"
                     @click="openAddApp(activeCategoryId)"
                 >
-                    <IconSvg name="add" :size="16" />
+                    <IconSvg name="plus" :size="16" />
                     添加网站
                 </button>
             </template>
@@ -492,6 +536,17 @@ const fabItems = [
                     添加网站
                 </button>
             </div>
+
+            <template v-else-if="activeCategoryId === 'all' && layoutStore.allViewFlat">
+                <AppGrid
+                    :apps="displayedApps"
+                    :category-id="'all'"
+                    :draggable="true"
+                    @app-click="handleAppClick"
+                    @edit-app="openEditApp"
+                    @delete-app="handleDeleteApp"
+                />
+            </template>
 
             <template v-else-if="activeCategoryId === 'all'">
                 <CategorySection

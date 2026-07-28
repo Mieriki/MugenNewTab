@@ -49,4 +49,15 @@ describe('FabMenu', () => {
         await wrapper.find('.fab-section-title').trigger('click');
         expect(wrapper.emitted('select')).toBeUndefined();
     });
+
+    it('菜单项图标应用 monochrome（暗色主题自动反色）', () => {
+        const wrapper = mount(FabMenu, {
+            props: { items, active: true }
+        });
+        const icons = wrapper.findAll('.fab-item-icon .icon-svg');
+        expect(icons.length).toBeGreaterThan(0);
+        for (const icon of icons) {
+            expect(icon.classes()).toContain('is-monochrome');
+        }
+    });
 });

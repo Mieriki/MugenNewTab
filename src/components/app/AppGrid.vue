@@ -190,6 +190,7 @@ function handleDelete(app: AppItem): void {
                 :pressing="cardDrag.state.phase === 'pressing' && cardDrag.state.app?.id === entry.app.id"
                 :editable="editable"
                 :deletable="deletable"
+                :icon-background="layoutStore.showIconBackground"
                 @click="handleAppClick"
                 @edit="handleEdit"
                 @delete="handleDelete"
@@ -249,7 +250,7 @@ function handleDelete(app: AppItem): void {
         grid-column: 1 / -1;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: center;
         gap: 8px;
         padding-top: 4px;
     }

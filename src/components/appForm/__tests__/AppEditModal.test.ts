@@ -82,7 +82,7 @@ describe('AppEditModal', () => {
         expect(document.querySelector('input[placeholder="例如：GitHub"]')).not.toBeNull();
         expect(document.querySelector('input[type="url"]')).not.toBeNull();
         expect(document.querySelector('#app-edit-category')).not.toBeNull();
-        expect(document.querySelector('input[type="checkbox"]')).not.toBeNull();
+        expect(document.querySelector('.checkbox-label input[type="checkbox"]')).not.toBeNull();
     });
 
     it('编辑模式下回显应用数据并显示编辑标题', async () => {
@@ -102,7 +102,7 @@ describe('AppEditModal', () => {
         expect((document.querySelector('input[placeholder="例如：GitHub"]') as HTMLInputElement)?.value).toBe('GitHub');
         expect((document.querySelector('input[type="url"]') as HTMLInputElement)?.value).toBe('https://github.com');
         expect((document.querySelector('#app-edit-category') as HTMLSelectElement)?.value).toBe('dev');
-        expect((document.querySelector('input[type="checkbox"]') as HTMLInputElement)?.checked).toBe(true);
+        expect((document.querySelector('.checkbox-label input[type="checkbox"]') as HTMLInputElement)?.checked).toBe(true);
     });
 
     it('initialCategoryId 在添加模式下默认选中分类', async () => {
@@ -268,6 +268,32 @@ describe('AppEditModal', () => {
         expect(iconInput.value).toContain('https://favicon.im/example.com');
     });
 
+    it('勾选获取高清图标后自动获取的地址包含 larger=true', async () => {
+        mountModal();
+        await wait();
+
+        const urlInput = document.querySelector('input[type="url"]') as HTMLInputElement;
+        urlInput.value = 'example.com';
+        urlInput.dispatchEvent(new Event('input'));
+        await flushPromises();
+
+        const largerToggle = document.querySelector('.icon-larger-toggle input[type="checkbox"]') as HTMLInputElement;
+        expect(largerToggle).not.toBeNull();
+        largerToggle.checked = true;
+        largerToggle.dispatchEvent(new Event('change'));
+        await flushPromises();
+
+        const fetchBtn = Array.from(document.querySelectorAll('.mnt-base-button')).find(
+            (btn) => btn.textContent?.includes('自动获取图标')
+        ) as HTMLButtonElement;
+        fetchBtn.click();
+        await flushPromises();
+
+        const iconInput = document.querySelector('input[placeholder="图标 URL 或系统图标名称"]') as HTMLInputElement;
+        expect(iconInput.value).toContain('https://favicon.im/example.com');
+        expect(iconInput.value).toContain('larger=true');
+    });
+
     it('清除按钮清空图标输入', async () => {
         mountModal();
         await wait();
@@ -333,7 +359,7 @@ describe('AppEditModal', () => {
         categorySelect.value = 'dev';
         categorySelect.dispatchEvent(new Event('change'));
 
-        const hiddenCheckbox = document.querySelector('.app-edit-form input[type="checkbox"]') as HTMLInputElement;
+        const hiddenCheckbox = document.querySelector('.app-edit-form .checkbox-label input[type="checkbox"]') as HTMLInputElement;
         hiddenCheckbox.checked = true;
         hiddenCheckbox.dispatchEvent(new Event('change'));
         await flushPromises();

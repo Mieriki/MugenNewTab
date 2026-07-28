@@ -7,17 +7,18 @@
  */
 import { computed } from 'vue';
 import { useAppCardDrag } from '@/composables/useAppCardDrag';
+import { useLayoutStore } from '@/stores/layout.store';
 import { isImageIcon } from '@/utils/image.util';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
 const cardDrag = useAppCardDrag();
+const layoutStore = useLayoutStore();
 const state = cardDrag.state;
 
 const visible = computed(() => state.phase === 'dragging' && !!state.app);
 
 const iconSrc = computed(() => state.app?.icon?.trim() || undefined);
 const iconIsImage = computed(() => isImageIcon(iconSrc.value));
-
 const ghostStyle = computed(() => ({
     left: `${state.ghostX - state.cardWidth / 2}px`,
     top: `${state.ghostY - state.cardHeight / 2}px`,
@@ -28,13 +29,20 @@ const ghostStyle = computed(() => ({
 
 <template>
     <Teleport to="body">
-        <div v-if="visible" class="app-card-drag-ghost" :style="ghostStyle" aria-hidden="true">
+        <div
+            v-if="visible"
+            class="app-card-drag-ghost"
+            :class="{ 'app-card-drag-ghost--no-icon-bg': !layoutStore.showIconBackground }"
+            :style="ghostStyle"
+            aria-hidden="true"
+        >
             <div class="app-card-drag-ghost__icon">
                 <IconSvg
                     :src="iconSrc"
-                    name="link"
+                    name="site"
+                    fallback="site"
                     :size="40"
-                    :monochrome="!iconIsImage"
+                    :monochrome="!!iconSrc && !iconIsImage"
                     :alt="state.app?.name"
                 />
             </div>
@@ -77,6 +85,11 @@ const ghostStyle = computed(() => ({
         color: var(--md-sys-color-on-primary-container);
         flex-shrink: 0;
         overflow: hidden;
+    }
+
+    // 图标背景关闭时透明
+    &--no-icon-bg &__icon {
+        background: transparent;
     }
 
     &__content {

@@ -77,7 +77,8 @@
             { "id": "el-sort", "name": "排序", "url": "./image/icons/sort.svg", "category": "element" },
             { "id": "el-filter", "name": "筛选", "url": "./image/icons/filter.svg", "category": "element" },
             { "id": "el-logout", "name": "退出", "url": "./image/icons/logout.svg", "category": "element" },
-            { "id": "el-filter", "name": "筛选", "url": "./image/icons/filter.svg", "category": "element" }
+            { "id": "el-filter", "name": "筛选", "url": "./image/icons/filter.svg", "category": "element" },
+            { "id": "el-site", "name": "默认站点", "url": "./image/icons/site.svg", "category": "element" }
         ]
     },
     "userUiLib": {

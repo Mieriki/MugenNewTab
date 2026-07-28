@@ -237,4 +237,30 @@ describe('PopupApp.vue', () => {
 
         expect(nameInput.value).toBe('GitHub');
     });
+
+    it('勾选高清图标后自动获取的地址包含 larger=true', async () => {
+        mountPopup();
+        await flushPromises();
+
+        const urlInput = document.querySelector('input[type="url"]') as HTMLInputElement;
+        urlInput.value = 'example.com';
+        urlInput.dispatchEvent(new Event('input'));
+        await flushPromises();
+
+        const largerToggle = document.querySelector('.icon-larger-toggle input[type="checkbox"]') as HTMLInputElement;
+        expect(largerToggle).not.toBeNull();
+        largerToggle.checked = true;
+        largerToggle.dispatchEvent(new Event('change'));
+        await flushPromises();
+
+        const fetchBtn = Array.from(document.querySelectorAll('.mnt-base-button')).find(
+            (btn) => btn.textContent?.includes('自动获取')
+        ) as HTMLButtonElement;
+        fetchBtn.click();
+        await flushPromises();
+
+        const iconInput = document.querySelector('input[placeholder="图标 URL 或系统图标名称"]') as HTMLInputElement;
+        expect(iconInput.value).toContain('https://favicon.im/example.com');
+        expect(iconInput.value).toContain('larger=true');
+    });
 });

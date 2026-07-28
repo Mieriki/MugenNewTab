@@ -26,6 +26,8 @@ export interface AppCardProps {
     deletable?: boolean;
     /** 是否始终显示操作按钮（默认悬停显示） */
     showActions?: boolean;
+    /** 是否显示图标背景（false 时图标背景透明） */
+    iconBackground?: boolean;
 }
 
 const props = withDefaults(defineProps<AppCardProps>(), {
@@ -35,6 +37,7 @@ const props = withDefaults(defineProps<AppCardProps>(), {
     editable: true,
     deletable: true,
     showActions: false,
+    iconBackground: true,
 });
 
 const emit = defineEmits<{
@@ -57,6 +60,9 @@ const iconSrc = computed(() => {
 });
 
 const iconIsImage = computed(() => isImageIcon(iconSrc.value));
+
+/** 是否已设置图标（未设置时显示默认站点图标，保持彩色不加单色滤镜） */
+const hasIcon = computed(() => !!iconSrc.value);
 
 function handleClick(event: MouseEvent): void {
     const target = event.target as HTMLElement | null;
@@ -93,6 +99,7 @@ function handleDelete(event: MouseEvent): void {
             'is-pressing': pressing,
             'is-draggable': draggable,
             'show-actions': showActions,
+            'no-icon-bg': !iconBackground,
         }"
         :data-app-id="app.id"
         tabindex="0"
@@ -104,9 +111,10 @@ function handleDelete(event: MouseEvent): void {
         <div class="app-card__icon">
             <IconSvg
                 :src="iconSrc"
-                name="link"
+                name="site"
+                fallback="site"
                 :size="40"
-                :monochrome="!iconIsImage"
+                :monochrome="hasIcon && !iconIsImage"
                 :alt="app.name"
             />
         </div>
@@ -220,6 +228,11 @@ function handleDelete(event: MouseEvent): void {
         color: var(--md-sys-color-on-primary-container);
         flex-shrink: 0;
         overflow: hidden;
+    }
+
+    // 图标背景关闭时透明
+    &.no-icon-bg &__icon {
+        background: transparent;
     }
 
     &__content {

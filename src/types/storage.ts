@@ -81,6 +81,12 @@ export interface LayoutSettings {
     paginate: boolean;
     /** 分页模式每页卡片数 */
     pageSize: number;
+    /** 是否在侧栏显示「全部应用」分类（false 时只按分类显示） */
+    showAllCategory: boolean;
+    /** 「全部应用」视图是否平铺显示（不按分类分组） */
+    allViewFlat: boolean;
+    /** 是否显示站点卡片图标背景（false 时图标背景透明） */
+    showIconBackground: boolean;
 }
 
 /** 本地壁纸图片元数据 */

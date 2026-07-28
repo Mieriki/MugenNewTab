@@ -163,7 +163,7 @@ function formatCount(categoryId: string): string {
             <BaseButton variant="text" @click="handleClose">关闭</BaseButton>
             <BaseButton variant="primary" @click="handleAdd">
                 <template #icon>
-                    <IconSvg name="add" :size="16" />
+                    <IconSvg name="plus" :size="16" />
                 </template>
                 新建分类
             </BaseButton>

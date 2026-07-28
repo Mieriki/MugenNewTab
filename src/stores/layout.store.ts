@@ -19,6 +19,9 @@ export const useLayoutStore = defineStore('layout', () => {
     const columns = ref<number | 'auto'>(DEFAULT_COLUMNS);
     const paginate = ref(false);
     const pageSize = ref(DEFAULT_PAGE_SIZE);
+    const showAllCategory = ref(true);
+    const allViewFlat = ref(false);
+    const showIconBackground = ref(true);
     const initialized = ref(false);
     const isMobile = ref(false);
 
@@ -43,6 +46,9 @@ export const useLayoutStore = defineStore('layout', () => {
             columns: columns.value,
             paginate: paginate.value,
             pageSize: pageSize.value,
+            showAllCategory: showAllCategory.value,
+            allViewFlat: allViewFlat.value,
+            showIconBackground: showIconBackground.value,
         };
         await storageManager.set(STORAGE_KEYS.LAYOUT_SETTINGS, settings);
     }
@@ -64,6 +70,15 @@ export const useLayoutStore = defineStore('layout', () => {
                 }
                 if (typeof saved.pageSize === 'number' && saved.pageSize > 0) {
                     pageSize.value = saved.pageSize;
+                }
+                if (typeof saved.showAllCategory === 'boolean') {
+                    showAllCategory.value = saved.showAllCategory;
+                }
+                if (typeof saved.allViewFlat === 'boolean') {
+                    allViewFlat.value = saved.allViewFlat;
+                }
+                if (typeof saved.showIconBackground === 'boolean') {
+                    showIconBackground.value = saved.showIconBackground;
                 }
             }
             initialized.value = true;
@@ -88,15 +103,36 @@ export const useLayoutStore = defineStore('layout', () => {
         await persist();
     }
 
+    async function setShowAllCategory(value: boolean): Promise<void> {
+        showAllCategory.value = value;
+        await persist();
+    }
+
+    async function setAllViewFlat(value: boolean): Promise<void> {
+        allViewFlat.value = value;
+        await persist();
+    }
+
+    async function setShowIconBackground(value: boolean): Promise<void> {
+        showIconBackground.value = value;
+        await persist();
+    }
+
     return {
         columns,
         paginate,
         pageSize,
+        showAllCategory,
+        allViewFlat,
+        showIconBackground,
         isMobile,
         initialized,
         init,
         setColumns,
         setPaginate,
         setPageSize,
+        setShowAllCategory,
+        setAllViewFlat,
+        setShowIconBackground,
     };
 });
