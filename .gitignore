@@ -57,3 +57,4 @@ build-firefox/*
 
 # AI agent instructions (keep local only)
 AGENTS.md
+/bun.lock
