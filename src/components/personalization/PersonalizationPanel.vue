@@ -98,7 +98,7 @@ function handleEsc(event: KeyboardEvent): void {
                             aria-label="关闭"
                             @click="close"
                         >
-                            <IconSvg name="close" :size="20" />
+                            <IconSvg name="close" :size="20" monochrome />
                         </button>
                     </div>
 
@@ -114,7 +114,7 @@ function handleEsc(event: KeyboardEvent): void {
                                         :class="{ active: activeTab === tab.id }"
                                         @click="activeTab = tab.id"
                                     >
-                                        <IconSvg :name="tab.icon" :size="16" />
+                                        <IconSvg :name="tab.icon" :size="16" monochrome />
                                         <span>{{ tab.label }}</span>
                                     </button>
                                 </nav>
