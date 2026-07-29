@@ -29,7 +29,13 @@ const mockDefaultData: AppNavigatorData = {
 
 const mockDefaultDataConfig = {
     appNavigator: mockDefaultData,
-    systemUiLib: { categories: [], items: [] },
+    systemUiLib: {
+        categories: [{ id: 'sys-cat-1', name: '系统图标' }],
+        items: [
+            { id: 'sys-item-1', name: 'Menu', url: '/image/icons/menu.svg', category: 'sys-cat-1' },
+            { id: 'sys-item-2', name: 'Folder', url: '/image/icons/folder.svg', category: 'sys-cat-1' },
+        ],
+    },
     userUiLib: { categories: [], items: [] },
 };
 
@@ -155,7 +161,7 @@ describe('CategoryEditModal', () => {
         expect(saved.categories.find((c) => c.id === 'dev')?.name).toBe('开发者工具');
     });
 
-    it('点击常用图标按钮填充图标输入', async () => {
+    it('点击图标库中的图标填充图标输入', async () => {
         mount(CategoryEditModal, {
             props: { modelValue: true },
             attachTo: document.body,
@@ -170,12 +176,12 @@ describe('CategoryEditModal', () => {
 
         expect(document.querySelector('.mnt-category-form__presets')).not.toBeNull();
 
-        const firstPreset = document.querySelector('.mnt-category-form__preset-btn') as HTMLButtonElement | null;
-        firstPreset?.click();
+        const firstItem = document.querySelector('.mnt-category-form__picker-item') as HTMLButtonElement | null;
+        firstItem?.click();
         await flushPromises();
 
         const inputs = queryInputs();
-        expect(inputs[1]?.value).toMatch(/^\.\/image\/icons\/[a-zA-Z0-9_-]+\.svg$/);
+        expect(inputs[1]?.value).toBe('/image/icons/menu.svg');
     });
 
     it('恢复默认按钮重置图标与单色设置', async () => {

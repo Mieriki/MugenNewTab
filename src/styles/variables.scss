@@ -55,8 +55,8 @@
     --fab-bottom: 24px;
     --fab-right: 24px;
 
-    // 图标滤镜：浅色模式显示黑色，深色模式反转为白色
-    --icon-filter: brightness(0) saturate(0);
+    // 图标滤镜：浅色模式显示原始图标，深色模式反转为白色（仅作用于 monochrome 图标）
+    --icon-filter: none;
 
     // 派生变量（由 ThemeManager 动态设置，提供默认回退）
     --md-primary: var(--md-sys-color-primary);

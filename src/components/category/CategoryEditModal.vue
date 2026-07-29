@@ -30,23 +30,10 @@ const emit = defineEmits<{
 }>();
 
 const dataManager = useDataManager({ autoInit: false });
+const { uiItems } = dataManager;
 const toast = useToast();
 
 const DEFAULT_ICON = './image/icons/folder.svg';
-
-/** 常用系统图标，供用户快速选择 */
-const PRESET_ICONS = [
-    'folder',
-    'code',
-    'heart',
-    'game',
-    'music',
-    'video',
-    'book',
-    'image',
-    'search',
-    'settings',
-];
 
 const isEdit = computed(() => !!props.category);
 const modalTitle = computed(() => (isEdit.value ? '编辑分类' : '添加分类'));
@@ -76,8 +63,13 @@ function resetForm(): void {
 watch(
     () => props.modelValue,
     (open) => {
-        if (open) resetForm();
-    }
+        if (open) {
+            resetForm();
+            // 确保 UI 图标库已初始化，供图标选择网格使用（幂等）
+            dataManager.init().catch(() => undefined);
+        }
+    },
+    { immediate: true }
 );
 
 watch(() => props.category, resetForm, { immediate: true });
@@ -145,8 +137,8 @@ function openPresetIcons(field: 'light' | 'dark'): void {
     showPresetIcons.value = true;
 }
 
-function selectPresetIcon(name: string): void {
-    const url = `./image/icons/${name}.svg`;
+/** 从 UI 图标库选择图标，填入当前目标字段 */
+function selectIcon(url: string): void {
     if (activeIconField.value === 'dark') {
         form.value.iconDark = url;
     } else {
@@ -157,6 +149,11 @@ function selectPresetIcon(name: string): void {
 
 const lightPreviewSrc = computed(() => form.value.icon?.trim() || DEFAULT_ICON);
 const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPreviewSrc.value);
+
+/** 当前目标字段已选中的图标 URL，用于常用图标网格的选中高亮 */
+const activePresetIcon = computed(() =>
+    activeIconField.value === 'dark' ? form.value.iconDark?.trim() : form.value.icon?.trim()
+);
 </script>
 
 <template>
@@ -180,7 +177,17 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
             />
 
             <div class="mnt-category-form__group">
-                <label class="mnt-category-form__label">分类图标</label>
+                <div class="mnt-category-form__group-header">
+                    <label class="mnt-category-form__label">分类图标</label>
+                    <BaseButton
+                        variant="text"
+                        size="small"
+                        class="mnt-category-form__restore-btn"
+                        @click="restoreDefaultIcon"
+                    >
+                        恢复默认
+                    </BaseButton>
+                </div>
 
                 <div class="mnt-category-form__icon-row">
                     <span class="mnt-category-form__icon-label">浅色</span>
@@ -200,7 +207,7 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
                         @click="openPresetIcons('light')"
                     >
                         <template #icon>
-                            <IconSvg name="image" :size="16" />
+                            <IconSvg name="picture" :size="16" />
                         </template>
                         选择
                     </BaseButton>
@@ -224,33 +231,39 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
                         @click="openPresetIcons('dark')"
                     >
                         <template #icon>
-                            <IconSvg name="image" :size="16" />
+                            <IconSvg name="picture" :size="16" />
                         </template>
                         选择
                     </BaseButton>
                 </div>
 
                 <div class="mnt-category-form__preview-row">
-                    <div
-                        class="mnt-category-form__preview-box mnt-category-form__preview-box--light"
-                        aria-label="浅色模式预览"
-                    >
-                        <IconSvg
-                            :src="lightPreviewSrc"
-                            :size="32"
-                            :monochrome="form.monochrome"
-                        />
+                    <div class="mnt-category-form__preview-item">
+                        <div
+                            class="mnt-category-form__preview-box mnt-category-form__preview-box--light"
+                            aria-label="浅色模式预览"
+                        >
+                            <IconSvg
+                                :src="lightPreviewSrc"
+                                :size="32"
+                                :monochrome="form.monochrome"
+                            />
+                        </div>
+                        <span class="mnt-category-form__preview-label">浅色</span>
                     </div>
-                    <div
-                        class="mnt-category-form__preview-box mnt-category-form__preview-box--dark"
-                        aria-label="深色模式预览"
-                    >
-                        <IconSvg
-                            :src="darkPreviewSrc"
-                            :size="32"
-                            :monochrome="form.monochrome"
-                            style="--icon-filter: invert(1) brightness(2)"
-                        />
+                    <div class="mnt-category-form__preview-item">
+                        <div
+                            class="mnt-category-form__preview-box mnt-category-form__preview-box--dark"
+                            aria-label="深色模式预览"
+                        >
+                            <IconSvg
+                                :src="darkPreviewSrc"
+                                :size="32"
+                                :monochrome="form.monochrome"
+                                style="--icon-filter: invert(1) brightness(2)"
+                            />
+                        </div>
+                        <span class="mnt-category-form__preview-label">深色</span>
                     </div>
                 </div>
 
@@ -259,28 +272,32 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
                     <span>深色模式下图标增加反色遮罩</span>
                 </label>
 
-                <BaseButton
-                    variant="text"
-                    size="small"
-                    class="mnt-category-form__restore-btn"
-                    @click="restoreDefaultIcon"
-                >
-                    恢复默认
-                </BaseButton>
-
                 <Transition name="mnt-category-form__presets">
                     <div v-if="showPresetIcons" class="mnt-category-form__presets">
-                        <p class="mnt-category-form__presets-title">常用图标</p>
-                        <div class="mnt-category-form__presets-grid">
+                        <p class="mnt-category-form__presets-title">
+                            选择图标
+                            <span class="mnt-category-form__presets-target">
+                                应用到：{{ activeIconField === 'dark' ? '深色' : '浅色' }}图标
+                            </span>
+                        </p>
+                        <div v-if="uiItems.length === 0" class="mnt-category-form__picker-empty">
+                            暂无可用图标
+                        </div>
+                        <div v-else class="mnt-category-form__presets-grid">
                             <button
-                                v-for="name in PRESET_ICONS"
-                                :key="name"
+                                v-for="item in uiItems"
+                                :key="item.id"
                                 type="button"
-                                class="mnt-category-form__preset-btn"
-                                :aria-label="`选择图标 ${name}`"
-                                @click="selectPresetIcon(name)"
+                                class="mnt-category-form__picker-item"
+                                :class="{
+                                    'mnt-category-form__picker-item--active':
+                                        activePresetIcon === item.url,
+                                }"
+                                :title="item.name"
+                                :aria-label="`选择图标 ${item.name}`"
+                                @click="selectIcon(item.url)"
                             >
-                                <IconSvg :name="name" :size="22" />
+                                <IconSvg :src="item.url" :size="20" :alt="item.name" />
                             </button>
                         </div>
                     </div>
@@ -317,10 +334,21 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
         gap: 12px;
     }
 
+    &__group-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
     &__label {
         font-size: 13px;
         font-weight: 600;
         color: var(--md-sys-color-on-surface);
+    }
+
+    &__restore-btn {
+        flex-shrink: 0;
     }
 
     &__icon-row {
@@ -338,27 +366,46 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
 
     &__preview-row {
         display: flex;
-        gap: 12px;
+        gap: 16px;
         margin-top: 4px;
+    }
+
+    &__preview-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
     }
 
     &__preview-box {
         width: 64px;
         height: 64px;
-        border-radius: 12px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
         border: 1px solid var(--md-sys-color-outline-variant);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         overflow: hidden;
+        @include md-transition(box-shadow, var(--md-transition-fast));
+
+        &:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
 
         &--light {
             background: var(--md-sys-color-surface);
         }
 
         &--dark {
-            background: #333;
+            background: #1c1b1f;
+            border-color: rgba(255, 255, 255, 0.12);
         }
+    }
+
+    &__preview-label {
+        font-size: 11px;
+        color: var(--md-sys-color-on-surface-variant);
     }
 
     &__checkbox {
@@ -377,38 +424,52 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
         }
     }
 
-    &__restore-btn {
-        align-self: flex-start;
-        margin-top: -4px;
-    }
-
     &__presets {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        padding: 12px;
-        border-radius: 10px;
-        background: var(--md-sys-color-surface-variant);
-        border: 1px solid var(--md-sys-color-outline-variant);
+        gap: 10px;
+        padding: 12px 14px 14px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--md-sys-color-primary) 6%, transparent);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
     }
 
     &__presets-title {
         margin: 0;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
         font-size: 12px;
         font-weight: 600;
         color: var(--md-sys-color-on-surface-variant);
     }
 
-    &__presets-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
+    &__presets-target {
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--md-sys-color-primary);
     }
 
-    &__preset-btn {
+    &__presets-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        @include hide-scrollbar;
+    }
+
+    &__picker-empty {
+        padding: 24px 0;
+        text-align: center;
+        font-size: 12px;
+        color: var(--md-sys-color-on-surface-variant);
+    }
+
+    &__picker-item {
         @include button-reset;
-        width: 36px;
-        height: 36px;
+        aspect-ratio: 1;
         border-radius: 8px;
         background: var(--md-sys-color-surface);
         border: 1px solid var(--md-sys-color-outline-variant);
@@ -421,6 +482,15 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
             border-color: var(--md-sys-color-primary);
             color: var(--md-sys-color-primary);
             transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        &--active,
+        &--active:hover {
+            border-color: var(--md-sys-color-primary);
+            background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+            color: var(--md-sys-color-primary);
+            transform: none;
         }
     }
 }
@@ -442,7 +512,7 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
 .mnt-category-form__presets-enter-to,
 .mnt-category-form__presets-leave-from {
     opacity: 1;
-    max-height: 200px;
+    max-height: 320px;
 }
 
 // 深色模式适配
@@ -457,9 +527,15 @@ const darkPreviewSrc = computed(() => form.value.iconDark?.trim() || lightPrevie
         border-color: rgba(255, 255, 255, 0.08);
     }
 
-    .mnt-category-form__preset-btn {
+    .mnt-category-form__picker-item {
         background: rgba(255, 255, 255, 0.05);
         border-color: rgba(255, 255, 255, 0.08);
+
+        &--active,
+        &--active:hover {
+            background: color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
+            border-color: var(--md-sys-color-primary);
+        }
     }
 }
 </style>

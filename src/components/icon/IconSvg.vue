@@ -302,7 +302,7 @@ function onImageLoad(event: Event) {
 
     &.is-monochrome &__img,
     &.is-monochrome :deep(svg) {
-        filter: var(--icon-filter, brightness(0) saturate(0));
+        filter: var(--icon-filter, none);
     }
 }
 </style>
