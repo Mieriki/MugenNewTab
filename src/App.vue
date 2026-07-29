@@ -356,11 +356,6 @@ async function handleDeleteApp(app: AppItem): Promise<void> {
     }
 }
 
-function openAddCategory(): void {
-    editingCategory.value = undefined;
-    categoryEditOpen.value = true;
-}
-
 function handleSavedCategory(category: Category): void {
     // 新建分类后可选中该分类
     if (!editingCategory.value) {
@@ -372,9 +367,6 @@ function handleFabSelect(action: string): void {
     switch (action) {
         case 'add-app':
             openAddApp();
-            break;
-        case 'add-category':
-            openAddCategory();
             break;
         case 'manage-categories':
             categoryManagerOpen.value = true;
@@ -470,7 +462,6 @@ async function handleImportFile(event: Event): Promise<void> {
 // ==================== FAB 菜单配置 ====================
 const fabItems = [
     { action: 'add-app', label: '添加网站', icon: 'plus' },
-    { action: 'add-category', label: '添加分类', icon: 'folder' },
     { action: 'manage-categories', label: '管理分类', icon: 'setting' },
     { divider: true },
     { section: '数据' },

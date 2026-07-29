@@ -10,6 +10,7 @@ import FabMenu from '@/components/layout/FabMenu.vue';
 import SearchModal from '@/components/search/SearchModal.vue';
 import AppEditModal from '@/components/appForm/AppEditModal.vue';
 import CategoryEditModal from '@/components/category/CategoryEditModal.vue';
+import CategoryManager from '@/components/category/CategoryManager.vue';
 import { useDataManager } from '@/composables/useDataManager';
 import { useTheme } from '@/composables/useTheme';
 import { useConfirm, provideConfirm } from '@/composables/useConfirm';
@@ -317,14 +318,31 @@ describe('App.vue', () => {
         expect(modal.props('app')).toBeNull();
     });
 
-    it('FAB 菜单点击"添加分类"打开分类编辑模态框', async () => {
+    it('FAB 菜单点击"管理分类"打开分类管理弹窗', async () => {
         const wrapper = mountApp();
         await flushPromises();
 
         const fab = wrapper.findComponent(FabMenu);
-        await fab.vm.$emit('select', 'add-category');
+        await fab.vm.$emit('select', 'manage-categories');
         await flushPromises();
 
+        const manager = wrapper.findComponent(CategoryManager);
+        expect(manager.props('modelValue')).toBe(true);
+    });
+
+    it('分类管理触发 add 后打开分类编辑模态框', async () => {
+        const wrapper = mountApp();
+        await flushPromises();
+
+        const fab = wrapper.findComponent(FabMenu);
+        await fab.vm.$emit('select', 'manage-categories');
+        await flushPromises();
+
+        const manager = wrapper.findComponent(CategoryManager);
+        await manager.vm.$emit('add');
+        await flushPromises();
+
+        expect(manager.props('modelValue')).toBe(false);
         const modal = wrapper.findComponent(CategoryEditModal);
         expect(modal.props('modelValue')).toBe(true);
         expect(modal.props('category')).toBeUndefined();

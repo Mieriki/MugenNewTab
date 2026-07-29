@@ -139,6 +139,20 @@ describe('CategoryManager', () => {
         expect(wrapper.emitted('add')).toHaveLength(1);
     });
 
+    it('点击列表底部新建分类行触发 add 事件', async () => {
+        const wrapper = mount(CategoryManager, {
+            props: { modelValue: true },
+            attachTo: document.body,
+        });
+        await flushPromises();
+
+        const addRow = document.querySelector('.mnt-category-manager__add-row') as HTMLButtonElement | null;
+        addRow?.click();
+        await flushPromises();
+
+        expect(wrapper.emitted('add')).toHaveLength(1);
+    });
+
     it('点击删除按钮并从存储中移除分类及其应用', async () => {
         mount(CategoryManager, {
             props: { modelValue: true },
