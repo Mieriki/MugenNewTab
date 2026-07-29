@@ -85,6 +85,23 @@ describe('AppEditModal', () => {
         expect(document.querySelector('.checkbox-label input[type="checkbox"]')).not.toBeNull();
     });
 
+    it('区块头与操作按钮图标应用 monochrome（暗色主题自动反色）', async () => {
+        mountModal();
+        await wait();
+
+        const headerIcons = document.querySelectorAll('.form-section__header .icon-svg');
+        expect(headerIcons.length).toBe(2);
+        headerIcons.forEach((icon) => {
+            expect(icon.classList.contains('is-monochrome')).toBe(true);
+        });
+
+        const actionIcons = document.querySelectorAll('.icon-actions .icon-svg, .icon-input-group .mnt-base-button .icon-svg');
+        expect(actionIcons.length).toBeGreaterThan(0);
+        actionIcons.forEach((icon) => {
+            expect(icon.classList.contains('is-monochrome')).toBe(true);
+        });
+    });
+
     it('编辑模式下回显应用数据并显示编辑标题', async () => {
         const app: AppItem = {
             id: 'app_1',

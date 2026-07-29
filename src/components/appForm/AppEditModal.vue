@@ -27,7 +27,7 @@ import type { AppItem, AppInput } from '@/types/app';
 const NEW_CATEGORY_VALUE = '__new__';
 
 /** 默认图标占位 */
-const DEFAULT_ICON = './image/icons/picture.svg';
+const DEFAULT_ICON = './image/icons/site.svg';
 
 export interface AppEditModalProps {
     /** 是否显示模态框（支持 v-model） */
@@ -292,146 +292,159 @@ watch(
         @update:model-value="$emit('update:modelValue', $event)"
     >
         <form class="app-edit-form" @submit.prevent="handleSubmit">
-            <div class="form-group">
-                <BaseInput
-                    v-model="form.name"
-                    label="网站名称"
-                    placeholder="例如：GitHub"
-                    required
-                    :error="errors.name"
-                />
-            </div>
+            <section class="form-section">
+                <header class="form-section__header">
+                    <IconSvg name="edit" :size="16" color="var(--md-sys-color-primary)" monochrome />
+                    <h3 class="form-section__title">基本信息</h3>
+                </header>
 
-            <div class="form-group">
-                <BaseInput
-                    v-model="form.url"
-                    label="网站链接"
-                    type="url"
-                    placeholder="https://..."
-                    required
-                    hint="输入 URL 后失焦可自动获取图标，也可手动设置下方图标"
-                    :error="errors.url"
-                    @blur="handleUrlBlur"
-                />
-            </div>
+                <div class="form-group">
+                    <BaseInput
+                        v-model="form.name"
+                        label="网站名称"
+                        placeholder="例如：GitHub"
+                        required
+                        :error="errors.name"
+                    />
+                </div>
 
-            <div class="form-group">
-                <label class="form-label" for="app-edit-category">
-                    所属分类
-                    <span class="form-required" aria-hidden="true">*</span>
-                </label>
-                <select
-                    id="app-edit-category"
-                    v-model="form.category"
-                    class="form-select"
-                    :class="{ 'form-select--error': errors.category }"
-                >
-                    <option value="" disabled>请选择分类</option>
-                    <option
-                        v-for="category in categoryOptions"
-                        :key="category.id"
-                        :value="category.id"
+                <div class="form-group">
+                    <BaseInput
+                        v-model="form.url"
+                        label="网站链接"
+                        type="url"
+                        placeholder="https://..."
+                        required
+                        hint="输入 URL 后失焦可自动获取图标，也可手动设置下方图标"
+                        :error="errors.url"
+                        @blur="handleUrlBlur"
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="app-edit-category">
+                        所属分类
+                        <span class="form-required" aria-hidden="true">*</span>
+                    </label>
+                    <select
+                        id="app-edit-category"
+                        v-model="form.category"
+                        class="form-select"
+                        :class="{ 'form-select--error': errors.category }"
                     >
-                        {{ category.name }}
-                    </option>
-                    <option :value="NEW_CATEGORY_VALUE">+ 新建分类</option>
-                </select>
-                <p v-if="errors.category" class="form-error">{{ errors.category }}</p>
-            </div>
+                        <option value="" disabled>请选择分类</option>
+                        <option
+                            v-for="category in categoryOptions"
+                            :key="category.id"
+                            :value="category.id"
+                        >
+                            {{ category.name }}
+                        </option>
+                        <option :value="NEW_CATEGORY_VALUE">+ 新建分类</option>
+                    </select>
+                    <p v-if="errors.category" class="form-error">{{ errors.category }}</p>
+                </div>
 
-            <div v-if="isNewCategory" class="form-group">
-                <BaseInput
-                    v-model="newCategoryName"
-                    label="新分类名称"
-                    placeholder="例如：学习资源"
-                    required
-                    :error="errors.newCategoryName"
-                />
-            </div>
+                <div v-if="isNewCategory" class="form-group">
+                    <BaseInput
+                        v-model="newCategoryName"
+                        label="新分类名称"
+                        placeholder="例如：学习资源"
+                        required
+                        :error="errors.newCategoryName"
+                    />
+                </div>
 
-            <div class="form-group">
-                <BaseInput
-                    v-model="form.description"
-                    label="备注描述"
-                    placeholder="简短描述网站用途..."
-                />
-            </div>
+                <div class="form-group">
+                    <BaseInput
+                        v-model="form.description"
+                        label="备注描述"
+                        placeholder="简短描述网站用途..."
+                    />
+                </div>
+            </section>
 
-            <div class="form-group">
-                <label class="form-label">图标设置</label>
-                <div class="icon-selector">
-                    <div class="icon-preview">
-                        <IconSvg
-                            :src="effectiveIcon"
-                            :size="32"
-                            :fallback="DEFAULT_ICON"
-                            alt="图标预览"
-                        />
+            <section class="form-section">
+                <header class="form-section__header">
+                    <IconSvg name="picture" :size="16" color="var(--md-sys-color-primary)" monochrome />
+                    <h3 class="form-section__title">图标设置</h3>
+                </header>
+
+                <div class="icon-card">
+                    <div class="icon-selector">
+                        <div class="icon-preview">
+                            <IconSvg
+                                :src="effectiveIcon"
+                                :size="36"
+                                :fallback="DEFAULT_ICON"
+                                alt="图标预览"
+                            />
+                        </div>
+                        <div class="icon-input-group">
+                            <BaseInput
+                                v-model="form.icon"
+                                placeholder="图标 URL 或系统图标名称"
+                                :error="errors.icon"
+                            />
+                            <BaseButton
+                                type="button"
+                                variant="secondary"
+                                size="small"
+                                @click="showIconPicker = !showIconPicker"
+                            >
+                                <template #icon>
+                                    <IconSvg name="picture" :size="16" monochrome />
+                                </template>
+                                选择
+                            </BaseButton>
+                        </div>
                     </div>
-                    <div class="icon-input-group">
-                        <BaseInput
-                            v-model="form.icon"
-                            placeholder="图标 URL 或系统图标名称"
-                            :error="errors.icon"
-                        />
+
+                    <div class="icon-actions">
                         <BaseButton
                             type="button"
-                            variant="secondary"
+                            variant="outlined"
                             size="small"
-                            @click="showIconPicker = !showIconPicker"
+                            @click="autoFetchIcon"
                         >
                             <template #icon>
-                                <IconSvg name="picture" :size="16" />
+                                <IconSvg name="refresh" :size="14" monochrome />
                             </template>
-                            选择
+                            自动获取图标
                         </BaseButton>
+                        <BaseButton
+                            type="button"
+                            variant="text"
+                            size="small"
+                            @click="clearIcon"
+                        >
+                            清除
+                        </BaseButton>
+                        <label class="icon-larger-toggle">
+                            <input v-model="fetchLargerIcon" type="checkbox" />
+                            <span>获取高清图标</span>
+                        </label>
+                    </div>
+
+                    <div v-if="showIconPicker" class="icon-picker">
+                        <button
+                            v-for="item in iconItems"
+                            :key="item.id"
+                            type="button"
+                            class="icon-picker-item"
+                            :title="item.name"
+                            @click="selectIcon(item.url)"
+                        >
+                            <IconSvg
+                                :src="item.url"
+                                :size="22"
+                                :fallback="DEFAULT_ICON"
+                                :alt="item.name"
+                            />
+                        </button>
                     </div>
                 </div>
-
-                <div class="icon-actions">
-                    <BaseButton
-                        type="button"
-                        variant="outlined"
-                        size="small"
-                        @click="autoFetchIcon"
-                    >
-                        <template #icon>
-                            <IconSvg name="refresh" :size="14" />
-                        </template>
-                        自动获取图标
-                    </BaseButton>
-                    <BaseButton
-                        type="button"
-                        variant="text"
-                        size="small"
-                        @click="clearIcon"
-                    >
-                        清除
-                    </BaseButton>
-                    <label class="icon-larger-toggle">
-                        <input v-model="fetchLargerIcon" type="checkbox" />
-                        <span>获取高清图标</span>
-                    </label>
-                </div>
-
-                <div v-if="showIconPicker" class="icon-picker">
-                    <button
-                        v-for="item in iconItems"
-                        :key="item.id"
-                        type="button"
-                        class="icon-picker-item"
-                        :title="item.name"
-                        @click="selectIcon(item.url)"
-                    >
-                        <IconSvg
-                            :src="item.url"
-                            :size="22"
-                            :fallback="DEFAULT_ICON"
-                            :alt="item.name"
-                        />
-                    </button>
-                </div>
-            </div>
+            </section>
 
             <div class="form-group form-group--checkbox">
                 <label class="checkbox-label">
@@ -464,7 +477,28 @@ watch(
 .app-edit-form {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 20px;
+}
+
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--md-sys-color-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
 }
 
 .form-group {
@@ -522,6 +556,16 @@ watch(
     line-height: 1.4;
 }
 
+.icon-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: 14px;
+    background: var(--md-sys-color-surface-variant);
+}
+
 .icon-selector {
     display: flex;
     align-items: center;
@@ -529,11 +573,11 @@ watch(
 }
 
 .icon-preview {
-    width: 44px;
-    height: 44px;
+    width: 56px;
+    height: 56px;
     flex-shrink: 0;
-    border-radius: 10px;
-    background: var(--md-sys-color-surface-variant);
+    border-radius: 12px;
+    background: var(--md-sys-color-surface);
     border: 1px solid var(--md-sys-color-outline);
     @include flex-center(row, 0);
 }
@@ -552,7 +596,6 @@ watch(
 .icon-actions {
     display: flex;
     gap: 8px;
-    margin-top: 4px;
     align-items: center;
 }
 
@@ -576,20 +619,19 @@ watch(
 .icon-picker {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
+    gap: 8px;
     max-height: 140px;
     overflow-y: auto;
     padding: 8px;
     border: 1px solid var(--md-sys-color-outline-variant);
     border-radius: 10px;
-    background: var(--md-sys-color-surface-variant);
-    margin-top: 4px;
+    background: var(--md-sys-color-surface);
 }
 
 .icon-picker-item {
     @include button-reset;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 8px;
     background: var(--md-sys-color-surface);
     border: 1px solid var(--md-sys-color-outline);
@@ -623,6 +665,11 @@ watch(
 :global(html.dark-mode),
 :global(body.dark-mode) {
     .form-select {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .icon-card {
         background: rgba(255, 255, 255, 0.05);
         border-color: rgba(255, 255, 255, 0.08);
     }

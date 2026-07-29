@@ -136,7 +136,7 @@ function handleDelete(event: MouseEvent): void {
                 @click="handleEdit"
             >
                 <template #icon>
-                    <IconSvg name="edit" :size="16" :alt="`编辑 ${app.name}`" />
+                    <IconSvg name="edit" :size="16" monochrome :alt="`编辑 ${app.name}`" />
                 </template>
             </BaseButton>
             <BaseButton
@@ -148,7 +148,7 @@ function handleDelete(event: MouseEvent): void {
                 @click="handleDelete"
             >
                 <template #icon>
-                    <IconSvg name="delete" :size="16" :alt="`删除 ${app.name}`" />
+                    <IconSvg name="delete" :size="16" monochrome :alt="`删除 ${app.name}`" />
                 </template>
             </BaseButton>
         </div>
