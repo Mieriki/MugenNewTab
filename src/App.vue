@@ -33,8 +33,7 @@ import SearchModal from '@/components/search/SearchModal.vue';
 import AppEditModal from '@/components/appForm/AppEditModal.vue';
 import CategoryEditModal from '@/components/category/CategoryEditModal.vue';
 import CategoryManager from '@/components/category/CategoryManager.vue';
-import UiLibPicker from '@/components/uiLib/UiLibPicker.vue';
-import UiLibManager from '@/components/uiLib/UiLibManager.vue';
+import UiLibPanel from '@/components/uiLib/UiLibPanel.vue';
 import PersonalizationPanel from '@/components/personalization/PersonalizationPanel.vue';
 import ToastContainer from '@/components/common/ToastContainer.vue';
 import CategorySection from '@/components/app/CategorySection.vue';
@@ -70,8 +69,7 @@ const layoutStore = useLayoutStore();
 const appEditOpen = ref(false);
 const categoryEditOpen = ref(false);
 const categoryManagerOpen = ref(false);
-const uiLibPickerOpen = ref(false);
-const uiLibManagerOpen = ref(false);
+const uiLibPanelOpen = ref(false);
 const cloudSyncOpen = ref(false);
 const fabOpen = ref(false);
 
@@ -372,7 +370,7 @@ function handleFabSelect(action: string): void {
             categoryManagerOpen.value = true;
             break;
         case 'ui-lib':
-            uiLibPickerOpen.value = true;
+            uiLibPanelOpen.value = true;
             break;
         case 'cloud-sync':
             cloudSyncOpen.value = true;
@@ -399,13 +397,6 @@ function handleCategoryManagerAdd(): void {
     nextTick(() => {
         editingCategory.value = undefined;
         categoryEditOpen.value = true;
-    });
-}
-
-function handleUiLibPickerManage(): void {
-    uiLibPickerOpen.value = false;
-    nextTick(() => {
-        uiLibManagerOpen.value = true;
     });
 }
 
@@ -463,10 +454,10 @@ async function handleImportFile(event: Event): Promise<void> {
 const fabItems = [
     { action: 'add-app', label: '添加网站', icon: 'plus' },
     { action: 'manage-categories', label: '管理分类', icon: 'setting' },
+    { action: 'ui-lib', label: '图标库', icon: 'picture' },
     { divider: true },
     { section: '数据' },
     { action: 'cloud-sync', label: '云同步', icon: 'cloud' },
-    { action: 'ui-lib', label: '图标库', icon: 'picture' },
     { action: 'export', label: '导出数据', icon: 'download' },
     { action: 'import', label: '导入数据', icon: 'upload' },
 ];
@@ -593,12 +584,7 @@ const fabItems = [
             @add="handleCategoryManagerAdd"
         />
 
-        <UiLibPicker
-            v-model="uiLibPickerOpen"
-            @manage="handleUiLibPickerManage"
-        />
-
-        <UiLibManager v-model="uiLibManagerOpen" />
+        <UiLibPanel v-model="uiLibPanelOpen" />
 
         <ModalOverlay v-model="cloudSyncOpen" title="云同步" :max-width="420" close-on-overlay>
             <CloudSyncPanel />
