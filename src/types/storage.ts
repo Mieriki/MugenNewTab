@@ -18,6 +18,8 @@ export const STORAGE_KEYS = {
     CLOUD_AUTO_SYNC: 'appNavigator_cloudSync_autoSync',
     CLOUD_LAST_SYNC_TIME: 'appNavigator_cloudSync_lastSyncTime',
     CLOUD_USER_INFO: 'appNavigator_cloudSync_userInfo',
+    CLOUD_SYNC_BASE: 'appNavigator_cloudSync_base',
+    CLOUD_PROVIDER: 'appNavigator_cloudSync_provider',
     SELECTED_THEME: 'selectedTheme',
     SIDEBAR_COLLAPSED: 'sidebarCollapsed',
     SEARCH_HISTORY: 'searchHistory',
@@ -35,20 +37,10 @@ export const SYNC_MIRROR_KEYS = new Set<string>([
     STORAGE_KEYS.SIDEBAR_COLLAPSED
 ]);
 
-/** 云同步需要收集的本地数据键 */
+/** 云同步需要收集的本地数据键（仅站点数据与用户图标库，个性化设置不同步） */
 export const CLOUD_SYNC_DATA_KEYS: string[] = [
     STORAGE_KEYS.MAIN_DATA,
-    STORAGE_KEYS.USER_UI_LIB,
-    STORAGE_KEYS.WALLPAPER,
-    STORAGE_KEYS.WALLPAPER_IMAGE,
-    STORAGE_KEYS.SELECTED_THEME,
-    STORAGE_KEYS.SIDEBAR_COLLAPSED,
-    STORAGE_KEYS.SEARCH_HISTORY,
-    STORAGE_KEYS.SELECTED_SEARCH_ENGINE,
-    STORAGE_KEYS.SHOW_HIDDEN_APPS,
-    STORAGE_KEYS.HIDDEN_TIP_DISMISSED,
-    STORAGE_KEYS.LAYOUT_SETTINGS,
-    STORAGE_KEYS.DATA_UPDATED_AT
+    STORAGE_KEYS.USER_UI_LIB
 ];
 
 /** 存储项值类型 */

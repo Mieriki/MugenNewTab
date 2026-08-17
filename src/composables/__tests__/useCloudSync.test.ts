@@ -32,13 +32,17 @@ function mockFetchSequence(responses: Response[]) {
     });
 }
 
+/** 构造 Gist 响应；不传内容时默认带一份空同步数据（provider 会读取文件内容校验 Gist 有效性） */
 function createGistResponse(content?: unknown): Response {
+    const defaultSyncData = { version: '1.0', lastModified: 0, device: 'Browser', data: {} };
     return createResponse({
         id: TEST_GIST_ID,
         files: {
-            'mugen-newtab-sync.json': content !== undefined
-                ? { content: typeof content === 'string' ? content : JSON.stringify(content) }
-                : {}
+            'mugen-newtab-sync.json': {
+                content: content !== undefined
+                    ? (typeof content === 'string' ? content : JSON.stringify(content))
+                    : JSON.stringify(defaultSyncData)
+            }
         }
     });
 }
@@ -106,7 +110,7 @@ describe('useCloudSync composable', () => {
         expect(wrapper.vm.cloud.autoSync.value).toBe(true);
         expect(wrapper.vm.cloud.userInfo.value).toEqual(TEST_USER);
         expect(wrapper.vm.cloud.isLoggedIn.value).toBe(true);
-        expect(wrapper.vm.cloud.statusText.value).toBe('已连接：testuser');
+        expect(wrapper.vm.cloud.statusText.value).toBe('已连接：GitHub / testuser');
     });
 
     it('login 验证 Token 后更新状态并持久化', async () => {
@@ -268,7 +272,7 @@ describe('useCloudSync composable', () => {
         expect(saved).toBe(true);
     });
 
-    it('数据变更事件触发自动同步', async () => {
+    it('数据变更事件（source 为 local）触发自动同步', async () => {
         vi.useFakeTimers();
 
         mockFetchSequence([
@@ -283,10 +287,24 @@ describe('useCloudSync composable', () => {
         await wrapper.vm.cloud.setAutoSync(true);
         await flushPromises();
 
+        // 自动同步走双向合并 sync：远端与本地一致，无需应用/上传
+        // （本地数据经 appData normalize 后含「全部应用」兜底分类，远端需保持一致；
+        //   使用字面量避免 reactive proxy 无法写入存储）
+        const allCategory = { id: 'all', name: '全部应用', icon: './image/icons/menu.svg', monochrome: true };
+        const syncData = {
+            version: '1.0',
+            lastModified: Date.now(),
+            device: 'Browser',
+            data: {
+                [STORAGE_KEYS.MAIN_DATA]: { categories: [allCategory], apps: [] },
+                [STORAGE_KEYS.USER_UI_LIB]: { categories: [], items: [] }
+            }
+        };
         mockFetchSequence([
-            createGistResponse(),
-            createGistResponse()
+            createGistResponse(syncData),
+            createGistResponse(syncData)
         ]);
+        const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
 
         window.dispatchEvent(new CustomEvent('appNavigator:data-changed', {
             detail: { kind: 'data', source: 'local' }
@@ -295,7 +313,80 @@ describe('useCloudSync composable', () => {
         vi.advanceTimersByTime(3000);
         await flushPromises();
 
-        expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
+        // 防抖后执行 sync，至少发起 Gist 读取请求
+        expect(fetchMock.mock.calls.length).toBeGreaterThan(0);
+        // 静默同步成功，lastSyncTime 已更新
+        expect(wrapper.vm.cloud.lastSyncTime.value).toBeGreaterThan(0);
+    });
+
+    it('source 为 cloud 或 external 的数据变更事件不触发自动同步', async () => {
+        vi.useFakeTimers();
+
+        mockFetchSequence([
+            createResponse(TEST_USER_API),
+            createResponse([]),
+            createResponse({ id: TEST_GIST_ID, files: {} })
+        ]);
+
+        const wrapper = mount(createTestComponent());
+        await flushPromises();
+        await wrapper.vm.cloud.login(TEST_TOKEN);
+        await wrapper.vm.cloud.setAutoSync(true);
+        await flushPromises();
+
+        globalThis.fetch = vi.fn();
+        const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+
+        for (const source of ['cloud', 'external']) {
+            window.dispatchEvent(new CustomEvent('appNavigator:data-changed', {
+                detail: { kind: 'data', source }
+            }));
+            vi.advanceTimersByTime(3000);
+            await flushPromises();
+        }
+
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('sync 方法暴露给组件并执行双向合并', async () => {
+        mockFetchSequence([
+            createResponse(TEST_USER_API),
+            createResponse([]),
+            createResponse({ id: TEST_GIST_ID, files: {} })
+        ]);
+
+        const wrapper = mount(createTestComponent());
+        await flushPromises();
+        await wrapper.vm.cloud.login(TEST_TOKEN);
+
+        expect(typeof wrapper.vm.cloud.sync).toBe('function');
+
+        // 远端数据需包含 appData normalize 注入的「全部应用」兜底分类
+        const allCategory = { id: 'all', name: '全部应用', icon: './image/icons/menu.svg', monochrome: true };
+        const remoteData = {
+            categories: [allCategory, { id: 'cat_remote', name: '远程分类', icon: '/image/icons/folder.svg' }],
+            apps: []
+        };
+        const syncData = {
+            version: '1.0',
+            lastModified: Date.now(),
+            device: 'Browser',
+            data: {
+                [STORAGE_KEYS.MAIN_DATA]: remoteData,
+                [STORAGE_KEYS.USER_UI_LIB]: { categories: [], items: [] }
+            }
+        };
+        mockFetchSequence([
+            createGistResponse(syncData),
+            createGistResponse(syncData)
+        ]);
+
+        const result = await wrapper.vm.cloud.sync();
+
+        expect(result.success).toBe(true);
+        expect(result.applied).toBe(true);
+        expect(wrapper.vm.cloud.lastSyncTime.value).toBe(result.time);
+        expect(wrapper.vm.cloud.formattedLastSyncTime.value).not.toBe('从未同步');
     });
 
     it('未登录时数据变更不会触发自动同步', async () => {

@@ -2,13 +2,16 @@
 /**
  * CloudSyncPanel - 云同步状态面板
  *
- * 通过 useCloudSync 管理 GitHub Gist 同步状态。
- * 未登录时提供 Token 输入框；已登录时展示用户信息、自动同步开关与操作按钮。
- * 提示使用 useToast，不依赖外部 Confirm/Prompt 宿主组件。
+ * 通过 useCloudSync 管理 GitHub / Gitee 代码片段（Gist）同步状态。
+ * 未登录时提供平台选择与 Token 输入框；已登录时展示用户信息、自动同步开关与操作按钮。
+ * 「立即同步」执行双向增量合并（冲突本地优先）；「强制恢复云端」为云端覆盖本地的兜底操作。
+ * 提示使用 useToast，确认/输入框使用 useConfirm（依赖 App.vue 挂载的 MntConfirmHost）。
  */
 import { computed, ref } from 'vue';
 import { useCloudSync } from '@/composables/useCloudSync';
 import { useToast } from '@/composables/useToast';
+import { useConfirm } from '@/composables/useConfirm';
+import type { PromptOptions } from '@/composables/useConfirm';
 import IconSvg from '@/components/icon/IconSvg.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
@@ -33,6 +36,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const confirmDialog = useConfirm();
 
 const {
     isLoggedIn,
@@ -44,7 +48,7 @@ const {
     error,
     login,
     logout,
-    upload,
+    sync,
     pullAndApply,
     setAutoSync
 } = useCloudSync({
@@ -52,24 +56,45 @@ const {
         showToast: (message, type = 'info') => {
             toast.show(message, { type });
         },
-        showConfirm: async () => true,
-        showPrompt: async () => null
+        showConfirm: (message, options) => confirmDialog.confirm(message, options),
+        showPrompt: (message, options) => confirmDialog.prompt(message, options as PromptOptions | undefined)
     }
 });
 
 const tokenInput = ref('');
+
+type ProviderId = 'github' | 'gitee';
+
+const PROVIDER_OPTIONS: Array<{ id: ProviderId; name: string; placeholder: string; hint: string }> = [
+    {
+        id: 'github',
+        name: 'GitHub',
+        placeholder: 'ghp_xxxxxxxxxxxxxxxxxxxx',
+        hint: '在 github.com/settings/tokens 创建 Token（需要 gist 权限）'
+    },
+    {
+        id: 'gitee',
+        name: 'Gitee',
+        placeholder: 'xxxxxxxxxxxxxxxx',
+        hint: '在 gitee.com/profile/personal_access_tokens 创建私人令牌（勾选 gists 权限）'
+    }
+];
+
+const selectedProvider = ref<ProviderId>('github');
+
+const currentProviderOption = computed(() => PROVIDER_OPTIONS.find((option) => option.id === selectedProvider.value) ?? PROVIDER_OPTIONS[0]);
 
 const CLOUD_PATH = 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z';
 
 async function handleLogin(): Promise<void> {
     const token = tokenInput.value.trim();
     if (!token) {
-        toast.show('请输入 GitHub Token', { type: 'error' });
+        toast.show('请输入 Token', { type: 'error' });
         return;
     }
 
     try {
-        const success = await login(token);
+        const success = await login(token, selectedProvider.value);
         emit('login', success);
         if (success) {
             tokenInput.value = '';
@@ -90,9 +115,9 @@ async function handleLogout(): Promise<void> {
     }
 }
 
-async function handleUpload(): Promise<void> {
+async function handleSync(): Promise<void> {
     try {
-        const result = await upload();
+        const result = await sync();
         emit('upload', { success: result.success, message: result.message });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -102,7 +127,7 @@ async function handleUpload(): Promise<void> {
 
 async function handlePull(): Promise<void> {
     try {
-        const result = await pullAndApply({ force: false });
+        const result = await pullAndApply({ force: true });
         emit('pull', {
             success: result.success,
             applied: result.applied,
@@ -149,18 +174,36 @@ const statusClass = computed(() => {
 
         <div v-if="!isLoggedIn" class="cloud-sync-panel__guest">
             <p class="cloud-sync-panel__hint">
-                使用 GitHub Gist 备份和同步你的数据
+                使用 GitHub / Gitee 代码片段（Gist）备份和同步你的站点数据
             </p>
+
+            <div class="cloud-sync-provider" role="tablist" aria-label="同步平台">
+                <button
+                    v-for="option in PROVIDER_OPTIONS"
+                    :key="option.id"
+                    type="button"
+                    role="tab"
+                    class="cloud-sync-provider__btn"
+                    :class="{ 'is-active': selectedProvider === option.id }"
+                    :aria-selected="selectedProvider === option.id"
+                    :disabled="isLoading"
+                    @click="selectedProvider = option.id"
+                >
+                    {{ option.name }}
+                </button>
+            </div>
 
             <BaseInput
                 v-model="tokenInput"
                 type="password"
-                label="GitHub Token"
-                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                :label="`${currentProviderOption.name} Token`"
+                :placeholder="currentProviderOption.placeholder"
                 autocomplete="off"
                 :disabled="isLoading"
                 @enter="handleLogin"
             />
+
+            <p class="cloud-sync-panel__hint">{{ currentProviderOption.hint }}</p>
 
             <BaseButton
                 variant="primary"
@@ -172,7 +215,7 @@ const statusClass = computed(() => {
                 <template #icon>
                     <IconSvg name="link" :size="16" />
                 </template>
-                连接 GitHub
+                连接 {{ currentProviderOption.name }}
             </BaseButton>
         </div>
 
@@ -207,7 +250,7 @@ const statusClass = computed(() => {
                     variant="primary"
                     size="small"
                     :loading="isLoading"
-                    @click="handleUpload"
+                    @click="handleSync"
                 >
                     <template #icon>
                         <IconSvg name="upload" :size="16" />
@@ -224,7 +267,7 @@ const statusClass = computed(() => {
                     <template #icon>
                         <IconSvg name="download" :size="16" />
                     </template>
-                    恢复云端
+                    强制恢复云端
                 </BaseButton>
             </div>
 
@@ -354,6 +397,34 @@ const statusClass = computed(() => {
         height: 18px;
         cursor: pointer;
         accent-color: var(--md-sys-color-primary);
+    }
+}
+
+.cloud-sync-provider {
+    display: flex;
+    gap: 6px;
+
+    &__btn {
+        flex: 1;
+        padding: 6px 0;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 13px;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+
+        &.is-active {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     }
 }
 

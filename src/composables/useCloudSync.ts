@@ -8,10 +8,12 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import type { ComputedRef } from 'vue';
 import { useCloudSyncStore } from '@/stores/cloudSync.store';
 import type {
+    CloudSyncProviderId,
     DownloadResult,
     GitHubUserInfo,
     ICloudSyncUIAdapter,
     PullResult,
+    SyncResult,
     UploadResult
 } from '@/types/cloudSync.types';
 
@@ -25,6 +27,7 @@ export interface UseCloudSyncOptions {
 export interface UseCloudSyncReturn {
     token: ComputedRef<string | null>;
     gistId: ComputedRef<string | null>;
+    provider: ComputedRef<CloudSyncProviderId>;
     autoSync: ComputedRef<boolean>;
     userInfo: ComputedRef<GitHubUserInfo | null>;
     lastSyncTime: ComputedRef<number>;
@@ -34,10 +37,11 @@ export interface UseCloudSyncReturn {
     statusText: ComputedRef<string>;
     formattedLastSyncTime: ComputedRef<string>;
     init: () => Promise<void>;
-    login: (inputToken: string) => Promise<boolean>;
+    login: (inputToken: string, providerId?: CloudSyncProviderId) => Promise<boolean>;
     logout: () => Promise<void>;
     setAutoSync: (enabled: boolean) => Promise<void>;
     upload: (options?: { silent?: boolean }) => Promise<UploadResult>;
+    sync: (options?: { silent?: boolean }) => Promise<SyncResult>;
     download: () => Promise<DownloadResult>;
     pullAndApply: (options?: { force?: boolean; silent?: boolean }) => Promise<PullResult>;
     showLoginDialog: () => Promise<void>;
@@ -46,6 +50,12 @@ export interface UseCloudSyncReturn {
 }
 
 const DEFAULT_AUTO_SYNC_DEBOUNCE_MS = 3000;
+
+/** 平台标识到显示名的映射 */
+const PROVIDER_NAMES: Record<CloudSyncProviderId, string> = {
+    github: 'GitHub',
+    gitee: 'Gitee'
+};
 
 function formatDateTime(timestamp: number): string {
     if (!timestamp) {
@@ -104,7 +114,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
             return '同步中...';
         }
         if (store.isLoggedIn && store.userInfo) {
-            return `已连接：${store.userInfo.login}`;
+            return `已连接：${PROVIDER_NAMES[store.provider] ?? store.provider} / ${store.userInfo.login}`;
         }
         return '未连接';
     });
@@ -160,8 +170,8 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
         return createAbortable(() => store.init());
     }
 
-    async function login(inputToken: string): Promise<boolean> {
-        return createAbortable(() => store.login(inputToken));
+    async function login(inputToken: string, providerId?: CloudSyncProviderId): Promise<boolean> {
+        return createAbortable(() => store.login(inputToken, providerId));
     }
 
     async function logout(): Promise<void> {
@@ -174,6 +184,10 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
 
     async function upload(opts?: { silent?: boolean }): Promise<UploadResult> {
         return createAbortable(() => store.upload(opts));
+    }
+
+    async function sync(opts?: { silent?: boolean }): Promise<SyncResult> {
+        return createAbortable(() => store.sync(opts));
     }
 
     async function download(): Promise<DownloadResult> {
@@ -190,7 +204,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
 
     /**
      * 触发自动同步（防抖）
-     * 仅在已登录且开启自动同步时生效。
+     * 仅在已登录且开启自动同步时生效；执行双向合并同步，成功静默、失败 Toast 提示。
      */
     function scheduleAutoSync(): void {
         if (!store.autoSync || !store.isLoggedIn) {
@@ -201,16 +215,21 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
         }
         autoSyncTimer = setTimeout(() => {
             autoSyncTimer = null;
-            upload({ silent: true }).catch(() => {
-                // 静默失败，避免未处理的 Promise 拒绝
+            sync({ silent: true }).catch(() => {
+                // 静默失败（失败提示由 service 层 Toast 负责），避免未处理的 Promise 拒绝
             });
         }, autoSyncDebounceMs);
     }
 
     /**
      * 本地数据变更时触发自动同步
+     * 仅响应本地修改（source === 'local'），云端应用/外部变更不触发，避免回环上传
      */
-    function handleDataChanged(): void {
+    function handleDataChanged(event: Event): void {
+        const source = (event as CustomEvent<{ source?: string }>).detail?.source;
+        if (source && source !== 'local') {
+            return;
+        }
         scheduleAutoSync();
     }
 
@@ -229,6 +248,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
     return {
         token: computed(() => store.token),
         gistId: computed(() => store.gistId),
+        provider: computed(() => store.provider),
         autoSync: computed(() => store.autoSync),
         userInfo: computed(() => store.userInfo),
         lastSyncTime: computed(() => store.lastSyncTime),
@@ -242,6 +262,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
         logout,
         setAutoSync,
         upload,
+        sync,
         download,
         pullAndApply,
         showLoginDialog,

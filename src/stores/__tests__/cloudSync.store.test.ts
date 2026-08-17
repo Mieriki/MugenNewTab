@@ -5,7 +5,7 @@ import { useAppDataStore } from '../appData.store';
 import { storageManager } from '@/services/storage.service';
 import { browserApi } from '@/services/browserApi.service';
 import { STORAGE_KEYS } from '@/types/storage';
-import type { AppNavigatorData } from '@/types/app';
+import type { AppNavigatorData, Category } from '@/types/app';
 import type { GitHubUserInfo } from '@/types/cloudSync.types';
 
 const TEST_TOKEN = 'ghp_testtoken';
@@ -32,13 +32,17 @@ function mockFetchSequence(responses: Response[]) {
     });
 }
 
+/** 构造 Gist 响应；不传内容时默认带一份空同步数据（provider 会读取文件内容校验 Gist 有效性） */
 function createGistResponse(content?: unknown): Response {
+    const defaultSyncData = { version: '1.0', lastModified: 0, device: 'Browser', data: {} };
     return createResponse({
         id: TEST_GIST_ID,
         files: {
-            'mugen-newtab-sync.json': content !== undefined
-                ? { content: typeof content === 'string' ? content : JSON.stringify(content) }
-                : {}
+            'mugen-newtab-sync.json': {
+                content: content !== undefined
+                    ? (typeof content === 'string' ? content : JSON.stringify(content))
+                    : JSON.stringify(defaultSyncData)
+            }
         }
     });
 }
@@ -316,5 +320,103 @@ describe('cloudSync store', () => {
         store.scheduleAutoSync();
         // 自动同步是 3s 防抖，立即检查不应调用 fetch
         expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
+    it('sync 双向合并：远端新增应用到本地，base 与 lastSyncTime 更新', async () => {
+        const appData = useAppDataStore();
+        await appData.loadData();
+
+        // appData 内存数据会被 normalize 注入「全部应用」兜底分类（见 appData.store 的 createDefaultAllCategory），
+        // 远端数据需包含它才能与本地对齐；此处使用字面量避免 reactive proxy 无法写入存储
+        const allCategory: Category = { id: 'all', name: '全部应用', icon: './image/icons/menu.svg', monochrome: true };
+        const remoteData: AppNavigatorData = {
+            categories: [allCategory, { id: 'cat_remote', name: '远程分类', icon: '/image/icons/folder.svg' }],
+            apps: []
+        };
+        const syncData = {
+            version: '1.0',
+            lastModified: Date.now(),
+            device: 'Browser',
+            data: {
+                [STORAGE_KEYS.MAIN_DATA]: remoteData,
+                [STORAGE_KEYS.USER_UI_LIB]: { categories: [], items: [] }
+            }
+        };
+
+        mockFetchSequence([
+            createResponse(TEST_USER_API),
+            createResponse([]),
+            createResponse({ id: TEST_GIST_ID, files: {} })
+        ]);
+        const store = useCloudSyncStore();
+        await store.login(TEST_TOKEN);
+        expect(typeof store.sync).toBe('function');
+
+        mockFetchSequence([
+            createGistResponse(syncData), // findOrCreateGist -> getGist
+            createGistResponse(syncData) // download -> getGist（merged 与远端一致，无需 PATCH）
+        ]);
+        const result = await store.sync({ silent: true });
+
+        expect(result.success).toBe(true);
+        expect(result.applied).toBe(true);
+        expect(result.uploaded).toBe(false);
+        // 远端新增分类已合并进本地
+        expect(appData.categories.some((c) => c.id === 'cat_remote')).toBe(true);
+        // 状态回同步
+        expect(store.lastSyncTime).toBe(result.time);
+        expect(store.lastSyncTime).toBeGreaterThan(0);
+        // base 快照已写入合并结果
+        const base = await storageManager.get(STORAGE_KEYS.CLOUD_SYNC_BASE) as Record<string, AppNavigatorData>;
+        expect(base[STORAGE_KEYS.MAIN_DATA].categories.some((c) => c.id === 'cat_remote')).toBe(true);
+    });
+
+    it('sync 本地与云端一致时不应用也不上传', async () => {
+        const appData = useAppDataStore();
+        await appData.loadData();
+
+        // 预置 base = 本地 = 远端（本地数据经 normalize 后含「全部应用」兜底分类）
+        const mainData: AppNavigatorData = {
+            categories: [{ id: 'all', name: '全部应用', icon: './image/icons/menu.svg', monochrome: true }],
+            apps: []
+        };
+        const uiLib = { categories: [], items: [] };
+        await storageManager.setMany({
+            [STORAGE_KEYS.MAIN_DATA]: mainData,
+            [STORAGE_KEYS.USER_UI_LIB]: uiLib,
+            [STORAGE_KEYS.CLOUD_SYNC_BASE]: {
+                [STORAGE_KEYS.MAIN_DATA]: mainData,
+                [STORAGE_KEYS.USER_UI_LIB]: uiLib
+            }
+        });
+        const syncData = {
+            version: '1.0',
+            lastModified: Date.now(),
+            device: 'Browser',
+            data: {
+                [STORAGE_KEYS.MAIN_DATA]: mainData,
+                [STORAGE_KEYS.USER_UI_LIB]: uiLib
+            }
+        };
+
+        mockFetchSequence([
+            createResponse(TEST_USER_API),
+            createResponse([]),
+            createResponse({ id: TEST_GIST_ID, files: {} })
+        ]);
+        const store = useCloudSyncStore();
+        await store.login(TEST_TOKEN);
+
+        mockFetchSequence([
+            createGistResponse(syncData),
+            createGistResponse(syncData)
+        ]);
+        const result = await store.sync({ silent: true });
+
+        expect(result.success).toBe(true);
+        expect(result.applied).toBe(false);
+        expect(result.uploaded).toBe(false);
+        expect(store.isLoading).toBe(false);
+        expect(store.error).toBeNull();
     });
 });

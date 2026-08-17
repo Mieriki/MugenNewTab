@@ -12,10 +12,12 @@ import { useAppDataStore } from './appData.store';
 import type {
     ICloudSyncUIAdapter,
     ICloudSyncStorageAdapter,
+    CloudSyncProviderId,
     GitHubUserInfo,
     UploadResult,
     DownloadResult,
-    PullResult
+    PullResult,
+    SyncResult
 } from '@/types/cloudSync.types';
 
 /** 默认 UI 适配器：Store 不直接操作 UI，默认无提示 / 自动确认 */
@@ -39,6 +41,8 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     const userInfo = ref<GitHubUserInfo | null>(null);
     /** 上次同步时间戳 */
     const lastSyncTime = ref(0);
+    /** 当前连接的同步平台 */
+    const provider = ref<CloudSyncProviderId>('github');
     /** 是否正在执行云同步操作 */
     const isLoading = ref(false);
     /** 最近一次错误信息 */
@@ -71,6 +75,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         autoSync.value = settings.autoSync;
         userInfo.value = settings.userInfo;
         lastSyncTime.value = settings.lastSyncTime;
+        provider.value = settings.provider;
     }
 
     /**
@@ -103,11 +108,11 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
      * 使用 Token 登录
      * 验证通过后会持久化并尝试查找/创建 Gist。
      */
-    async function login(inputToken: string): Promise<boolean> {
+    async function login(inputToken: string, providerId?: CloudSyncProviderId): Promise<boolean> {
         isLoading.value = true;
         error.value = null;
         try {
-            const success = await getService().saveToken(inputToken);
+            const success = await getService().saveToken(inputToken, providerId);
             syncStateFromService();
             return success;
         } catch (e) {
@@ -151,6 +156,25 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         error.value = null;
         try {
             const result = await getService().upload(options);
+            syncStateFromService();
+            return result;
+        } catch (e) {
+            error.value = e instanceof Error ? e.message : String(e);
+            throw e;
+        } finally {
+            isLoading.value = false;
+        }
+    }
+
+    /**
+     * 双向增量同步：下载云端数据与本地三方合并（冲突本地优先），
+     * 按需应用与上传。手动「立即同步」、自动同步与启动拉取均走此入口。
+     */
+    async function sync(options?: { silent?: boolean }): Promise<SyncResult> {
+        isLoading.value = true;
+        error.value = null;
+        try {
+            const result = await getService().sync(options);
             syncStateFromService();
             return result;
         } catch (e) {
@@ -223,6 +247,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         autoSync,
         userInfo,
         lastSyncTime,
+        provider,
         isLoading,
         error,
         // Getters
@@ -234,6 +259,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         logout,
         setAutoSync,
         upload,
+        sync,
         download,
         pullAndApply,
         showLoginDialog,
