@@ -296,12 +296,15 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         max-width: 260px;
         max-height: 320px;
         overflow-y: auto;
+        // 完全不透明 + 背景模糊双保险：极简模式下磁贴紧贴搜索框下方，
+        // 下拉展开时盖住磁贴是预期行为，但不能让磁贴「穿透」面板显示出来
         background: var(--md-sys-color-surface);
         border: 1px solid var(--md-sys-color-outline-variant);
         border-radius: 14px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         padding: 6px;
         z-index: 3000;
+        backdrop-filter: blur(16px);
         @include hide-scrollbar;
     }
 
@@ -359,11 +362,11 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
     transform: translateY(-6px);
 }
 
-// 深色模式
+// 深色模式：跟随 surface-rgb 变量即可拿到深色底，这里只补一层不透明度与描边
 :global(html.dark-mode),
 :global(body.dark-mode) {
     .engine-selector__dropdown {
-        background: rgba(40, 40, 40, 0.98);
+        background: rgba(var(--md-sys-color-surface-rgb), 0.98);
         border-color: rgba(255, 255, 255, 0.1);
     }
 }

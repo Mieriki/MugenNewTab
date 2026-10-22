@@ -141,6 +141,26 @@ describe('cloudSync store', () => {
         expect(savedToken).toBeNull();
     });
 
+    it('Gist 初始化失败时仍保持已连接（Token 已验证并保存）', async () => {
+        // Token 验证成功，但 gist 列表接口失败（缺少 gist 权限 / 网络受限）
+        mockFetchSequence([
+            createResponse(TEST_USER_API),
+            createResponse({ message: 'Resource not accessible by integration' }, 403)
+        ]);
+
+        const store = useCloudSyncStore();
+        const success = await store.login(TEST_TOKEN);
+
+        // 修复点：不再因为「初始化同步空间失败」让整次登录失败，界面也不应停在「未连接」
+        expect(success).toBe(true);
+        expect(store.isLoggedIn).toBe(true);
+        expect(store.token).toBe(TEST_TOKEN);
+        expect(store.gistId).toBeNull();
+
+        const savedToken = await storageManager.get(STORAGE_KEYS.CLOUD_TOKEN);
+        expect(savedToken).toBe(TEST_TOKEN);
+    });
+
     it('logout 清空状态并持久化', async () => {
         // 先登录
         mockFetchSequence([

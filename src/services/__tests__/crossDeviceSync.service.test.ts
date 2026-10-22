@@ -36,7 +36,10 @@ vi.mock('@/services/syncStorage.service', () => ({
     }),
     syncRemove: vi.fn(async (key: string) => {
         syncStore.delete(key);
-    })
+    }),
+    isNativeSyncStorage: vi.fn(() => false),
+    getSyncAreaStatus: vi.fn(() => ({ native: false, kind: 'local' })),
+    subscribeSyncAreaChanges: vi.fn(() => () => {})
 }));
 
 import {
@@ -46,7 +49,9 @@ import {
     pushCrossDeviceAuth,
     pullCrossDeviceAuth,
     getCrossDeviceState,
-    hasRemoteCrossDeviceAuth
+    getCrossDeviceStatus,
+    hasRemoteCrossDeviceAuth,
+    clearRemoteCrossDeviceAuth
 } from '../crossDeviceSync.service';
 
 const REMOTE_AUTH_KEY = 'mugen_cross_device_auth';
@@ -157,5 +162,62 @@ describe('crossDeviceSync.service', () => {
         localStore.delete(LOCAL_PASSPHRASE_KEY);
 
         await expect(pullCrossDeviceAuth()).resolves.toBeNull();
+    });
+
+    it('已登录时启用会立即推送，返回 pushed=true', async () => {
+        const result = await enableCrossDevice(PASSPHRASE, AUTH);
+
+        expect(result.pushed).toBe(true);
+        expect(syncStore.has(REMOTE_AUTH_KEY)).toBe(true);
+    });
+
+    it('未登录时启用只保存开关与口令，返回 pushed=false（登录后补推）', async () => {
+        const result = await enableCrossDevice(PASSPHRASE, null);
+
+        expect(result.pushed).toBe(false);
+        expect(syncStore.has(REMOTE_AUTH_KEY)).toBe(false);
+        await expect(getCrossDeviceState()).resolves.toEqual({ enabled: true, hasPassphrase: true });
+    });
+
+    it('未登录先设密码、登录后 pushCrossDeviceAuth 能补推凭据', async () => {
+        await enableCrossDevice(PASSPHRASE, null);
+        expect(syncStore.has(REMOTE_AUTH_KEY)).toBe(false);
+
+        // 模拟登录成功后 CloudSyncService 调用补推
+        await expect(pushCrossDeviceAuth(AUTH)).resolves.toBe(true);
+        expect(syncStore.has(REMOTE_AUTH_KEY)).toBe(true);
+    });
+
+    it('缺口令时 pushCrossDeviceAuth 返回 false 且不写同步区', async () => {
+        await enableCrossDevice(PASSPHRASE, null);
+        localStore.delete(LOCAL_PASSPHRASE_KEY);
+
+        await expect(pushCrossDeviceAuth(AUTH)).resolves.toBe(false);
+        expect(syncStore.has(REMOTE_AUTH_KEY)).toBe(false);
+    });
+
+    it('getCrossDeviceStatus 汇总开关、口令与远端密文状态', async () => {
+        await expect(getCrossDeviceStatus()).resolves.toEqual({
+            enabled: false,
+            hasPassphrase: false,
+            nativeSync: false,
+            remoteAvailable: false
+        });
+
+        await enableCrossDevice(PASSPHRASE, AUTH);
+        await expect(getCrossDeviceStatus()).resolves.toEqual({
+            enabled: true,
+            hasPassphrase: true,
+            nativeSync: false,
+            remoteAvailable: true
+        });
+    });
+
+    it('clearRemoteCrossDeviceAuth 只清远端密文，保留本机开关', async () => {
+        await enableCrossDevice(PASSPHRASE, AUTH);
+        await clearRemoteCrossDeviceAuth();
+
+        expect(syncStore.has(REMOTE_AUTH_KEY)).toBe(false);
+        await expect(getCrossDeviceState()).resolves.toEqual({ enabled: true, hasPassphrase: true });
     });
 });

@@ -8,13 +8,14 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { storageManager } from '@/services/storage.service';
 import { CloudSyncService, createCloudSyncService } from '@/services/cloudSync.service';
+import { getSyncAreaStatus } from '@/services/syncStorage.service';
 import {
     enableCrossDevice,
     disableCrossDevice,
     restoreCrossDeviceAuth,
-    getCrossDeviceState,
-    hasRemoteCrossDeviceAuth
+    getCrossDeviceStatus
 } from '@/services/crossDeviceSync.service';
+import type { EnableCrossDeviceResult } from '@/services/crossDeviceSync.service';
 import { useAppDataStore } from './appData.store';
 import type {
     ICloudSyncUIAdapter,
@@ -60,6 +61,8 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     const crossDeviceHasPassphrase = ref(false);
     /** 同步区是否已有其他设备推送的加密凭据 */
     const crossDeviceRemoteAvailable = ref(false);
+    /** 当前环境是否使用浏览器账号同步区（false = 网页预览的 localStorage 降级） */
+    const syncAreaNative = ref(getSyncAreaStatus().native);
 
     /** CloudSyncService 实例，懒创建 */
     let cloudSyncService: CloudSyncService | null = null;
@@ -94,30 +97,30 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     /** 刷新跨设备同步相关状态 */
     async function refreshCrossDevice(): Promise<void> {
         try {
-            const [state, remoteAvailable] = await Promise.all([
-                getCrossDeviceState(),
-                hasRemoteCrossDeviceAuth()
-            ]);
-            crossDeviceEnabled.value = state.enabled;
-            crossDeviceHasPassphrase.value = state.hasPassphrase;
-            crossDeviceRemoteAvailable.value = remoteAvailable;
+            const status = await getCrossDeviceStatus();
+            crossDeviceEnabled.value = status.enabled;
+            crossDeviceHasPassphrase.value = status.hasPassphrase;
+            crossDeviceRemoteAvailable.value = status.remoteAvailable;
+            syncAreaNative.value = status.nativeSync;
         } catch (e) {
-            console.warn('[CloudSync] 读取跨设备同步状态失败:', e);
+            console.warn('[CloudSync] 读取浏览器同步状态失败:', e);
         }
     }
 
     /**
      * 启用跨设备同步登录状态（加密）
-     * 已登录时立即把当前凭据加密后推送到同步区。
+     * 已登录时立即把当前凭据加密后推送到同步区；未登录时只记住开关与密码，
+     * 等登录成功后由 CloudSyncService 自动补推。
      */
-    async function enableCrossDeviceSync(passphrase: string): Promise<void> {
+    async function enableCrossDeviceSync(passphrase: string): Promise<EnableCrossDeviceResult> {
         error.value = null;
         try {
             const auth = token.value
                 ? { token: token.value, provider: provider.value as string }
                 : null;
-            await enableCrossDevice(passphrase, auth);
+            const result = await enableCrossDevice(passphrase, auth);
             await refreshCrossDevice();
+            return result;
         } catch (e) {
             error.value = e instanceof Error ? e.message : String(e);
             throw e;
@@ -139,6 +142,9 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     /**
      * 在新设备上凭口令还原登录状态
      *
+     * 还原成功后会立即做一次双向合并同步，把云端数据一并拉下来；
+     * 同步失败不影响登录状态（用户可以稍后手动点「立即同步」）。
+     *
      * @returns 是否还原成功
      */
     async function restoreFromCrossDevice(passphrase: string): Promise<boolean> {
@@ -149,6 +155,14 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
                 return false;
             }
             const success = await login(auth.token, auth.provider as CloudSyncProviderId);
+            if (success) {
+                try {
+                    await getService().sync({ silent: true });
+                    syncStateFromService();
+                } catch (e) {
+                    console.warn('[CloudSync] 还原登录状态后拉取数据失败:', e);
+                }
+            }
             await refreshCrossDevice();
             return success;
         } catch (e) {
@@ -187,6 +201,10 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     /**
      * 使用 Token 登录
      * 验证通过后会持久化并尝试查找/创建 Gist。
+     *
+     * 注意：即使后续步骤（Gist 初始化、浏览器同步推送）抛错，Token 可能已经保存成功，
+     * 因此 catch 里也要 syncStateFromService()，否则界面会停在「未连接」，
+     * 用户反复点「连接」都像没反应。
      */
     async function login(inputToken: string, providerId?: CloudSyncProviderId): Promise<boolean> {
         isLoading.value = true;
@@ -197,6 +215,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
             await refreshCrossDevice();
             return success;
         } catch (e) {
+            syncStateFromService();
             error.value = e instanceof Error ? e.message : String(e);
             throw e;
         } finally {
@@ -335,6 +354,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         crossDeviceEnabled,
         crossDeviceHasPassphrase,
         crossDeviceRemoteAvailable,
+        syncAreaNative,
         // Getters
         isLoggedIn,
         isSyncing,

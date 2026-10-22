@@ -1,0 +1,166 @@
+name: Build & Release
+
+# 触发方式：
+#   1. 推送版本 tag（推荐）：git tag v1.0.0.104 && git push origin v1.0.0.104
+#   2. 手动触发（Actions 页面 Run workflow），版本号取 manifest.firefox.json 里现有的值
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 同一时间只跑一个发布任务，避免并发签名撞版本
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ---------------------------------------------------------------
+      # 版本号：tag 触发时取 tag 去掉前缀 v；手动触发时取 manifest 现有版本
+      # ---------------------------------------------------------------
+      - name: Resolve version
+        id: version
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            TAG="${GITHUB_REF_NAME}"
+          else
+            VERSION="$(node -p "require('./manifest.firefox.json').version")"
+            TAG="v${VERSION}"
+          fi
+
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+(\.[0-9]+){0,3}$'; then
+            echo "❌ 版本号格式非法: $VERSION（只允许 1~4 段数字）"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "📌 版本: $VERSION  标签: $TAG"
+
+      # 把 tag 里的版本号写进两份源 manifest，保证产物与 tag 一致
+      - name: Stamp version into manifests
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            for (const f of ["manifest.json", "manifest.firefox.json"]) {
+              const j = JSON.parse(fs.readFileSync(f, "utf8"));
+              j.version = process.env.VERSION;
+              fs.writeFileSync(f, JSON.stringify(j, null, 4) + "\n");
+              console.log(f, "->", j.version);
+            }
+          '
+
+      - name: Build Firefox bundle
+        run: npm run build:firefox
+
+      - name: Build Chromium bundle
+        run: npm run build:chromium
+
+      # ---------------------------------------------------------------
+      # Firefox 必须经 AMO 签名才能在正式版 Firefox 安装，
+      # 自托管（unlisted）签名后才能通过 update_url 自动更新。
+      # ---------------------------------------------------------------
+      - name: Sign Firefox extension (AMO unlisted)
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WEB_EXT_API_KEY}" ] || [ -z "${WEB_EXT_API_SECRET}" ]; then
+            echo "❌ 缺少 WEB_EXT_API_KEY / WEB_EXT_API_SECRET"
+            echo "   请在仓库 Settings → Secrets and variables → Actions 中配置"
+            exit 1
+          fi
+
+          mkdir -p artifacts
+          npx --yes web-ext@10 sign \
+            --source-dir dist-firefox \
+            --artifacts-dir artifacts \
+            --api-key "$WEB_EXT_API_KEY" \
+            --api-secret "$WEB_EXT_API_SECRET" \
+            --channel unlisted
+
+          # 统一改名为固定格式，方便 updates.json 里拼稳定链接
+          # web-ext 通常已经按 mugennewtab-<version>.xpi 命名，同文件时跳过 mv
+          SRC="$(ls artifacts/*.xpi | head -n 1)"
+          DST="artifacts/mugennewtab-${VERSION}.xpi"
+          if [ "$SRC" != "$DST" ]; then
+            mv "$SRC" "$DST"
+          fi
+          ls -lh artifacts
+
+      - name: Package Chromium zip
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          npx --yes web-ext@10 build \
+            --source-dir dist-chrome \
+            --artifacts-dir artifacts \
+            --overwrite-dest
+
+          SRC="$(ls artifacts/*.zip | head -n 1)"
+          DST="artifacts/mugen_newtab-chromium.zip"
+          if [ "$SRC" != "$DST" ]; then
+            mv "$SRC" "$DST"
+          fi
+          ls -lh artifacts
+
+      # 生成 Firefox 更新清单：update_url 指向的 /releases/latest/download/updates.json
+      - name: Generate updates.json
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          node scripts/make-updates-json.js \
+            --version="$VERSION" \
+            --repo="$REPO" \
+            --xpi="artifacts/mugennewtab-${VERSION}.xpi" \
+            --out=artifacts/updates.json \
+            --tag="$TAG"
+          cat artifacts/updates.json
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" \
+            "artifacts/mugennewtab-${VERSION}.xpi" \
+            "artifacts/mugen_newtab-chromium.zip" \
+            "artifacts/updates.json" \
+            --title "MugenNewTab ${VERSION}" \
+            --notes "Firefox 已签名包：mugennewtab-${VERSION}.xpi
+          Chrome / Edge 通用包：mugen_newtab-chromium.zip
+
+          安装方式（Firefox）：下载 .xpi 后拖入 about:addons 页面，或直接用 Firefox 打开该文件。
+          已安装旧版本的用户会在 24 小时内自动更新到本版本。" \
+            --latest

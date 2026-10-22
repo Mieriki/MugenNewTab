@@ -9,6 +9,7 @@
     "build:firefox": "BUILD_OUT_DIR=dist-firefox vite build --emptyOutDir=false && node scripts/postbuild.js --target=firefox --out=dist-firefox",
     "build:edge": "vite build --emptyOutDir=false --outDir dist-edge && node scripts/postbuild.js --target=edge --out=dist-edge",
     "preview": "vite preview",
+    "release": "./scripts/release.sh",
     "test": "vitest"
   },
   "devDependencies": {

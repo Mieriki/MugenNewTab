@@ -1,5 +1,5 @@
 import { CLOUD_SYNC_DATA_KEYS, STORAGE_KEYS } from '@/types/storage';
-import { pushCrossDeviceAuth, pullCrossDeviceAuth } from '@/services/crossDeviceSync.service';
+import { pushCrossDeviceAuth, pullCrossDeviceAuth, getCrossDeviceState } from '@/services/crossDeviceSync.service';
 import { deepEqual, mergeSyncData } from '@/utils/syncMerge.util';
 import type { SyncSnapshot } from '@/utils/syncMerge.util';
 import { createGistProvider, SyncProviderError } from '@/services/gistProvider.service';
@@ -415,21 +415,51 @@ export class CloudSyncService {
         this.userInfo = userInfo;
         await this.saveSettings();
         await this.pushAuthToCrossDevice();
-        await this.findOrCreateGist();
+
+        // Gist 初始化失败（无 gist 权限 / 网络受限）不应让整次登录失败：
+        // Token 已验证且已保存，用户至少已经「连上」，可以稍后重试同步。
+        try {
+            await this.findOrCreateGist();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.warn('[CloudSync] 初始化 Gist 失败:', error);
+            this.ui.showToast(`账号已连接，但同步空间初始化失败：${message}`, 'error');
+            return true;
+        }
+
         this.ui.showToast(`${provider.name} 账号已连接`, 'success');
         return true;
     }
 
     /**
      * 把当前登录凭据推送到浏览器账号同步区（未启用跨设备同步时为 no-op）
+     *
+     * 已开启浏览器同步但推送失败（例如本机口令丢失、同步区配额不足）时必须提示，
+     * 否则用户会以为「浏览器同步已经生效」，换设备时才发现根本没有凭据。
      */
     private async pushAuthToCrossDevice(): Promise<void> {
         try {
-            await pushCrossDeviceAuth(
+            const state = await getCrossDeviceState();
+            if (!state.enabled) {
+                return;
+            }
+
+            const pushed = await pushCrossDeviceAuth(
                 this.token ? { token: this.token, provider: this.providerId } : null
             );
+
+            if (!pushed && this.token) {
+                this.ui.showToast(
+                    state.hasPassphrase
+                        ? '浏览器同步未写入：同步区不可用，请检查浏览器账号同步设置'
+                        : '浏览器同步未写入：本机缺少同步密码，请重新设置',
+                    'error'
+                );
+            }
         } catch (error) {
-            console.warn('[CloudSync] 跨设备登录状态同步失败:', error);
+            const message = error instanceof Error ? error.message : String(error);
+            console.warn('[CloudSync] 浏览器同步失败:', error);
+            this.ui.showToast('浏览器同步失败：' + message, 'error');
         }
     }
 

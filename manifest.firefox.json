@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "MugenNewTab - 新标签页导航",
     "short_name": "MugenNewTab",
-    "version": "1.0.0.110",
+    "version": "1.0.0.106",
     "description": "统一管理和快速访问各类开发者工具和外部链接的应用导航中心",
     "author": "MugenNewTab",
     "homepage_url": "https://github.com/MugenNewTab/MugenNewTab",
@@ -14,6 +14,9 @@
     },
     "chrome_url_overrides": {
         "newtab": "index.html"
+    },
+    "chrome_settings_overrides": {
+        "homepage": "index.html"
     },
     "action": {
         "default_popup": "view/popup.html",
@@ -58,8 +61,14 @@
     },
     "browser_specific_settings": {
         "gecko": {
-            "id": "mugen-newtab@mugen.dev",
-            "strict_min_version": "115.0"
+            "id": "cyke0315@163.com",
+            "strict_min_version": "115.0",
+            "update_url": "https://github.com/AlexCat315/MugenNewTab/releases/latest/download/updates.json",
+            "data_collection_permissions": {
+                "required": [
+                    "none"
+                ]
+            }
         }
     }
 }

@@ -678,6 +678,7 @@ defineExpose({ focusInput });
 // ==================== 搜索框 ====================
 .minimal-search {
     position: relative;
+    z-index: 30; // 高于磁贴行，确保引擎下拉 / 搜索建议向下展开时盖住磁贴而非被磁贴盖住
     width: 100%;
     max-width: 580px;
 }

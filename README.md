@@ -16,7 +16,8 @@
 - **壁纸背景**：支持自定义壁纸 URL 或本地图片上传，可调节透明度、模糊度、遮罩
 - **数据管理**：应用/分类的增删改查，数据导入/导出（JSON 格式备份）
 - **UI 图标库**：约 48 个系统 SVG 图标 + 用户自定义图标管理
-- **云同步**：基于 GitHub Gist 的数据云同步
+- **云同步**：基于 GitHub / Gitee Gist 的数据云同步，支持双向增量合并（冲突本地优先）
+- **浏览器同步**：把登录凭据用口令加密后写入浏览器账号同步区，同一账号的其他设备免 Token 登录
 
 ---
 
@@ -184,6 +185,32 @@ dist-firefox/  # Firefox
 
 ---
 
+## ☁️ 云同步与浏览器同步
+
+云同步面板（右下角菜单 → 云同步）提供两条互补的路径：
+
+| 能力 | 作用 | 需要的凭据 |
+|------|------|-----------|
+| 云同步 | 站点数据 + 图标库存到 GitHub / Gitee 的 Gist，多端双向增量合并（冲突本地优先） | 平台 Token（GitHub 需 `gist` 权限） |
+| 浏览器同步 | 把 Token 用口令加密后写进浏览器账号同步区（`storage.sync`），同账号设备免 Token 登录 | 自定的同步密码（≥ 6 位） |
+
+### 首次配置（设备 A）
+
+1. 填入 Token 并点「连接」，验证通过即完成云同步；
+2. 在「浏览器同步」区块勾选「开启浏览器同步」，设置同步密码并确认。
+
+> 也可以先开启浏览器同步再登录：此时只在本机记住开关与密码，登录成功后会自动把凭据补推到同步区。
+
+### 新设备（设备 B）
+
+1. 用同一浏览器账号登录浏览器（`storage.sync` 才会跨设备同步）；
+2. 打开云同步面板，若同步区已有其他设备的凭据，会显示「检测到其他设备的登录状态」；
+3. 输入同一同步密码 →「恢复登录状态」，随后自动拉取云端数据。
+
+同步区里只保存 AES-GCM 密文，明文 Token 与本机密码都不会上传；忘记密码时可在面板中「关闭浏览器同步」后重新开启。
+
+---
+
 ## 📦 浏览器扩展打包
 
 项目提供 `sign-firefox.sh` 脚本，一次运行即可同时打包 Chromium（Chrome / Edge）与 Firefox 扩展。
@@ -200,6 +227,84 @@ dist-firefox/  # Firefox
 - `dist/mugen_newtab-chromium.zip`：Chrome / Edge 商店提交包 / 开发者模式加载包
 - `dist/mugen_newtab-*.xpi`：Firefox 已签名安装包（需设置 API 密钥）
 - `dist/mugen_newtab-*.zip`：Firefox 未签名包（未设置密钥时生成，用于临时加载测试）
+
+---
+
+## 🚀 自动发版与 Firefox 自动更新
+
+推一个 tag 就能完成「构建 → 签名 → 发布 → 生成更新清单」，不需要本地打包。
+
+### 发版
+
+```bash
+./scripts/release.sh          # 构建号自动 +1，例如 1.0.0.103 → 1.0.0.104
+./scripts/release.sh 1.0.1.0  # 或指定版本号
+```
+
+脚本会写入两份 manifest 的版本号、提交、打 `v<版本>` tag 并推送。随后
+`.github/workflows/release.yml` 自动执行：
+
+1. `npm ci` + 构建 Firefox / Chromium 两个产物
+2. `web-ext sign --channel unlisted` 调用 AMO 签名 Firefox 包
+3. 打包 Chromium zip
+4. 生成 `updates.json`（含 sha256 校验）
+5. 创建 GitHub Release，附上三个文件
+
+### 首次配置（只需一次）
+
+在仓库 **Settings → Secrets and variables → Actions** 中添加：
+
+| Secret | 值 |
+| --- | --- |
+| `WEB_EXT_API_KEY` | AMO 的 JWT issuer，形如 `user:12345:67` |
+| `WEB_EXT_API_SECRET` | AMO 的 JWT secret |
+
+> Fork 仓库需要在 Actions 页面点一次「I understand my workflows, go ahead and enable them」。
+
+### Firefox 自动更新是怎么生效的
+
+`manifest.firefox.json` 里声明了：
+
+```json
+"browser_specific_settings": {
+  "gecko": {
+    "id": "xxxx@xxx.com",
+    "update_url": "https://github.com/AlexCat315/MugenNewTab/releases/latest/download/updates.json"
+  }
+}
+```
+
+Firefox 每 24 小时（`extensions.update.interval`，默认 86400 秒）拉取该 `updates.json`，
+发现 `version` 高于已安装版本就静默下载并安装。
+
+几个必须遵守的约束：
+
+- **扩展 ID 必须固定**（`cyke0315@163.com`）。改 ID 等于换了一个扩展，老用户收不到更新。
+- **版本号不能重复提交**。AMO 对同一版本只接受一次上传，重复会报
+  `This upload has already been submitted`，必须升版本号重试。
+- **`update_url` 一旦发布就尽量不要改**。已安装的扩展只会用自己 manifest 里写死的
+  `update_url` 检查更新，改地址会导致老用户永远收不到更新（只能靠企业策略兜底）。
+- **必须经 AMO 签名**。正式版 Firefox 只安装已签名的扩展，未签名的只能在
+  Developer Edition / Nightly 里关掉 `xpinstall.signatures.required` 后使用。
+
+### 安装方式
+
+Firefox 桌面版：下载 Release 里的 `.xpi`，拖进 `about:addons` 页面，或直接用 Firefox 打开该文件。
+
+> GitHub Releases 返回的 `Content-Type` 是 `application/octet-stream` 而非
+> `application/x-xpinstall`，所以点链接不会自动触发安装，需要手动拖入或打开文件。
+> 更新过程走 Firefox 自己的更新通道，不受这个限制影响。
+
+### 本地调试更新
+
+```bash
+# about:config 里把检查间隔改短（最小 120 秒）
+extensions.update.interval = 120
+# 确认开关是打开的
+extensions.update.enabled = true
+```
+
+然后打开「工具 → 浏览器工具 → 浏览器控制台」，按扩展名过滤即可看到更新请求日志。
 
 ---
 

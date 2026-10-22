@@ -1,8 +1,14 @@
 /**
- * 跨设备登录状态同步
+ * 跨设备登录状态同步（浏览器同步）
  *
  * 把云同步的登录凭据（Token + 平台）用用户口令加密后写入 storage.sync，
  * 登录同一浏览器账号的其他设备可解密还原，无需重新输入 Token。
+ *
+ * 典型两条路径：
+ *   A. 先登录再开启：勾选「浏览器同步」→ 输入同步密码 → 立即把凭据加密推送；
+ *   B. 先开启再登录：未登录时只保存开关与口令（不写同步区），登录成功后
+ *      CloudSyncService.saveToken() 会把凭据补推到同步区。
+ * 两条路径都必须能跑通——早期实现只支持 A，导致「先设密码」的用户永远推不上去。
  *
  * 安全边界：
  *   - 落到同步区的永远是密文（AES-GCM），浏览器账号里看不到明文 Token；
@@ -12,7 +18,13 @@
  */
 
 import { storageManager } from '@/services/storage.service';
-import { syncGet, syncSet, syncRemove } from '@/services/syncStorage.service';
+import {
+    syncGet,
+    syncSet,
+    syncRemove,
+    getSyncAreaStatus,
+    subscribeSyncAreaChanges
+} from '@/services/syncStorage.service';
 import {
     encryptText,
     decryptText,
@@ -25,7 +37,7 @@ const LOCAL_ENABLED_KEY = 'appNavigator_crossDevice_enabled';
 /** 本机：加密口令（不上传） */
 const LOCAL_PASSPHRASE_KEY = 'appNavigator_crossDevice_passphrase';
 /** 同步区：加密后的登录凭据 */
-const REMOTE_AUTH_KEY = 'mugen_cross_device_auth';
+export const REMOTE_AUTH_KEY = 'mugen_cross_device_auth';
 
 /** 需要跨设备同步的登录凭据 */
 export interface CrossDeviceAuth {
@@ -43,6 +55,20 @@ export interface CrossDeviceState {
     hasPassphrase: boolean;
 }
 
+/** 跨设备同步的完整状态（含同步区可用性与远端是否有密文） */
+export interface CrossDeviceStatus extends CrossDeviceState {
+    /** 当前环境是否使用浏览器账号同步区（false = 网页预览的 localStorage 降级） */
+    nativeSync: boolean;
+    /** 同步区是否已有加密凭据（无需口令即可判断） */
+    remoteAvailable: boolean;
+}
+
+/** 启用结果 */
+export interface EnableCrossDeviceResult {
+    /** 是否已把凭据写入同步区（未登录时为 false，登录后会自动补推） */
+    pushed: boolean;
+}
+
 /** 读取当前启用状态 */
 export async function getCrossDeviceState(): Promise<CrossDeviceState> {
     const [enabled, passphrase] = await Promise.all([
@@ -52,6 +78,19 @@ export async function getCrossDeviceState(): Promise<CrossDeviceState> {
     return {
         enabled: enabled === true,
         hasPassphrase: typeof passphrase === 'string' && passphrase.length >= MIN_PASSPHRASE_LENGTH
+    };
+}
+
+/** 读取完整状态（含同步区可用性 / 远端密文） */
+export async function getCrossDeviceStatus(): Promise<CrossDeviceStatus> {
+    const [state, remoteAvailable] = await Promise.all([
+        getCrossDeviceState(),
+        hasRemoteCrossDeviceAuth()
+    ]);
+    return {
+        ...state,
+        nativeSync: getSyncAreaStatus().native,
+        remoteAvailable
     };
 }
 
@@ -77,7 +116,7 @@ export async function hasRemoteCrossDeviceAuth(): Promise<boolean> {
 export async function enableCrossDevice(
     passphrase: string,
     auth?: CrossDeviceAuth | null
-): Promise<void> {
+): Promise<EnableCrossDeviceResult> {
     if (!passphrase || passphrase.length < MIN_PASSPHRASE_LENGTH) {
         throw new Error(`同步密码至少 ${MIN_PASSPHRASE_LENGTH} 位`);
     }
@@ -90,9 +129,12 @@ export async function enableCrossDevice(
         [LOCAL_PASSPHRASE_KEY]: passphrase
     });
 
-    if (auth?.token) {
-        await syncSet(REMOTE_AUTH_KEY, payload);
+    if (!auth?.token) {
+        return { pushed: false };
     }
+
+    await syncSet(REMOTE_AUTH_KEY, payload);
+    return { pushed: true };
 }
 
 /**
@@ -146,30 +188,37 @@ export async function disableCrossDevice(): Promise<void> {
     await syncRemove(REMOTE_AUTH_KEY);
 }
 
+/** 仅清除同步区密文，保留本机开关与口令 */
+export async function clearRemoteCrossDeviceAuth(): Promise<void> {
+    await syncRemove(REMOTE_AUTH_KEY);
+}
+
 /**
  * 推送登录凭据到同步区
  *
  * @param auth 为 null 表示已登出，需要清掉同步区的密文
+ * @returns 是否真的写入了同步区；未启用 / 缺口令 / 登出时为 false
  */
-export async function pushCrossDeviceAuth(auth: CrossDeviceAuth | null): Promise<void> {
+export async function pushCrossDeviceAuth(auth: CrossDeviceAuth | null): Promise<boolean> {
     const state = await getCrossDeviceState();
     if (!state.enabled) {
-        return;
+        return false;
     }
 
     if (!auth?.token) {
         await syncRemove(REMOTE_AUTH_KEY);
-        return;
+        return false;
     }
 
     const passphrase = await storageManager.get(LOCAL_PASSPHRASE_KEY);
     if (typeof passphrase !== 'string' || passphrase.length < MIN_PASSPHRASE_LENGTH) {
         // 口令丢失（例如清了浏览器数据）时无法加密，跳过推送
-        return;
+        return false;
     }
 
     const payload = await encryptText(JSON.stringify(auth), passphrase);
     await syncSet(REMOTE_AUTH_KEY, payload);
+    return true;
 }
 
 /**
@@ -203,4 +252,21 @@ export async function pullCrossDeviceAuth(): Promise<CrossDeviceAuth | null> {
         token: parsed.token,
         provider: typeof parsed.provider === 'string' ? parsed.provider : 'github'
     };
+}
+
+/**
+ * 监听同步区里登录凭据的变化
+ *
+ * 其他设备推送后本机可以立刻显示「检测到其他设备的登录状态」，
+ * 不需要用户关掉面板重开。
+ */
+export function watchRemoteCrossDeviceAuth(
+    listener: (available: boolean) => void
+): () => void {
+    return subscribeSyncAreaChanges((changes) => {
+        if (!Object.prototype.hasOwnProperty.call(changes, REMOTE_AUTH_KEY)) {
+            return;
+        }
+        listener(isEncryptedPayload(changes[REMOTE_AUTH_KEY]?.newValue));
+    });
 }

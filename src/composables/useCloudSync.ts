@@ -7,6 +7,8 @@
 import { computed, onMounted, onUnmounted } from 'vue';
 import type { ComputedRef } from 'vue';
 import { useCloudSyncStore } from '@/stores/cloudSync.store';
+import { watchRemoteCrossDeviceAuth } from '@/services/crossDeviceSync.service';
+import type { EnableCrossDeviceResult } from '@/services/crossDeviceSync.service';
 import type {
     CloudSyncProviderId,
     DownloadResult,
@@ -37,6 +39,8 @@ export interface UseCloudSyncReturn {
     crossDeviceEnabled: ComputedRef<boolean>;
     crossDeviceHasPassphrase: ComputedRef<boolean>;
     crossDeviceRemoteAvailable: ComputedRef<boolean>;
+    /** 当前环境是否使用浏览器账号同步区（false = 网页预览的 localStorage 降级） */
+    syncAreaNative: ComputedRef<boolean>;
     statusText: ComputedRef<string>;
     formattedLastSyncTime: ComputedRef<string>;
     init: () => Promise<void>;
@@ -51,7 +55,7 @@ export interface UseCloudSyncReturn {
     scheduleAutoSync: () => void;
     cancelPending: () => void;
     refreshCrossDevice: () => Promise<void>;
-    enableCrossDeviceSync: (passphrase: string) => Promise<void>;
+    enableCrossDeviceSync: (passphrase: string) => Promise<EnableCrossDeviceResult>;
     disableCrossDeviceSync: () => Promise<void>;
     restoreFromCrossDevice: (passphrase: string) => Promise<boolean>;
 }
@@ -109,6 +113,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
 
     const abortControllers = createAbortControllerSet();
     let autoSyncTimer: ReturnType<typeof setTimeout> | null = null;
+    let unwatchRemoteAuth: (() => void) | null = null;
 
     if (uiAdapter) {
         store.setUIAdapter(uiAdapter);
@@ -213,7 +218,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
         return createAbortable(() => store.refreshCrossDevice());
     }
 
-    async function enableCrossDeviceSync(passphrase: string): Promise<void> {
+    async function enableCrossDeviceSync(passphrase: string): Promise<EnableCrossDeviceResult> {
         return createAbortable(() => store.enableCrossDeviceSync(passphrase));
     }
 
@@ -258,6 +263,12 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
 
     onMounted(() => {
         window.addEventListener('appNavigator:data-changed', handleDataChanged);
+        // 其他设备推送浏览器同步凭据后，本机即时感知（无需重开面板）
+        unwatchRemoteAuth = watchRemoteCrossDeviceAuth(() => {
+            refreshCrossDevice().catch(() => {
+                // 状态刷新失败不影响主流程
+            });
+        });
         init().catch(() => {
             // 初始化失败由 store.error 暴露，不在此处抛出
         });
@@ -265,6 +276,8 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
 
     onUnmounted(() => {
         window.removeEventListener('appNavigator:data-changed', handleDataChanged);
+        unwatchRemoteAuth?.();
+        unwatchRemoteAuth = null;
         cancelPending();
     });
 
@@ -281,6 +294,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
         crossDeviceEnabled: computed(() => store.crossDeviceEnabled),
         crossDeviceHasPassphrase: computed(() => store.crossDeviceHasPassphrase),
         crossDeviceRemoteAvailable: computed(() => store.crossDeviceRemoteAvailable),
+        syncAreaNative: computed(() => store.syncAreaNative),
         statusText,
         formattedLastSyncTime,
         init,

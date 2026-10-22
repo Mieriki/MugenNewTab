@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import CloudSyncPanel from '@/components/personalization/CloudSyncPanel.vue';
+import { enableCrossDevice } from '@/services/crossDeviceSync.service';
 import { storageManager } from '@/services/storage.service';
 import { browserApi } from '@/services/browserApi.service';
 import { STORAGE_KEYS } from '@/types/storage';
@@ -107,20 +108,31 @@ describe('CloudSyncPanel', () => {
         }));
     }
 
-    it('已登录时展示「跨设备同步登录状态（加密）」开关', async () => {
+    it('已登录时展示「浏览器同步」区块', async () => {
         await prepareLoggedIn();
 
         const wrapper = mount(CloudSyncPanel);
         await flushPromises();
 
-        expect(wrapper.text()).toContain('跨设备同步登录状态（加密）');
+        expect(wrapper.text()).toContain('浏览器同步');
+        expect(wrapper.text()).toContain('开启浏览器同步');
         // 默认未开启：不展示密码输入
         expect(wrapper.text()).not.toContain('同步密码只保存在本机');
 
         vi.unstubAllGlobals();
     });
 
-    it('勾选跨设备同步后展开密码输入，密码过短时不提交', async () => {
+    it('未登录时也展示「浏览器同步」区块（修复：卡片上没有这个功能）', async () => {
+        const wrapper = mount(CloudSyncPanel);
+        await flushPromises();
+
+        // 未登录态仍然可以开启浏览器同步：先设密码，登录后自动补推凭据
+        expect(wrapper.find('.cloud-sync-cross').exists()).toBe(true);
+        expect(wrapper.text()).toContain('开启浏览器同步');
+        expect(wrapper.text()).toContain('登录同一浏览器账号的其他设备');
+    });
+
+    it('勾选「开启浏览器同步」后展开密码输入，密码过短时不提交', async () => {
         await prepareLoggedIn();
 
         const wrapper = mount(CloudSyncPanel);
@@ -144,8 +156,47 @@ describe('CloudSyncPanel', () => {
         await flushPromises();
 
         expect(wrapper.text()).toContain('开启并加密同步');
-        expect(wrapper.text()).not.toContain('已开启。');
+        expect(wrapper.text()).not.toContain('已开启 · ');
 
         vi.unstubAllGlobals();
+    });
+
+    it('未登录也能开启浏览器同步：密码写入本机，开关变为已开启', async () => {
+        const wrapper = mount(CloudSyncPanel);
+        await flushPromises();
+
+        const toggle = wrapper.find('.cloud-sync-cross .cloud-sync-toggle input[type="checkbox"]');
+        await toggle.setValue(true);
+        await flushPromises();
+
+        await wrapper.find('.cloud-sync-cross input[type="password"]').setValue('my-sync-pass');
+        const enableBtn = wrapper
+            .findAll('.cloud-sync-cross .mnt-base-button')
+            .find((btn) => btn.text().includes('开启并加密同步'));
+        await enableBtn!.trigger('click');
+
+        // 启用包含 PBKDF2 密钥派生（异步耗时），等待真实写入完成
+        await vi.waitFor(() => {
+            expect(localStorage.getItem('appNavigator_crossDevice_enabled')).toBe('true');
+        });
+        await flushPromises();
+
+        // 未登录时只保存开关与密码，等登录后由 CloudSyncService 自动补推
+        expect(localStorage.getItem('appNavigator_crossDevice_passphrase')).toBe('my-sync-pass');
+        expect(wrapper.text()).toContain('已开启');
+        expect(wrapper.text()).toContain('登录后会立即把登录状态加密同步到浏览器账号');
+    });
+
+    it('同步区已有其他设备凭据时提示「恢复登录状态」', async () => {
+        // 模拟另一台设备：本机没有开关与密码，但同步区已有密文
+        await enableCrossDevice('my-sync-pass', { token: 'ghp_other_device', provider: 'github' });
+        localStorage.removeItem('appNavigator_crossDevice_enabled');
+        localStorage.removeItem('appNavigator_crossDevice_passphrase');
+
+        const wrapper = mount(CloudSyncPanel);
+        await flushPromises();
+
+        expect(wrapper.text()).toContain('检测到其他设备的登录状态');
+        expect(wrapper.text()).toContain('恢复登录状态');
     });
 });
