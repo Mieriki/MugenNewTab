@@ -13,9 +13,10 @@ import {
     enableCrossDevice,
     disableCrossDevice,
     restoreCrossDeviceAuth,
-    getCrossDeviceStatus
+    getCrossDeviceStatus,
+    getStoredPassphrase
 } from '@/services/crossDeviceSync.service';
-import type { EnableCrossDeviceResult } from '@/services/crossDeviceSync.service';
+import type { EnableCrossDeviceResult, CrossDeviceRemoteMeta } from '@/services/crossDeviceSync.service';
 import { useAppDataStore } from './appData.store';
 import type {
     ICloudSyncUIAdapter,
@@ -34,6 +35,11 @@ const DEFAULT_UI_ADAPTER: ICloudSyncUIAdapter = {
     showConfirm: async () => true,
     showPrompt: async () => null
 };
+
+/** 启用浏览器同步的结果：是否已推送、是否顺带还原了其他设备的登录状态 */
+export interface EnableCrossDeviceOutcome extends EnableCrossDeviceResult {
+    restored: boolean;
+}
 
 export const useCloudSyncStore = defineStore('cloudSync', () => {
     const appData = useAppDataStore();
@@ -61,6 +67,8 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
     const crossDeviceHasPassphrase = ref(false);
     /** 同步区是否已有其他设备推送的加密凭据 */
     const crossDeviceRemoteAvailable = ref(false);
+    /** 同步区凭据的元信息（来自哪台设备、何时推送） */
+    const crossDeviceRemoteMeta = ref<CrossDeviceRemoteMeta | null>(null);
     /** 当前环境是否使用浏览器账号同步区（false = 网页预览的 localStorage 降级） */
     const syncAreaNative = ref(getSyncAreaStatus().native);
 
@@ -101,6 +109,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
             crossDeviceEnabled.value = status.enabled;
             crossDeviceHasPassphrase.value = status.hasPassphrase;
             crossDeviceRemoteAvailable.value = status.remoteAvailable;
+            crossDeviceRemoteMeta.value = status.remoteMeta;
             syncAreaNative.value = status.nativeSync;
         } catch (e) {
             console.warn('[CloudSync] 读取浏览器同步状态失败:', e);
@@ -109,10 +118,12 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
 
     /**
      * 启用跨设备同步登录状态（加密）
-     * 已登录时立即把当前凭据加密后推送到同步区；未登录时只记住开关与密码，
-     * 等登录成功后由 CloudSyncService 自动补推。
+     *
+     * 已登录：立即把当前凭据加密后推送到同步区。
+     * 未登录：只记住开关与密码；随后若发现同步区已有其他设备的凭据，
+     *        用同一个密码尝试解密并直接登录（新设备「开启」即恢复，不必再点一次「恢复」）。
      */
-    async function enableCrossDeviceSync(passphrase: string): Promise<EnableCrossDeviceResult> {
+    async function enableCrossDeviceSync(passphrase: string): Promise<EnableCrossDeviceOutcome> {
         error.value = null;
         try {
             const auth = token.value
@@ -120,10 +131,56 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
                 : null;
             const result = await enableCrossDevice(passphrase, auth);
             await refreshCrossDevice();
-            return result;
+
+            if (!auth && crossDeviceRemoteAvailable.value) {
+                const restored = await tryRestoreCrossDevice(passphrase);
+                return { pushed: result.pushed, restored };
+            }
+            return { ...result, restored: false };
         } catch (e) {
             error.value = e instanceof Error ? e.message : String(e);
             throw e;
+        }
+    }
+
+    /**
+     * 用本机已保存的密码尝试还原同步区里的凭据
+     *
+     * 这是「另一台设备刚把凭据同步过来」时的自动恢复入口：
+     * 面板打开、同步区变更、用户点「重新检查」时都会调用。
+     *
+     * @param passphrase 指定密码（刚开启时用）；不传则用本机保存的密码
+     * @returns 是否成功还原并登录
+     */
+    async function tryRestoreCrossDevice(passphrase?: string): Promise<boolean> {
+        if (token.value) return false;
+
+        const password = passphrase ?? (await getStoredPassphrase());
+        if (!password) {
+            return false;
+        }
+        if (!crossDeviceRemoteAvailable.value) {
+            return false;
+        }
+
+        try {
+            const auth = await restoreCrossDeviceAuth(password);
+            if (!auth) return false;
+
+            const success = await login(auth.token, auth.provider as CloudSyncProviderId);
+            if (success) {
+                try {
+                    await getService().sync({ silent: true });
+                    syncStateFromService();
+                } catch (e) {
+                    console.warn('[CloudSync] 浏览器同步还原后拉取数据失败:', e);
+                }
+            }
+            return success;
+        } catch (e) {
+            // 密码不对属于正常情况（另一台设备用了别的密码），不当作错误弹提示
+            console.warn('[CloudSync] 浏览器同步自动还原失败:', e);
+            return false;
         }
     }
 
@@ -190,6 +247,11 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
             await getService().init();
             syncStateFromService();
             await refreshCrossDevice();
+            // 服务层已尝试过还原；这里兜一次底，覆盖「本机开关是上一次会话设的」这类情况
+            if (!token.value) {
+                await tryRestoreCrossDevice();
+                await refreshCrossDevice();
+            }
         } catch (e) {
             error.value = e instanceof Error ? e.message : String(e);
             throw e;
@@ -354,6 +416,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         crossDeviceEnabled,
         crossDeviceHasPassphrase,
         crossDeviceRemoteAvailable,
+        crossDeviceRemoteMeta,
         syncAreaNative,
         // Getters
         isLoggedIn,
@@ -373,6 +436,7 @@ export const useCloudSyncStore = defineStore('cloudSync', () => {
         refreshCrossDevice,
         enableCrossDeviceSync,
         disableCrossDeviceSync,
-        restoreFromCrossDevice
+        restoreFromCrossDevice,
+        tryRestoreCrossDevice
     };
 });

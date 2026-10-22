@@ -54,6 +54,7 @@ const {
     crossDeviceEnabled,
     crossDeviceHasPassphrase,
     crossDeviceRemoteAvailable,
+    crossDeviceRemoteMeta,
     syncAreaNative,
     login,
     logout,
@@ -62,7 +63,9 @@ const {
     setAutoSync,
     enableCrossDeviceSync,
     disableCrossDeviceSync,
-    restoreFromCrossDevice
+    restoreFromCrossDevice,
+    refreshCrossDevice,
+    tryRestoreCrossDevice
 } = useCloudSync({
     uiAdapter: {
         showToast: (message, type = 'info') => {
@@ -124,15 +127,51 @@ const LOCK_PATHS = [
 type BrowserMode = 'off' | 'setup' | 'restore' | 'enabled' | 'missing-passphrase';
 
 const browserMode = computed<BrowserMode>(() => {
+    // 未登录 + 同步区已有凭据 → 优先引导恢复（即使本机开关是「已开启」，
+    // 也可能是密码对不上，需要用户重新输入）
+    if (!isLoggedIn.value && crossDeviceRemoteAvailable.value && !browserSkipRestore.value) {
+        return 'restore';
+    }
     if (crossDeviceEnabled.value) {
         return crossDeviceHasPassphrase.value ? 'enabled' : 'missing-passphrase';
     }
-    // 只有未登录时才提示「恢复」：已登录时恢复会用远端凭据覆盖当前 Token
-    if (crossDeviceRemoteAvailable.value && !isLoggedIn.value && !browserSkipRestore.value) {
-        return 'restore';
-    }
     return browserExpanded.value ? 'setup' : 'off';
 });
+
+/** 是否 Firefox：storage.sync 的同步节奏与开关位置和其他浏览器不同，提示文案要分开 */
+const isFirefox = computed(
+    () => typeof navigator !== 'undefined' && /Firefox\//.test(navigator.userAgent)
+);
+
+/**
+ * 当前扩展 ID
+ *
+ * Firefox 的 storage.sync 按扩展 ID 隔离：两台设备如果装的是不同 ID 的包
+ * （例如一个是旧的签名版、一个是新构建），同步区永远对不上。
+ * 这里只放在 title 里，排查时鼠标悬停即可看到。
+ */
+const extensionId = computed(() => {
+    if (typeof window === 'undefined') return '';
+    const win = window as unknown as {
+        browser?: { runtime?: { id?: string } };
+        chrome?: { runtime?: { id?: string } };
+    };
+    return win.browser?.runtime?.id ?? win.chrome?.runtime?.id ?? '';
+});
+
+/** 同步区凭据的来源描述 */
+const remoteMetaText = computed(() => {
+    const meta = crossDeviceRemoteMeta.value;
+    if (!meta) return '有（来源未知）';
+    return `有（${meta.device}，${formatCompactTime(meta.updatedAt)}）`;
+});
+
+/** 紧凑时间：10-22 15:29（面板宽度有限，不显示年份与秒） */
+function formatCompactTime(timestamp: number): string {
+    const date = new Date(timestamp);
+    const pad = (value: number) => String(value).padStart(2, '0');
+    return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 const browserNeedsPassphrase = computed(
     () => browserMode.value !== 'off' && (browserMode.value !== 'enabled' || browserExpanded.value)
@@ -167,7 +206,7 @@ const browserHint = computed(() => {
 const browserStatusText = computed(() => {
     if (browserMode.value === 'enabled') {
         if (!isLoggedIn.value) {
-            return '已开启 · 登录后会立即把登录状态加密同步到浏览器账号';
+            return '已开启 · 登录后会把登录状态加密写入同步区';
         }
         if (!syncAreaNative.value) {
             return '已开启 · 当前环境无法写入浏览器同步区';
@@ -264,14 +303,18 @@ async function handleEnableBrowserSync(): Promise<void> {
 
     browserBusy.value = true;
     try {
-        const { pushed } = await enableCrossDeviceSync(passphrase);
+        const { pushed, restored } = await enableCrossDeviceSync(passphrase);
         browserPassphrase.value = '';
         browserExpanded.value = false;
 
-        if (pushed) {
+        if (restored) {
+            toast.show('已开启浏览器同步，并从同步区恢复了其他设备的登录状态', { type: 'success' });
+        } else if (pushed) {
             toast.show('已开启浏览器同步，登录状态已加密写入同步区', { type: 'success' });
         } else if (isLoggedIn.value) {
             toast.show('已开启浏览器同步，但本次未能写入同步区，请检查浏览器账号同步设置', { type: 'error' });
+        } else if (crossDeviceRemoteAvailable.value) {
+            toast.show('已开启，但同步区里的密码对不上，请用原设备的同步密码恢复', { type: 'error' });
         } else {
             toast.show('已开启浏览器同步，登录后会自动加密同步登录状态', { type: 'success' });
         }
@@ -279,6 +322,30 @@ async function handleEnableBrowserSync(): Promise<void> {
         const message = err instanceof Error ? err.message : String(err);
         emit('error', message);
         toast.show(message, { type: 'error' });
+    } finally {
+        browserBusy.value = false;
+    }
+}
+
+/** 重新读取同步区状态，并尝试用本机密码免 Token 还原 */
+async function handleRefreshSyncArea(): Promise<void> {
+    browserBusy.value = true;
+    try {
+        await refreshCrossDevice();
+        const restored = await tryRestoreCrossDevice();
+        if (restored) {
+            toast.show('已从同步区恢复登录状态', { type: 'success' });
+        } else if (!crossDeviceRemoteAvailable.value) {
+            toast.show(
+                isFirefox.value
+                    ? '同步区暂无凭据：Firefox 需在「设置 → 同步」勾选「附加组件」，并每 10 分钟或点「立即同步」才会同步'
+                    : '同步区暂无凭据：请确认两台设备登录的是同一个浏览器账号，并已开启同步',
+                { type: 'info' }
+            );
+        }
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        emit('error', message);
     } finally {
         browserBusy.value = false;
     }
@@ -579,6 +646,34 @@ const statusClass = computed(() => {
                     关闭浏览器同步
                 </BaseButton>
             </div>
+
+            <!-- 同步区诊断：让「到底同步到了没」可见，而不是靠猜 -->
+            <div class="cloud-sync-cross__diag">
+                <span :title="extensionId ? `扩展 ID：${extensionId}` : ''">
+                    同步区：{{ syncAreaNative ? '浏览器账号' : '本机模拟' }}
+                </span>
+                <span>凭据：{{ crossDeviceRemoteAvailable ? remoteMetaText : '暂无' }}</span>
+                <button
+                    type="button"
+                    class="cloud-sync-cross__refresh"
+                    :disabled="browserBusy"
+                    @click="handleRefreshSyncArea"
+                >
+                    重新检查
+                </button>
+            </div>
+
+            <p
+                v-if="syncAreaNative && !crossDeviceRemoteAvailable && !isLoggedIn"
+                class="cloud-sync-cross__warn"
+            >
+                <template v-if="isFirefox">
+                    Firefox 需在「设置 → 同步」勾选「附加组件」，且每 10 分钟或点「立即同步」才会把同步区数据传到另一台设备。
+                </template>
+                <template v-else>
+                    两台设备需登录同一个浏览器账号并开启同步，数据才会在同步区之间流转。
+                </template>
+            </p>
         </div>
     </section>
 </template>
@@ -776,6 +871,38 @@ const statusClass = computed(() => {
 
     &__skip {
         align-self: flex-start;
+    }
+
+    &__diag {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--md-sys-color-outline-variant);
+        font-size: 11px;
+        color: var(--md-sys-color-on-surface-variant);
+        opacity: 0.9;
+    }
+
+    &__refresh {
+        @include button-reset;
+        margin-left: auto;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--md-sys-color-primary);
+        @include md-transition(background-color, var(--md-transition-fast));
+
+        &:hover:not(:disabled) {
+            background: var(--md-sys-color-primary-container);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     }
 }
 

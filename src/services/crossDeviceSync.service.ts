@@ -38,12 +38,24 @@ const LOCAL_ENABLED_KEY = 'appNavigator_crossDevice_enabled';
 const LOCAL_PASSPHRASE_KEY = 'appNavigator_crossDevice_passphrase';
 /** 同步区：加密后的登录凭据 */
 export const REMOTE_AUTH_KEY = 'mugen_cross_device_auth';
+/** 同步区：凭据元信息（明文，只含设备名与时间，不含 Token） */
+export const REMOTE_META_KEY = 'mugen_cross_device_auth_meta';
 
 /** 需要跨设备同步的登录凭据 */
 export interface CrossDeviceAuth {
     /** 平台 Token */
     token: string;
     /** 平台标识：github / gitee */
+    provider: string;
+}
+
+/** 同步区里凭据的元信息，用于界面显示「凭据来自哪台设备、什么时候更新的」 */
+export interface CrossDeviceRemoteMeta {
+    /** 推送时间戳 */
+    updatedAt: number;
+    /** 推送设备（浏览器 + 系统，粗粒度） */
+    device: string;
+    /** 平台标识 */
     provider: string;
 }
 
@@ -61,6 +73,8 @@ export interface CrossDeviceStatus extends CrossDeviceState {
     nativeSync: boolean;
     /** 同步区是否已有加密凭据（无需口令即可判断） */
     remoteAvailable: boolean;
+    /** 同步区凭据的元信息（来自哪台设备、何时推送） */
+    remoteMeta: CrossDeviceRemoteMeta | null;
 }
 
 /** 启用结果 */
@@ -81,16 +95,43 @@ export async function getCrossDeviceState(): Promise<CrossDeviceState> {
     };
 }
 
+/** 读取本机保存的同步密码（仅本机 storage.local，不上传） */
+export async function getStoredPassphrase(): Promise<string | null> {
+    const passphrase = await storageManager.get(LOCAL_PASSPHRASE_KEY);
+    return typeof passphrase === 'string' && passphrase.length >= MIN_PASSPHRASE_LENGTH
+        ? passphrase
+        : null;
+}
+
+/** 读取同步区凭据的元信息（不存在时返回 null） */
+export async function getRemoteCrossDeviceMeta(): Promise<CrossDeviceRemoteMeta | null> {
+    const raw = await syncGet(REMOTE_META_KEY);
+    if (!raw || typeof raw !== 'object') {
+        return null;
+    }
+    const meta = raw as Partial<CrossDeviceRemoteMeta>;
+    if (typeof meta.updatedAt !== 'number') {
+        return null;
+    }
+    return {
+        updatedAt: meta.updatedAt,
+        device: typeof meta.device === 'string' ? meta.device : '未知设备',
+        provider: typeof meta.provider === 'string' ? meta.provider : 'github'
+    };
+}
+
 /** 读取完整状态（含同步区可用性 / 远端密文） */
 export async function getCrossDeviceStatus(): Promise<CrossDeviceStatus> {
-    const [state, remoteAvailable] = await Promise.all([
+    const [state, remoteAvailable, remoteMeta] = await Promise.all([
         getCrossDeviceState(),
-        hasRemoteCrossDeviceAuth()
+        hasRemoteCrossDeviceAuth(),
+        getRemoteCrossDeviceMeta()
     ]);
     return {
         ...state,
         nativeSync: getSyncAreaStatus().native,
-        remoteAvailable
+        remoteAvailable,
+        remoteMeta: remoteAvailable ? remoteMeta : null
     };
 }
 
@@ -134,6 +175,11 @@ export async function enableCrossDevice(
     }
 
     await syncSet(REMOTE_AUTH_KEY, payload);
+    await syncSet(REMOTE_META_KEY, {
+        updatedAt: Date.now(),
+        device: getDeviceLabel(),
+        provider: auth.provider
+    } satisfies CrossDeviceRemoteMeta);
     return { pushed: true };
 }
 
@@ -186,11 +232,38 @@ export async function disableCrossDevice(): Promise<void> {
         [LOCAL_PASSPHRASE_KEY]: null
     });
     await syncRemove(REMOTE_AUTH_KEY);
+    await syncRemove(REMOTE_META_KEY);
 }
 
 /** 仅清除同步区密文，保留本机开关与口令 */
 export async function clearRemoteCrossDeviceAuth(): Promise<void> {
     await syncRemove(REMOTE_AUTH_KEY);
+    await syncRemove(REMOTE_META_KEY);
+}
+
+/** 生成粗粒度的设备标识，仅用于界面显示「凭据来自哪台设备」 */
+function getDeviceLabel(): string {
+    if (typeof navigator === 'undefined') return '未知设备';
+    const ua = navigator.userAgent;
+    const platform = /Windows/i.test(ua)
+        ? 'Windows'
+        : /Mac OS X|Macintosh/i.test(ua)
+            ? 'macOS'
+            : /Android/i.test(ua)
+                ? 'Android'
+                : /Linux/i.test(ua)
+                    ? 'Linux'
+                    : '';
+    const browser = /Edg\//.test(ua)
+        ? 'Edge'
+        : /Firefox\//.test(ua)
+            ? 'Firefox'
+            : /Chrome\//.test(ua)
+                ? 'Chrome'
+                : /Safari\//.test(ua)
+                    ? 'Safari'
+                    : 'Browser';
+    return platform ? `${browser} · ${platform}` : browser;
 }
 
 /**
@@ -207,6 +280,7 @@ export async function pushCrossDeviceAuth(auth: CrossDeviceAuth | null): Promise
 
     if (!auth?.token) {
         await syncRemove(REMOTE_AUTH_KEY);
+        await syncRemove(REMOTE_META_KEY);
         return false;
     }
 
@@ -218,6 +292,12 @@ export async function pushCrossDeviceAuth(auth: CrossDeviceAuth | null): Promise
 
     const payload = await encryptText(JSON.stringify(auth), passphrase);
     await syncSet(REMOTE_AUTH_KEY, payload);
+    // 元信息是明文，只写设备名与时间，便于另一台设备显示「凭据来自 X」
+    await syncSet(REMOTE_META_KEY, {
+        updatedAt: Date.now(),
+        device: getDeviceLabel(),
+        provider: auth.provider
+    } satisfies CrossDeviceRemoteMeta);
     return true;
 }
 

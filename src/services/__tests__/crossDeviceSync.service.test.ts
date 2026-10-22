@@ -201,16 +201,27 @@ describe('crossDeviceSync.service', () => {
             enabled: false,
             hasPassphrase: false,
             nativeSync: false,
-            remoteAvailable: false
+            remoteAvailable: false,
+            remoteMeta: null
         });
 
         await enableCrossDevice(PASSPHRASE, AUTH);
-        await expect(getCrossDeviceStatus()).resolves.toEqual({
-            enabled: true,
-            hasPassphrase: true,
-            nativeSync: false,
-            remoteAvailable: true
-        });
+        const status = await getCrossDeviceStatus();
+        expect(status.enabled).toBe(true);
+        expect(status.hasPassphrase).toBe(true);
+        expect(status.remoteAvailable).toBe(true);
+        // 元信息用于界面显示「凭据来自哪台设备、何时推送」
+        expect(status.remoteMeta?.provider).toBe('github');
+        expect(typeof status.remoteMeta?.device).toBe('string');
+        expect(status.remoteMeta?.updatedAt).toBeGreaterThan(0);
+    });
+
+    it('推送时写入元信息，关闭时一并清除', async () => {
+        await enableCrossDevice(PASSPHRASE, AUTH);
+        expect(syncStore.has('mugen_cross_device_auth_meta')).toBe(true);
+
+        await disableCrossDevice();
+        expect(syncStore.has('mugen_cross_device_auth_meta')).toBe(false);
     });
 
     it('clearRemoteCrossDeviceAuth 只清远端密文，保留本机开关', async () => {

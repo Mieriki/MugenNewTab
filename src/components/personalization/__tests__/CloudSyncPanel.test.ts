@@ -184,7 +184,10 @@ describe('CloudSyncPanel', () => {
         // 未登录时只保存开关与密码，等登录后由 CloudSyncService 自动补推
         expect(localStorage.getItem('appNavigator_crossDevice_passphrase')).toBe('my-sync-pass');
         expect(wrapper.text()).toContain('已开启');
-        expect(wrapper.text()).toContain('登录后会立即把登录状态加密同步到浏览器账号');
+        expect(wrapper.text()).toContain('登录后会把登录状态加密写入同步区');
+        // 同步区诊断：明确告知「凭据暂无」，而不是让用户以为已经同步好了
+        expect(wrapper.text()).toContain('凭据：暂无');
+        expect(wrapper.text()).toContain('重新检查');
     });
 
     it('同步区已有其他设备凭据时提示「恢复登录状态」', async () => {
@@ -198,5 +201,55 @@ describe('CloudSyncPanel', () => {
 
         expect(wrapper.text()).toContain('检测到其他设备的登录状态');
         expect(wrapper.text()).toContain('恢复登录状态');
+        // 诊断行显示凭据来源
+        expect(wrapper.text()).toContain('凭据：有');
+    });
+
+    it('新设备用同一密码「开启」时自动恢复登录状态（不必再点恢复）', async () => {
+        // 设备 A：登录后推送凭据
+        await enableCrossDevice('my-sync-pass', { token: 'ghp_other_device', provider: 'github' });
+        // 设备 B：本机没有开关与密码，只有同步区密文
+        localStorage.removeItem('appNavigator_crossDevice_enabled');
+        localStorage.removeItem('appNavigator_crossDevice_passphrase');
+
+        const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+            const url = String(input);
+            const body = url.endsWith('/user')
+                ? { login: 'tester', id: 1, avatar_url: 'https://avatar.png' }
+                : url.includes('/gists?')
+                    ? []
+                    : { id: 'gist_1', files: {} };
+            return {
+                status: 200,
+                ok: true,
+                json: async () => body,
+                text: async () => JSON.stringify(body)
+            } as Response;
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const wrapper = mount(CloudSyncPanel);
+        await flushPromises();
+
+        // 放弃「恢复」提示，改走「直接开启」
+        const skip = wrapper
+            .findAll('.cloud-sync-cross .mnt-base-button')
+            .find((btn) => btn.text().includes('直接开启'));
+        expect(skip).toBeTruthy();
+        await skip!.trigger('click');
+        await flushPromises();
+
+        await wrapper.find('.cloud-sync-cross input[type="password"]').setValue('my-sync-pass');
+        const enableBtn = wrapper
+            .findAll('.cloud-sync-cross .mnt-base-button')
+            .find((btn) => btn.text().includes('开启并加密同步'));
+        await enableBtn!.trigger('click');
+
+        // 开启后会尝试用同一密码解密同步区里的凭据并直接登录
+        await vi.waitFor(() => {
+            expect(wrapper.text()).toContain('已连接');
+        });
+
+        vi.unstubAllGlobals();
     });
 });

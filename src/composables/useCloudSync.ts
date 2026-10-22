@@ -7,8 +7,9 @@
 import { computed, onMounted, onUnmounted } from 'vue';
 import type { ComputedRef } from 'vue';
 import { useCloudSyncStore } from '@/stores/cloudSync.store';
+import type { EnableCrossDeviceOutcome } from '@/stores/cloudSync.store';
 import { watchRemoteCrossDeviceAuth } from '@/services/crossDeviceSync.service';
-import type { EnableCrossDeviceResult } from '@/services/crossDeviceSync.service';
+import type { CrossDeviceRemoteMeta } from '@/services/crossDeviceSync.service';
 import type {
     CloudSyncProviderId,
     DownloadResult,
@@ -39,6 +40,8 @@ export interface UseCloudSyncReturn {
     crossDeviceEnabled: ComputedRef<boolean>;
     crossDeviceHasPassphrase: ComputedRef<boolean>;
     crossDeviceRemoteAvailable: ComputedRef<boolean>;
+    /** 同步区凭据的元信息（来自哪台设备、何时推送） */
+    crossDeviceRemoteMeta: ComputedRef<CrossDeviceRemoteMeta | null>;
     /** 当前环境是否使用浏览器账号同步区（false = 网页预览的 localStorage 降级） */
     syncAreaNative: ComputedRef<boolean>;
     statusText: ComputedRef<string>;
@@ -55,9 +58,10 @@ export interface UseCloudSyncReturn {
     scheduleAutoSync: () => void;
     cancelPending: () => void;
     refreshCrossDevice: () => Promise<void>;
-    enableCrossDeviceSync: (passphrase: string) => Promise<EnableCrossDeviceResult>;
+    enableCrossDeviceSync: (passphrase: string) => Promise<EnableCrossDeviceOutcome>;
     disableCrossDeviceSync: () => Promise<void>;
     restoreFromCrossDevice: (passphrase: string) => Promise<boolean>;
+    tryRestoreCrossDevice: (passphrase?: string) => Promise<boolean>;
 }
 
 const DEFAULT_AUTO_SYNC_DEBOUNCE_MS = 3000;
@@ -218,8 +222,12 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
         return createAbortable(() => store.refreshCrossDevice());
     }
 
-    async function enableCrossDeviceSync(passphrase: string): Promise<EnableCrossDeviceResult> {
+    async function enableCrossDeviceSync(passphrase: string): Promise<EnableCrossDeviceOutcome> {
         return createAbortable(() => store.enableCrossDeviceSync(passphrase));
+    }
+
+    async function tryRestoreCrossDevice(passphrase?: string): Promise<boolean> {
+        return createAbortable(() => store.tryRestoreCrossDevice(passphrase));
     }
 
     async function disableCrossDeviceSync(): Promise<void> {
@@ -263,11 +271,13 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
 
     onMounted(() => {
         window.addEventListener('appNavigator:data-changed', handleDataChanged);
-        // 其他设备推送浏览器同步凭据后，本机即时感知（无需重开面板）
+        // 其他设备推送浏览器同步凭据后，本机即时感知并尝试免 Token 登录
         unwatchRemoteAuth = watchRemoteCrossDeviceAuth(() => {
-            refreshCrossDevice().catch(() => {
-                // 状态刷新失败不影响主流程
-            });
+            refreshCrossDevice()
+                .then(() => tryRestoreCrossDevice())
+                .catch(() => {
+                    // 状态刷新 / 自动还原失败不影响主流程
+                });
         });
         init().catch(() => {
             // 初始化失败由 store.error 暴露，不在此处抛出
@@ -294,6 +304,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
         crossDeviceEnabled: computed(() => store.crossDeviceEnabled),
         crossDeviceHasPassphrase: computed(() => store.crossDeviceHasPassphrase),
         crossDeviceRemoteAvailable: computed(() => store.crossDeviceRemoteAvailable),
+        crossDeviceRemoteMeta: computed(() => store.crossDeviceRemoteMeta),
         syncAreaNative: computed(() => store.syncAreaNative),
         statusText,
         formattedLastSyncTime,
@@ -311,6 +322,7 @@ export function useCloudSync(options: UseCloudSyncOptions = {}): UseCloudSyncRet
         refreshCrossDevice,
         enableCrossDeviceSync,
         disableCrossDeviceSync,
-        restoreFromCrossDevice
+        restoreFromCrossDevice,
+        tryRestoreCrossDevice
     };
 }
