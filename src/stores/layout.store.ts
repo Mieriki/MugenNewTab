@@ -9,7 +9,8 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { storageManager } from '@/services/storage.service';
-import { STORAGE_KEYS, type LayoutSettings } from '@/types/storage';
+import { STORAGE_KEYS, type LayoutSettings, type LinkOpenMode } from '@/types/storage';
+import { DEFAULT_OPEN_MODE, isLinkOpenMode } from '@/utils/navigation.util';
 
 const DEFAULT_COLUMNS: number | 'auto' = 'auto';
 const DEFAULT_PAGE_SIZE = 24;
@@ -23,6 +24,7 @@ export const useLayoutStore = defineStore('layout', () => {
     const allViewFlat = ref(false);
     const showIconBackground = ref(true);
     const minimalMode = ref(false);
+    const openMode = ref<LinkOpenMode>(DEFAULT_OPEN_MODE);
     const initialized = ref(false);
     const isMobile = ref(false);
 
@@ -51,6 +53,7 @@ export const useLayoutStore = defineStore('layout', () => {
             allViewFlat: allViewFlat.value,
             showIconBackground: showIconBackground.value,
             minimalMode: minimalMode.value,
+            openMode: openMode.value,
         };
         await storageManager.set(STORAGE_KEYS.LAYOUT_SETTINGS, settings);
     }
@@ -84,6 +87,9 @@ export const useLayoutStore = defineStore('layout', () => {
                 }
                 if (typeof saved.minimalMode === 'boolean') {
                     minimalMode.value = saved.minimalMode;
+                }
+                if (isLinkOpenMode(saved.openMode)) {
+                    openMode.value = saved.openMode;
                 }
             }
             initialized.value = true;
@@ -128,6 +134,12 @@ export const useLayoutStore = defineStore('layout', () => {
         await persist();
     }
 
+    async function setOpenMode(value: LinkOpenMode): Promise<void> {
+        if (!isLinkOpenMode(value)) return;
+        openMode.value = value;
+        await persist();
+    }
+
     return {
         columns,
         paginate,
@@ -136,6 +148,7 @@ export const useLayoutStore = defineStore('layout', () => {
         allViewFlat,
         showIconBackground,
         minimalMode,
+        openMode,
         isMobile,
         initialized,
         init,
@@ -146,5 +159,6 @@ export const useLayoutStore = defineStore('layout', () => {
         setAllViewFlat,
         setShowIconBackground,
         setMinimalMode,
+        setOpenMode,
     };
 });

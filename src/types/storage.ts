@@ -69,6 +69,14 @@ export interface WallpaperSettings {
     isLocalImage?: boolean;
 }
 
+/**
+ * 链接打开方式
+ *
+ * - new-tab：新开一个标签页，当前新标签页保留（历史行为）
+ * - current-tab：用目标站点覆盖当前新标签页
+ */
+export type LinkOpenMode = 'new-tab' | 'current-tab';
+
 /** 页面布局设置 */
 export interface LayoutSettings {
     /** 每行卡片列数，'auto' 表示按宽度自适应 */
@@ -85,6 +93,8 @@ export interface LayoutSettings {
     showIconBackground: boolean;
     /** 极简约模式 */
     minimalMode?: boolean;
+    /** 点击站点卡片 / 搜索时的跳转方式（缺省按新标签页处理） */
+    openMode?: LinkOpenMode;
 }
 
 /** 本地壁纸图片元数据 */

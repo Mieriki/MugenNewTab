@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#B14A6B">
     <title>Mugen新标签页</title>
+    <!--
+        标签页图标必须在这里显式声明：
+        Chrome 会把 manifest.icons 当作 chrome-extension:// 页面的兜底图标，
+        而 Firefox 不会——moz-extension:// 页面若没有 <link rel="icon">，
+        标签栏上就是一个空白图标（新标签页覆盖页尤其明显）。
+    -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/image/logo/logo_girl-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/image/logo/logo_girl-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/image/logo/logo_girl-48.png" />
+    <link rel="apple-touch-icon" href="/image/logo/logo_girl-128.png" />
     <style>
         html[data-theme-loading] body {
             opacity: 0;

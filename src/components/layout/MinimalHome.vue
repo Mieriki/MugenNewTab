@@ -20,7 +20,9 @@ import type { AppItem } from '@/types/app';
 import { useDataManager } from '@/composables/useDataManager';
 import { useSearch } from '@/composables/useSearch';
 import { useToast } from '@/composables/useToast';
+import { useLayoutStore } from '@/stores/layout.store';
 import { isImageIcon } from '@/utils/image.util';
+import { openUrl } from '@/utils/navigation.util';
 import IconSvg from '@/components/icon/IconSvg.vue';
 import SearchSuggestions from '@/components/search/SearchSuggestions.vue';
 import EngineSelector from '@/components/search/EngineSelector.vue';
@@ -65,6 +67,7 @@ const emit = defineEmits<{
 
 const dataManager = useDataManager({ autoInit: true });
 const toast = useToast();
+const layoutStore = useLayoutStore();
 
 const activeCategoryId = ref('all');
 const showAll = ref(false);
@@ -220,7 +223,7 @@ function handleTileClick(app: AppItem): void {
     // 长按刚弹出菜单时，手指抬起会补发一次 click，这里直接吞掉
     if (Date.now() < suppressClickUntil) return;
     if (!app.url) return;
-    window.open(app.url, '_blank');
+    openUrl(app.url, layoutStore.openMode);
 }
 
 function iconIsMonochrome(app: AppItem): boolean {
@@ -291,7 +294,7 @@ function handleMenuOpen(): void {
     const app = menuApp.value;
     closeMenu();
     if (!app?.url) return;
-    window.open(app.url, '_blank');
+    openUrl(app.url, layoutStore.openMode);
 }
 
 async function handleMenuCopyLink(): Promise<void> {

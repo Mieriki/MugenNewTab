@@ -22,6 +22,7 @@ import { useAppCardDrag, type AppCardDragCommit } from '@/composables/useAppCard
 import { useLayoutStore } from '@/stores/layout.store';
 import { storageManager } from '@/services/storage.service';
 import { isJsonFile, readTextFile } from '@/utils/file.util';
+import { openUrl } from '@/utils/navigation.util';
 import { STORAGE_KEYS } from '@/types/storage';
 
 import WallpaperLayer from '@/components/layout/WallpaperLayer.vue';
@@ -314,7 +315,7 @@ async function handleCardDragCommit(payload: AppCardDragCommit): Promise<void> {
 
 function handleAppClick(app: AppItem): void {
     if (!app.url) return;
-    window.open(app.url, '_blank');
+    openUrl(app.url, layoutStore.openMode);
 }
 
 function openAddApp(categoryId?: string): void {

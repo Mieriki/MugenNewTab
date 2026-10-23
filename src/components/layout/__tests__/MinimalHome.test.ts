@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { computed, nextTick, ref } from 'vue';
+import { setActivePinia, createPinia } from 'pinia';
 import MinimalHome from '../MinimalHome.vue';
 import MinimalSiteMenu from '../MinimalSiteMenu.vue';
 import { useDataManager } from '@/composables/useDataManager';
 import { useSearch } from '@/composables/useSearch';
 import { useToast } from '@/composables/useToast';
+import { useLayoutStore } from '@/stores/layout.store';
 import type { AppItem, Category } from '@/types/app';
 
 vi.mock('@/composables/useDataManager');
@@ -85,6 +87,8 @@ function findMenuItem(wrapper: ReturnType<typeof mountHome>, label: string) {
 describe('MinimalHome 站点操作', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
+        // MinimalHome 直接读 layout store 的 openMode 决定跳转方式
+        setActivePinia(createPinia());
     });
 
     afterEach(() => {
@@ -212,6 +216,25 @@ describe('MinimalHome 站点操作', () => {
         expect(openSpy).toHaveBeenCalledWith('https://github.com', '_blank');
 
         wrapper.unmount();
+    });
+
+    it('点击磁贴时按 openMode=current-tab 覆盖当前标签页', async () => {
+        setupMocks();
+        const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+        const assignSpy = vi.fn();
+        vi.stubGlobal('location', { ...window.location, assign: assignSpy });
+
+        const layoutStore = useLayoutStore();
+        layoutStore.openMode = 'current-tab';
+
+        const wrapper = mountHome();
+        await wrapper.findAll('.minimal-tile')[0].trigger('click');
+
+        expect(assignSpy).toHaveBeenCalledWith('https://github.com');
+        expect(openSpy).not.toHaveBeenCalled();
+
+        wrapper.unmount();
+        vi.unstubAllGlobals();
     });
 
     it('控制区揭示按钮请求切换隐藏站点', async () => {

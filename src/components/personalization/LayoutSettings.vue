@@ -4,8 +4,9 @@
  *
  * 提供每行卡片列数与分页模式设置，状态由 layout store 管理并持久化。
  */
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useLayoutStore } from '@/stores/layout.store';
+import type { LinkOpenMode } from '@/types/storage';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
 const layoutStore = useLayoutStore();
@@ -22,6 +23,17 @@ const COLUMN_OPTIONS: Array<{ value: number | 'auto'; label: string }> = [
 
 /** 每页数量选项 */
 const PAGE_SIZE_OPTIONS = [12, 24, 48, 96];
+
+/** 链接打开方式选项 */
+const OPEN_MODE_OPTIONS: Array<{ value: LinkOpenMode; label: string; hint: string }> = [
+    { value: 'new-tab', label: '新标签页', hint: '保留当前新标签页，站点在右侧新标签打开' },
+    { value: 'current-tab', label: '覆盖当前页', hint: '直接在当前标签页打开，新标签页被替换' },
+];
+
+/** 当前打开方式对应的说明文案 */
+const openModeHint = computed(
+    () => OPEN_MODE_OPTIONS.find((item) => item.value === layoutStore.openMode)?.hint ?? ''
+);
 
 onMounted(() => {
     void layoutStore.init();
@@ -98,6 +110,23 @@ function handlePaginateChange(event: Event): void {
                 />
                 <span>极简约模式（隐藏侧边栏与顶栏，仅保留核心内容）</span>
             </label>
+        </div>
+
+        <div class="layout-settings__group">
+            <label class="layout-settings__label">链接打开方式</label>
+            <div class="layout-settings__segments">
+                <button
+                    v-for="option in OPEN_MODE_OPTIONS"
+                    :key="option.value"
+                    type="button"
+                    class="layout-settings__segment"
+                    :class="{ active: layoutStore.openMode === option.value }"
+                    @click="layoutStore.setOpenMode(option.value)"
+                >
+                    {{ option.label }}
+                </button>
+            </div>
+            <p class="layout-settings__hint">{{ openModeHint }}</p>
         </div>
 
         <div class="layout-settings__group">

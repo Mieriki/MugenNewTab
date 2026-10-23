@@ -21,9 +21,11 @@ import {
 } from 'vue';
 import { useSearchStore, type SearchHistoryItem } from '@/stores/search.store';
 import { useAppDataStore } from '@/stores/appData.store';
+import { useLayoutStore } from '@/stores/layout.store';
 import SearchEngineService from '@/services/searchEngine.service';
 import type { SearchEngine } from '@/types/config';
 import { debounce } from '@/utils/debounce.util';
+import { openUrl } from '@/utils/navigation.util';
 
 /** useSearch 配置项 */
 export interface UseSearchOptions {
@@ -132,6 +134,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
 
     const searchStore = useSearchStore();
     const appDataStore = useAppDataStore();
+    const layoutStore = useLayoutStore();
 
     const query = ref('');
     const engines = ref<SearchEngine[]>([]);
@@ -342,7 +345,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
             return false;
         }
 
-        window.open(url, '_blank');
+        openUrl(url, layoutStore.openMode);
         clearSuggestions();
         // 搜索跳转后清空输入框，下次打开搜索时不残留上次的关键词
         query.value = '';

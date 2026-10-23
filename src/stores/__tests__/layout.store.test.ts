@@ -63,7 +63,47 @@ describe('layout.store', () => {
             allViewFlat: true,
             showIconBackground: false,
             minimalMode: false,
+            openMode: 'new-tab',
         });
+    });
+
+    it('默认以新标签页方式打开链接', () => {
+        const store = useLayoutStore();
+
+        expect(store.openMode).toBe('new-tab');
+    });
+
+    it('init 加载已保存的打开方式', async () => {
+        vi.mocked(storageManager.get).mockResolvedValue({ openMode: 'current-tab' });
+
+        const store = useLayoutStore();
+        await store.init();
+
+        expect(store.openMode).toBe('current-tab');
+    });
+
+    it('setOpenMode 持久化打开方式', async () => {
+        const store = useLayoutStore();
+        await store.init();
+
+        await store.setOpenMode('current-tab');
+
+        expect(store.openMode).toBe('current-tab');
+        expect(storageManager.set).toHaveBeenLastCalledWith(
+            STORAGE_KEYS.LAYOUT_SETTINGS,
+            expect.objectContaining({ openMode: 'current-tab' })
+        );
+    });
+
+    it('非法的打开方式被忽略，保持原值', async () => {
+        vi.mocked(storageManager.get).mockResolvedValue({ openMode: 'same-window' });
+
+        const store = useLayoutStore();
+        await store.init();
+        expect(store.openMode).toBe('new-tab');
+
+        await store.setOpenMode('blank' as never);
+        expect(store.openMode).toBe('new-tab');
     });
 
     it('旧数据缺少 showIconBackground 字段时保持默认显示', async () => {
