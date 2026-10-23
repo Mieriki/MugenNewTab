@@ -65,7 +65,8 @@ jobs:
           set -euo pipefail
           node -e '
             const fs = require("fs");
-            for (const f of ["manifest.json", "manifest.firefox.json"]) {
+            // 三个目标共用同一版本号，漏掉任一份 manifest 都会让该目标的版本号停滞
+            for (const f of ["manifest.json", "manifest.edge.json", "manifest.firefox.json"]) {
               const j = JSON.parse(fs.readFileSync(f, "utf8"));
               j.version = process.env.VERSION;
               fs.writeFileSync(f, JSON.stringify(j, null, 4) + "\n");
@@ -146,6 +147,24 @@ jobs:
             --tag="$TAG"
           cat artifacts/updates.json
 
+      # 生成应用内更新检查用的静态清单：latest.json
+      # 客户端从 /releases/latest/download/latest.json 读取，避开 GitHub API 的频率限制
+      - name: Generate latest.json
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          node scripts/make-latest-json.js \
+            --version="$VERSION" \
+            --repo="$REPO" \
+            --tag="$TAG" \
+            --xpi="artifacts/mugennewtab-${VERSION}.xpi" \
+            --zip="artifacts/mugen_newtab-chromium.zip" \
+            --out=artifacts/latest.json
+          cat artifacts/latest.json
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -157,10 +176,12 @@ jobs:
             "artifacts/mugennewtab-${VERSION}.xpi" \
             "artifacts/mugen_newtab-chromium.zip" \
             "artifacts/updates.json" \
+            "artifacts/latest.json" \
             --title "MugenNewTab ${VERSION}" \
             --notes "Firefox 已签名包：mugennewtab-${VERSION}.xpi
           Chrome / Edge 通用包：mugen_newtab-chromium.zip
 
           安装方式（Firefox）：下载 .xpi 后拖入 about:addons 页面，或直接用 Firefox 打开该文件。
-          已安装旧版本的用户会在 24 小时内自动更新到本版本。" \
+          已安装旧版本的用户会在 24 小时内自动更新到本版本。
+          扩展内也会在发现新版本时给出下载提示（updates.json / latest.json 为机器读取的清单）。" \
             --latest

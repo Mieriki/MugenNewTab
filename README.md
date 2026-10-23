@@ -250,14 +250,14 @@ dist-firefox/  # Firefox
 ./scripts/release.sh 1.0.1.0  # 或指定版本号
 ```
 
-脚本会写入两份 manifest 的版本号、提交、打 `v<版本>` tag 并推送。随后
+脚本会写入三份 manifest（Chrome / Edge / Firefox）的版本号、提交、打 `v<版本>` tag 并推送。随后
 `.github/workflows/release.yml` 自动执行：
 
 1. `npm ci` + 构建 Firefox / Chromium 两个产物
 2. `web-ext sign --channel unlisted` 调用 AMO 签名 Firefox 包
 3. 打包 Chromium zip
-4. 生成 `updates.json`（含 sha256 校验）
-5. 创建 GitHub Release，附上三个文件
+4. 生成 `updates.json`（Firefox 更新清单，含 sha256 校验）与 `latest.json`（应用内更新检查用）
+5. 创建 GitHub Release，附上四个文件
 
 推送失败（网络抖动、`SSL_ERROR_SYSCALL` 等）时提交和 tag 已经在本地建好，
 **直接重新运行 `./scripts/release.sh` 即可**：脚本会检测到 HEAD 上未推送的 tag，
@@ -289,6 +289,22 @@ dist-firefox/  # Firefox
 
 Firefox 每 24 小时（`extensions.update.interval`，默认 86400 秒）拉取该 `updates.json`，
 发现 `version` 高于已安装版本就静默下载并安装。
+
+### Chrome / Edge 为什么没有自动更新
+
+Chrome 和 Edge 只对**商店分发**的扩展做自动更新，自托管的包（开发者模式加载、拖入 zip）
+永远不会自己升级——`update_url` 在 Chromium 系只有 Linux 或企业策略托管环境才生效。
+Firefox 是唯一支持「自托管 + 自动更新」的浏览器。
+
+所以 Chromium 侧退一步做**应用内更新提示**：`useUpdateCheck` 定时读
+`releases/latest/download/latest.json`，比对扩展自身 manifest 版本，有新版本时在左下角
+显示提示条，点「立即更新」直接下载对应安装包。
+
+- 数据源优先用静态清单 `latest.json`，GitHub REST API 只作兜底
+  （未认证接口限 60 次/小时/IP，共享出口容易被刷满）
+- 检查结果缓存 6 小时，避免每开一个新标签页都发请求
+- 忽略某个版本后不再提示，下一个版本发布后会重新提示
+- 网络异常、限流一律静默失败，不会打扰用户
 
 几个必须遵守的约束：
 

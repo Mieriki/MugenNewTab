@@ -18,6 +18,7 @@ import { useDataManager } from '@/composables/useDataManager';
 import { useTheme } from '@/composables/useTheme';
 import { provideConfirm, MntConfirmHost } from '@/composables/useConfirm';
 import { useToast } from '@/composables/useToast';
+import { useUpdateCheck } from '@/composables/useUpdateCheck';
 import { useAppCardDrag, type AppCardDragCommit } from '@/composables/useAppCardDrag';
 import { useLayoutStore } from '@/stores/layout.store';
 import { storageManager } from '@/services/storage.service';
@@ -38,6 +39,7 @@ import CategoryManager from '@/components/category/CategoryManager.vue';
 import UiLibPanel from '@/components/uiLib/UiLibPanel.vue';
 import PersonalizationPanel from '@/components/personalization/PersonalizationPanel.vue';
 import ToastContainer from '@/components/common/ToastContainer.vue';
+import UpdateBanner from '@/components/common/UpdateBanner.vue';
 import CategorySection from '@/components/app/CategorySection.vue';
 import AppGrid from '@/components/app/AppGrid.vue';
 import AppCardDragGhost from '@/components/app/AppCardDragGhost.vue';
@@ -50,6 +52,16 @@ const dataManager = useDataManager({ autoInit: true });
 useTheme({ autoInit: true });
 const confirmManager = provideConfirm();
 const toast = useToast();
+
+// 应用内更新检查：Chromium 系不会自动更新商店外的扩展，只能靠界面提示
+const {
+    currentVersion: updateCurrentVersion,
+    latestVersion: updateLatestVersion,
+    visible: updateBannerVisible,
+    check: checkForUpdate,
+    dismiss: dismissUpdate,
+    openDownload: openUpdateDownload,
+} = useUpdateCheck();
 
 // 卡片拖拽落下的统一提交入口
 useAppCardDrag().onCommit((payload) => {
@@ -195,6 +207,9 @@ onMounted(() => {
 
     // 全局快捷键 Ctrl+K / Cmd+K 打开搜索
     document.addEventListener('keydown', handleGlobalKeydown);
+
+    // 检查是否有新版本（内部按 6 小时节流，失败静默）
+    void checkForUpdate();
 });
 
 onUnmounted(() => {
@@ -613,6 +628,14 @@ const fabItems = [
 
         <MntConfirmHost />
         <ToastContainer position="top-right" />
+
+        <UpdateBanner
+            v-if="updateBannerVisible"
+            :current-version="updateCurrentVersion ?? ''"
+            :latest-version="updateLatestVersion ?? ''"
+            @update="openUpdateDownload"
+            @close="dismissUpdate"
+        />
 
         <AppCardDragGhost />
 

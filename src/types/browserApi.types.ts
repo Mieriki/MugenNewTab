@@ -103,5 +103,10 @@ export interface BrowserNamespace {
     runtime?: {
         lastError?: RuntimeLastError | null;
         getURL?(path: string): string;
+        /**
+         * 读取扩展自身的 manifest。
+         * 仅用于取 version 做应用内更新检查（Chromium 侧没有自托管自动更新）。
+         */
+        getManifest?(): { version?: string };
     };
 }

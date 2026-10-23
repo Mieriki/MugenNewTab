@@ -113,7 +113,10 @@ fi
 echo "🔧 设置版本号: ${VERSION}"
 node -e '
     const fs = require("fs");
-    for (const f of ["manifest.json", "manifest.firefox.json"]) {
+    // 三个目标（Chrome / Edge / Firefox）共用同一版本号：
+    // Edge 商店要求每次提交的版本号严格递增，漏掉任一份 manifest 都会让
+    // 该目标的版本号停留在旧值，下次提交时被判定为「版本未提升」而拒绝。
+    for (const f of ["manifest.json", "manifest.edge.json", "manifest.firefox.json"]) {
         const j = JSON.parse(fs.readFileSync(f, "utf8"));
         j.version = process.argv[1];
         fs.writeFileSync(f, JSON.stringify(j, null, 4) + "\n");

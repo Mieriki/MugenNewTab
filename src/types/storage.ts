@@ -30,7 +30,11 @@ export const STORAGE_KEYS = {
      */
     SHOW_HIDDEN_APPS: 'appNavigator_showHiddenApps',
     HIDDEN_TIP_DISMISSED: 'appNavigator_hiddenTipDismissed',
-    LAYOUT_SETTINGS: 'appNavigator_layoutSettings'
+    LAYOUT_SETTINGS: 'appNavigator_layoutSettings',
+    /** 应用内更新检查的缓存结果（含上次检查时间，用于节流） */
+    UPDATE_CHECK_CACHE: 'appNavigator_updateCheckCache',
+    /** 用户已忽略的版本号，同一版本不再重复提示 */
+    UPDATE_DISMISSED_VERSION: 'appNavigator_updateDismissedVersion'
 } as const;
 
 /** 需要同步镜像到 localStorage 的首屏设置键（防止 FOUC 闪烁） */
