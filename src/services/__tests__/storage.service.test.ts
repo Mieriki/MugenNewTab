@@ -63,6 +63,43 @@ describe('StorageManager', () => {
         expect(SYNC_MIRROR_KEYS).toContain('selectedTheme');
     });
 
+    it('布局设置属于同步镜像键（极简约模式首帧不闪的前提）', () => {
+        expect(SYNC_MIRROR_KEYS).toContain(STORAGE_KEYS.LAYOUT_SETTINGS);
+    });
+
+    it('writeSyncMirror 只写 localStorage，不写后端存储', async () => {
+        const manager = new StorageManager();
+        const backendSet = vi.spyOn(BrowserAPI.storage.local, 'set');
+
+        manager.writeSyncMirror(STORAGE_KEYS.LAYOUT_SETTINGS, { minimalMode: true });
+
+        expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.LAYOUT_SETTINGS) ?? 'null')).toEqual({
+            minimalMode: true,
+        });
+        expect(backendSet).not.toHaveBeenCalled();
+        backendSet.mockRestore();
+    });
+
+    it('writeSyncMirror 对非镜像键静默忽略', () => {
+        const manager = new StorageManager();
+        manager.writeSyncMirror('someRandomKey', { a: 1 });
+        expect(localStorage.getItem('someRandomKey')).toBeNull();
+    });
+
+    it('writeSyncMirror 在 localStorage 抛错时不向外冒泡', () => {
+        const manager = new StorageManager();
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+        expect(() => manager.writeSyncMirror(STORAGE_KEYS.LAYOUT_SETTINGS, { minimalMode: true })).not.toThrow();
+        expect(warn).toHaveBeenCalled();
+
+        spy.mockRestore();
+        warn.mockRestore();
+    });
+
     it('同步镜像键写入失败时应回滚 localStorage', async () => {
         const manager = new StorageManager();
         localStorage.setItem('selectedTheme', '"old-theme"');

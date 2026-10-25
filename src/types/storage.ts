@@ -42,7 +42,12 @@ export const SYNC_MIRROR_KEYS = new Set<string>([
     STORAGE_KEYS.SELECTED_THEME,
     STORAGE_KEYS.SELECTED_SEARCH_ENGINE,
     STORAGE_KEYS.SEARCH_HISTORY,
-    STORAGE_KEYS.SIDEBAR_COLLAPSED
+    STORAGE_KEYS.SIDEBAR_COLLAPSED,
+    /**
+     * 布局设置（含极简约模式）必须同步镜像：
+     * storage.local 是异步的，等它回来再渲染会先画标准布局再切成极简约，肉眼就是「闪一下」。
+     */
+    STORAGE_KEYS.LAYOUT_SETTINGS
 ]);
 
 /** 云同步需要收集的本地数据键（仅站点数据与用户图标库，个性化设置不同步） */

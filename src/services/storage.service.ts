@@ -111,6 +111,7 @@ function getNativeOnChanged() {
 export interface IStorageManager {
     readonly isExtension: boolean;
     getSync(key: string): StorageValue;
+    writeSyncMirror(key: string, value: StorageValue): void;
     get(key: string): Promise<StorageValue | null>;
     getMany(keys: string[]): Promise<Record<string, StorageValue | null>>;
     set(key: string, value: StorageValue): Promise<void>;
@@ -137,6 +138,26 @@ export class StorageManager implements IStorageManager {
      */
     getSync(key: string): StorageValue {
         return parseStoredValue(localStorage.getItem(key));
+    }
+
+    /**
+     * 只写 localStorage 同步镜像，不触碰 storage.local。
+     *
+     * 用途：老版本没有镜像，或镜像被清掉后，把异步存储里读到的值回填成同步镜像，
+     * 这样下次打开新标签页时首帧就能直接用上，不必等异步读取回来再渲染。
+     * 这里刻意不走 setMany——写 storage.local 会触发跨标签页的 onChanged，
+     * 每次开新标签页都写一遍属于无意义噪音。
+     */
+    writeSyncMirror(key: string, value: StorageValue): void {
+        if (!SYNC_MIRROR_KEY_SET.has(key)) {
+            return;
+        }
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (error) {
+            // 隐私模式 / 配额满时 localStorage 可能抛错，镜像只是加速手段，失败不影响主流程
+            console.warn(`[StorageManager] 写入同步镜像 ${key} 失败:`, error);
+        }
     }
 
     /**

@@ -69,7 +69,11 @@ useAppCardDrag().onCommit((payload) => {
 });
 
 // ==================== 布局状态 ====================
-const sidebarCollapsed = ref(false);
+/**
+ * 侧边栏折叠状态：先同步读 localStorage 镜像，避免首帧按展开渲染、
+ * 等异步存储返回后再收起（同样是一次可见的跳动）。
+ */
+const sidebarCollapsed = ref(!!storageManager.getSync(STORAGE_KEYS.SIDEBAR_COLLAPSED));
 const mobileSidebarOpen = ref(false);
 const personalizationOpen = ref(false);
 const searchOpen = ref(false);
@@ -159,6 +163,8 @@ async function loadSettings(): Promise<void> {
     try {
         const collapsed = await storageManager.get(STORAGE_KEYS.SIDEBAR_COLLAPSED);
         sidebarCollapsed.value = !!collapsed;
+        // 回填同步镜像，下次打开新标签页时首帧就是正确宽度，不会先展开再收起
+        storageManager.writeSyncMirror(STORAGE_KEYS.SIDEBAR_COLLAPSED, !!collapsed);
     } catch (error) {
         console.error('[App] 加载设置失败:', error);
     }

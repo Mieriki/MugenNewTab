@@ -13,6 +13,7 @@ import { STORAGE_KEYS } from '@/types/storage';
 describe('layout.store', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
+        localStorage.clear();
         vi.spyOn(storageManager, 'get').mockResolvedValue(null);
         vi.spyOn(storageManager, 'set').mockResolvedValue(undefined);
     });
@@ -30,6 +31,68 @@ describe('layout.store', () => {
         expect(store.showAllCategory).toBe(true);
         expect(store.allViewFlat).toBe(false);
         expect(store.showIconBackground).toBe(true);
+    });
+
+    it('首屏直接使用 localStorage 镜像，不必等 init（防极简约模式闪烁）', () => {
+        localStorage.setItem(
+            STORAGE_KEYS.LAYOUT_SETTINGS,
+            JSON.stringify({ minimalMode: true, columns: 4, pageSize: 48 })
+        );
+
+        const store = useLayoutStore();
+
+        // 关键：还没调用 init()，状态就已经是最终形态
+        expect(store.initialized).toBe(false);
+        expect(store.minimalMode).toBe(true);
+        expect(store.columns).toBe(4);
+        expect(store.pageSize).toBe(48);
+    });
+
+    it('镜像里含非法值时逐字段忽略，不影响其他字段', () => {
+        localStorage.setItem(
+            STORAGE_KEYS.LAYOUT_SETTINGS,
+            JSON.stringify({ minimalMode: 'yes', columns: 99, allViewFlat: true })
+        );
+
+        const store = useLayoutStore();
+
+        expect(store.minimalMode).toBe(false);
+        expect(store.columns).toBe('auto');
+        expect(store.allViewFlat).toBe(true);
+    });
+
+    it('镜像为空时退回默认值，不抛错', () => {
+        const store = useLayoutStore();
+
+        expect(store.minimalMode).toBe(false);
+        expect(store.columns).toBe('auto');
+    });
+
+    it('init 从真实存储读到设置后回填同步镜像（老用户下次不再闪）', async () => {
+        vi.mocked(storageManager.get).mockResolvedValue({ minimalMode: true, columns: 3 });
+
+        const store = useLayoutStore();
+        expect(localStorage.getItem(STORAGE_KEYS.LAYOUT_SETTINGS)).toBeNull();
+
+        await store.init();
+
+        const mirrored = JSON.parse(localStorage.getItem(STORAGE_KEYS.LAYOUT_SETTINGS) ?? 'null');
+        expect(mirrored).toMatchObject({ minimalMode: true, columns: 3, openMode: 'new-tab' });
+    });
+
+    it('镜像已存在时 init 不会把状态改回默认值', async () => {
+        localStorage.setItem(
+            STORAGE_KEYS.LAYOUT_SETTINGS,
+            JSON.stringify({ minimalMode: true, columns: 2 })
+        );
+        // 真实存储返回空（例如首次安装、存储被清空）时，应以镜像为准
+        vi.mocked(storageManager.get).mockResolvedValue(null);
+
+        const store = useLayoutStore();
+        await store.init();
+
+        expect(store.minimalMode).toBe(true);
+        expect(store.columns).toBe(2);
     });
 
     it('init 加载已保存的布局设置', async () => {
