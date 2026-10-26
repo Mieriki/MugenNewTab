@@ -11,104 +11,83 @@ import { useTheme } from '../useTheme';
 import type { UseThemeReturn } from '../useTheme';
 import type { ThemeConfig } from '@/types/config';
 
+/** 构造最小可用调色板 */
+function makeColors(primary: string, surface: string, onSurface: string): Record<string, string> {
+    return {
+        '--md-sys-color-primary': primary,
+        '--md-sys-color-on-primary': '#FFFFFF',
+        '--md-sys-color-primary-container': '#FFD8E1',
+        '--md-sys-color-on-primary-container': '#3D001F',
+        '--md-sys-color-secondary': '#7D5F65',
+        '--md-sys-color-on-secondary': '#FFFFFF',
+        '--md-sys-color-secondary-container': '#FFD8E1',
+        '--md-sys-color-on-secondary-container': '#2A1519',
+        '--md-sys-color-tertiary': '#8B6E3D',
+        '--md-sys-color-on-tertiary': '#FFFFFF',
+        '--md-sys-color-tertiary-container': '#FFDEA7',
+        '--md-sys-color-on-tertiary-container': '#2A1800',
+        '--md-sys-color-surface': surface,
+        '--md-sys-color-surface-variant': '#F3DDE2',
+        '--md-sys-color-on-surface': onSurface,
+        '--md-sys-color-on-surface-variant': '#534345',
+        '--md-sys-color-background': surface,
+        '--md-sys-color-on-background': onSurface,
+        '--md-sys-color-outline': '#847376',
+        '--md-sys-color-error': '#BA1A1A',
+        '--md-sys-color-success': '#376B2F',
+        '--md-sys-color-inverse-surface': onSurface,
+        '--md-sys-color-inverse-on-surface': surface,
+    };
+}
+
+/** 两个主题族，每族明/暗各一个变体 */
 const mockThemes: ThemeConfig = {
-    defaultTheme: 'material-rose',
+    defaultTheme: 'material-rose-light',
+    legacyIds: {
+        'material-rose': 'material-rose-light',
+        'midnight-rose': 'material-rose-dark',
+        'azure-sky': 'azure-sky-light',
+    },
     themes: [
         {
-            id: 'material-rose',
+            id: 'material-rose-light',
+            family: 'material-rose',
+            mode: 'light',
+            isDark: false,
             name: 'Material Rose',
             description: '默认浅色主题',
             logo: 'image/logo/mugen.png',
-            isDark: false,
-            colors: {
-                '--md-sys-color-primary': '#B14A6B',
-                '--md-sys-color-on-primary': '#FFFFFF',
-                '--md-sys-color-primary-container': '#FFD8E1',
-                '--md-sys-color-on-primary-container': '#3D001F',
-                '--md-sys-color-secondary': '#7D5F65',
-                '--md-sys-color-on-secondary': '#FFFFFF',
-                '--md-sys-color-secondary-container': '#FFD8E1',
-                '--md-sys-color-on-secondary-container': '#2A1519',
-                '--md-sys-color-tertiary': '#8B6E3D',
-                '--md-sys-color-on-tertiary': '#FFFFFF',
-                '--md-sys-color-tertiary-container': '#FFDEA7',
-                '--md-sys-color-on-tertiary-container': '#2A1800',
-                '--md-sys-color-surface': '#FFF8F9',
-                '--md-sys-color-surface-variant': '#F3DDE2',
-                '--md-sys-color-on-surface': '#201A1A',
-                '--md-sys-color-on-surface-variant': '#534345',
-                '--md-sys-color-background': '#FFF8F9',
-                '--md-sys-color-on-background': '#201A1A',
-                '--md-sys-color-outline': '#847376',
-                '--md-sys-color-error': '#BA1A1A',
-                '--md-sys-color-success': '#376B2F',
-                '--md-sys-color-inverse-surface': '#201A1A',
-                '--md-sys-color-inverse-on-surface': '#F3DDE2',
-            },
+            colors: makeColors('#B14A6B', '#FFF8F9', '#201A1A'),
         },
         {
-            id: 'midnight-rose',
-            name: 'Midnight Rose',
-            description: '深色主题',
-            logo: 'image/logo/mugen.png',
+            id: 'material-rose-dark',
+            family: 'material-rose',
+            mode: 'dark',
             isDark: true,
-            colors: {
-                '--md-sys-color-primary': '#8B0000',
-                '--md-sys-color-on-primary': '#FFFFFF',
-                '--md-sys-color-primary-container': '#2A0000',
-                '--md-sys-color-on-primary-container': '#410002',
-                '--md-sys-color-secondary': '#2C2C2C',
-                '--md-sys-color-on-secondary': '#FFFFFF',
-                '--md-sys-color-secondary-container': '#2A0000',
-                '--md-sys-color-on-secondary-container': '#EF9A9A',
-                '--md-sys-color-tertiary': '#D4AF37',
-                '--md-sys-color-on-tertiary': '#1A1A1A',
-                '--md-sys-color-tertiary-container': '#3D3000',
-                '--md-sys-color-on-tertiary-container': '#FFE082',
-                '--md-sys-color-surface': '#1A1A1A',
-                '--md-sys-color-surface-variant': '#2C2C2C',
-                '--md-sys-color-on-surface': '#E8E8E8',
-                '--md-sys-color-on-surface-variant': '#B0B0B0',
-                '--md-sys-color-background': '#121212',
-                '--md-sys-color-on-background': '#E8E8E8',
-                '--md-sys-color-outline': '#424242',
-                '--md-sys-color-error': '#EF5350',
-                '--md-sys-color-success': '#66BB6A',
-                '--md-sys-color-inverse-surface': '#E8E8E8',
-                '--md-sys-color-inverse-on-surface': '#1A1A1A',
-            },
+            name: 'Material Rose',
+            description: '默认深色主题',
+            logo: 'image/logo/mugen.png',
+            colors: makeColors('#E8A2B4', '#1D191A', '#EEECED'),
         },
         {
-            id: 'azure-sky',
+            id: 'azure-sky-light',
+            family: 'azure-sky',
+            mode: 'light',
+            isDark: false,
             name: 'Azure Sky',
             description: '蓝色主题',
             logo: 'image/logo/mugen.png',
-            isDark: false,
-            colors: {
-                '--md-sys-color-primary': '#409EFF',
-                '--md-sys-color-on-primary': '#FFFFFF',
-                '--md-sys-color-primary-container': '#ECF5FF',
-                '--md-sys-color-on-primary-container': '#2C3E50',
-                '--md-sys-color-secondary': '#B3E5FC',
-                '--md-sys-color-on-secondary': '#FFFFFF',
-                '--md-sys-color-secondary-container': '#F5F7FA',
-                '--md-sys-color-on-secondary-container': '#303133',
-                '--md-sys-color-tertiary': '#67C23A',
-                '--md-sys-color-on-tertiary': '#FFFFFF',
-                '--md-sys-color-tertiary-container': '#F0F9EB',
-                '--md-sys-color-on-tertiary-container': '#2E7D32',
-                '--md-sys-color-surface': '#FFFFFF',
-                '--md-sys-color-surface-variant': '#F5F7FA',
-                '--md-sys-color-on-surface': '#303133',
-                '--md-sys-color-on-surface-variant': '#606266',
-                '--md-sys-color-background': '#F5F7FA',
-                '--md-sys-color-on-background': '#303133',
-                '--md-sys-color-outline': '#DCDFE6',
-                '--md-sys-color-error': '#F56C6C',
-                '--md-sys-color-success': '#67C23A',
-                '--md-sys-color-inverse-surface': '#303133',
-                '--md-sys-color-inverse-on-surface': '#FFFFFF',
-            },
+            colors: makeColors('#409EFF', '#FFFFFF', '#303133'),
+        },
+        {
+            id: 'azure-sky-dark',
+            family: 'azure-sky',
+            mode: 'dark',
+            isDark: true,
+            name: 'Azure Sky',
+            description: '蓝色深色主题',
+            logo: 'image/logo/mugen.png',
+            colors: makeColors('#8AB4F8', '#101418', '#E3E3E3'),
         },
     ],
 };
@@ -219,14 +198,17 @@ describe('useTheme', () => {
 
         expect(result.isReady.value).toBe(true);
         expect(result.isInitializing.value).toBe(false);
-        expect(result.themes.value).toHaveLength(3);
-        expect(result.currentTheme.value?.id).toBe('material-rose');
-        expect(result.selectedThemeId.value).toBe('material-rose');
+        expect(result.themes.value).toHaveLength(4);
+        expect(result.currentTheme.value?.id).toBe('material-rose-light');
+        expect(result.selectedThemeId.value).toBe('material-rose-light');
         expect(result.isDark.value).toBe(false);
+        expect(result.currentMode.value).toBe('light');
+        expect(result.themeFamilies.value).toHaveLength(2);
         expect(result.availableThemeIds.value).toEqual([
-            'material-rose',
-            'midnight-rose',
-            'azure-sky',
+            'material-rose-light',
+            'material-rose-dark',
+            'azure-sky-light',
+            'azure-sky-dark',
         ]);
     });
 
@@ -240,7 +222,7 @@ describe('useTheme', () => {
         await result.initialize();
 
         expect(result.isReady.value).toBe(true);
-        expect(result.themes.value).toHaveLength(3);
+        expect(result.themes.value).toHaveLength(4);
     });
 
     it('setTheme 切换并持久化主题', async () => {
@@ -250,14 +232,34 @@ describe('useTheme', () => {
         await nextTick();
         await flushPromises();
 
-        await result.setTheme('azure-sky');
+        await result.setTheme('azure-sky-light');
 
-        expect(result.selectedThemeId.value).toBe('azure-sky');
-        expect(result.currentTheme.value?.id).toBe('azure-sky');
-        expect(localStorage.getItem('selectedTheme')).toContain('azure-sky');
+        expect(result.selectedThemeId.value).toBe('azure-sky-light');
+        expect(result.currentTheme.value?.id).toBe('azure-sky-light');
+        expect(result.currentFamilyId.value).toBe('azure-sky');
+        expect(localStorage.getItem('selectedTheme')).toContain('azure-sky-light');
     });
 
-    it('cycleTheme 按顺序循环切换主题', async () => {
+    it('setMode 在同族内切换明暗', async () => {
+        const { result, wrapper } = useSetup();
+        wrappers.push(wrapper);
+
+        await nextTick();
+        await flushPromises();
+
+        await result.setTheme('azure-sky-light');
+        await result.setMode('dark');
+
+        expect(result.selectedThemeId.value).toBe('azure-sky-dark');
+        expect(result.currentFamilyId.value).toBe('azure-sky');
+        expect(result.isDark.value).toBe(true);
+
+        await result.setMode('light');
+        expect(result.selectedThemeId.value).toBe('azure-sky-light');
+        expect(result.isDark.value).toBe(false);
+    });
+
+    it('cycleTheme 按主题族顺序循环并保持明暗模式', async () => {
         const { result, wrapper } = useSetup();
         wrappers.push(wrapper);
 
@@ -265,13 +267,13 @@ describe('useTheme', () => {
         await flushPromises();
 
         await result.cycleTheme();
-        expect(result.selectedThemeId.value).toBe('midnight-rose');
+        expect(result.selectedThemeId.value).toBe('azure-sky-light');
 
         await result.cycleTheme();
-        expect(result.selectedThemeId.value).toBe('azure-sky');
+        expect(result.selectedThemeId.value).toBe('material-rose-light');
 
         await result.cycleTheme();
-        expect(result.selectedThemeId.value).toBe('material-rose');
+        expect(result.selectedThemeId.value).toBe('azure-sky-light');
     });
 
     it('nextTheme 是 cycleTheme 的别名', async () => {
@@ -282,10 +284,10 @@ describe('useTheme', () => {
         await flushPromises();
 
         await result.nextTheme();
-        expect(result.selectedThemeId.value).toBe('midnight-rose');
+        expect(result.selectedThemeId.value).toBe('azure-sky-light');
     });
 
-    it('previousTheme 切换到上一个主题', async () => {
+    it('previousTheme 切换到上一个主题族', async () => {
         const { result, wrapper } = useSetup();
         wrappers.push(wrapper);
 
@@ -293,10 +295,10 @@ describe('useTheme', () => {
         await flushPromises();
 
         await result.previousTheme();
-        expect(result.selectedThemeId.value).toBe('azure-sky');
+        expect(result.selectedThemeId.value).toBe('azure-sky-light');
     });
 
-    it('followSystemTheme 启用系统跟随并选择深色主题', async () => {
+    it('followSystemTheme 保留主题族、只切到系统对应的明暗', async () => {
         setupMatchMedia(true);
         const { result, wrapper } = useSetup();
         wrappers.push(wrapper);
@@ -304,11 +306,11 @@ describe('useTheme', () => {
         await nextTick();
         await flushPromises();
 
-        await result.setTheme('azure-sky');
+        await result.setTheme('azure-sky-light');
         await result.followSystemTheme();
 
         expect(result.isFollowingSystem.value).toBe(true);
-        expect(result.selectedThemeId.value).toBe('midnight-rose');
+        expect(result.selectedThemeId.value).toBe('azure-sky-dark');
         expect(localStorage.getItem('selectedTheme')).toBeNull();
     });
 
@@ -337,7 +339,7 @@ describe('useTheme', () => {
         await flushPromises();
 
         await result.followSystemTheme();
-        expect(result.selectedThemeId.value).toBe('material-rose');
+        expect(result.selectedThemeId.value).toBe('material-rose-light');
 
         // 模拟系统切换到深色
         const event = new Event('change') as MediaQueryListEvent;
@@ -347,7 +349,7 @@ describe('useTheme', () => {
         await flushPromises();
 
         expect(result.systemPrefersDark.value).toBe(true);
-        expect(result.selectedThemeId.value).toBe('midnight-rose');
+        expect(result.selectedThemeId.value).toBe('material-rose-dark');
     });
 
     it('refreshThemes 重新加载配置并应用当前主题', async () => {
@@ -357,11 +359,11 @@ describe('useTheme', () => {
         await nextTick();
         await flushPromises();
 
-        await result.setTheme('azure-sky');
+        await result.setTheme('azure-sky-light');
         await result.refreshThemes();
 
-        expect(result.selectedThemeId.value).toBe('azure-sky');
-        expect(result.themes.value).toHaveLength(3);
+        expect(result.selectedThemeId.value).toBe('azure-sky-light');
+        expect(result.themes.value).toHaveLength(4);
     });
 
     it('组件卸载后 initialize 被中断且不再更新状态', async () => {
@@ -382,11 +384,11 @@ describe('useTheme', () => {
         await nextTick();
         await flushPromises();
 
-        await result.setTheme('azure-sky');
+        await result.setTheme('azure-sky-light');
         wrapper.unmount();
 
         const before = result.selectedThemeId.value;
-        await result.setTheme('midnight-rose');
+        await result.setTheme('material-rose-dark');
 
         expect(result.selectedThemeId.value).toBe(before);
     });

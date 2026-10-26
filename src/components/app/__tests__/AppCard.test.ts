@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import AppCard from '@/components/app/AppCard.vue';
+import { mediaCacheService } from '@/services/mediaCache.service';
 import type { AppItem } from '@/types/app';
 
 function createApp(overrides: Partial<AppItem> = {}): AppItem {
@@ -19,6 +20,9 @@ function createApp(overrides: Partial<AppItem> = {}): AppItem {
 describe('AppCard', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
+        // 远程图标先查缓存再抓取：固定为「未命中且抓不到」，避免测试真的发网络请求
+        vi.spyOn(mediaCacheService, 'resolve').mockResolvedValue(null);
+        vi.spyOn(mediaCacheService, 'fetchAndCache').mockResolvedValue(null);
     });
 
     afterEach(() => {
@@ -116,20 +120,23 @@ describe('AppCard', () => {
         expect(byDefault.find('.app-card').classes()).not.toContain('no-icon-bg');
     });
 
-    it('未设置图标时显示默认站点图标（彩色，无单色滤镜）', () => {
+    it('未设置图标时显示默认站点图标（系统图标遮罩，颜色跟随主题）', () => {
         const app = createApp({ icon: undefined });
         const wrapper = mount(AppCard, { props: { app } });
 
-        const img = wrapper.find('.app-card__icon img');
-        expect(img.exists()).toBe(true);
-        expect(img.attributes('src')).toBe('/image/icons/site.svg');
-        expect(wrapper.find('.app-card__icon .icon-svg').classes()).not.toContain('is-monochrome');
+        // 没有自定义图标 → 退回系统图标库的 site.svg，走 mask 渲染
+        expect(wrapper.find('.app-card__icon img').exists()).toBe(false);
+        const mask = wrapper.find('.app-card__icon .icon-svg__mask');
+        expect(mask.exists()).toBe(true);
+        expect(mask.attributes('style')).toContain('/image/icons/site.svg');
     });
 
     it('图标加载失败时回退为默认站点图标', async () => {
         const app = createApp({ icon: 'https://example.com/favicon.ico' });
         const wrapper = mount(AppCard, { props: { app } });
 
+        // 缓存解析是异步的，解析完成前不渲染 <img>
+        await flushPromises();
         const img = wrapper.find('.app-card__icon img');
         await img.trigger('error');
         expect(img.attributes('src')).toBe('/image/icons/site.svg');

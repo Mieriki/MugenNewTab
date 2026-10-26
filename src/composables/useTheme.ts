@@ -12,7 +12,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import type { ComputedRef, Ref } from 'vue';
 import { useThemeStore } from '@/stores/theme.store';
-import type { Theme } from '@/types/config';
+import type { Theme, ThemeFamily, ThemeMode } from '@/types/config';
 
 /** Composable 配置项 */
 export interface UseThemeOptions {
@@ -32,6 +32,12 @@ export interface UseThemeReturn {
     defaultThemeId: ComputedRef<string>;
     /** 当前是否为深色主题 */
     isDark: ComputedRef<boolean>;
+    /** 当前主题模式（明亮 / 深色） */
+    currentMode: ComputedRef<ThemeMode>;
+    /** 当前主题族 ID */
+    currentFamilyId: ComputedRef<string>;
+    /** 主题族列表（同色系的明/暗变体合并为一项） */
+    themeFamilies: ComputedRef<ThemeFamily[]>;
     /** store 是否已完成初始化 */
     isReady: ComputedRef<boolean>;
     /** 是否正在初始化中 */
@@ -53,6 +59,8 @@ export interface UseThemeReturn {
     initialize: () => Promise<void>;
     /** 切换并持久化指定主题 */
     setTheme: (themeId: string) => Promise<void>;
+    /** 切换当前主题的明/暗模式（主题族不变） */
+    setMode: (mode: ThemeMode) => Promise<void>;
     /** 跟随系统深色偏好 */
     followSystemTheme: () => Promise<void>;
     /** 切换跟随系统状态 */
@@ -139,6 +147,16 @@ export function useTheme(options: UseThemeOptions = {}): UseThemeReturn {
     }
 
     /**
+     * 切换当前主题的明/暗模式（保持主题族）
+     */
+    function setMode(mode: ThemeMode): Promise<void> {
+        if (signal.aborted) {
+            return Promise.resolve();
+        }
+        return store.setMode(mode);
+    }
+
+    /**
      * 跟随系统深色偏好
      */
     function followSystemTheme(): Promise<void> {
@@ -180,24 +198,25 @@ export function useTheme(options: UseThemeOptions = {}): UseThemeReturn {
     }
 
     /**
-     * 切换到上一个主题（循环）
+     * 切换到上一个主题（循环，只在主题族之间轮换）
      */
     function previousTheme(): Promise<void> {
         if (signal.aborted) {
             return Promise.resolve();
         }
-        const themes = store.themes;
-        if (themes.length === 0) {
+        const families = store.themeFamilies;
+        if (families.length === 0) {
             return Promise.resolve();
         }
 
-        const currentIndex = themes.findIndex(t => t.id === store.selectedThemeId);
+        const currentIndex = families.findIndex(family => family.id === store.currentFamilyId);
         const previousIndex =
             currentIndex === -1
-                ? themes.length - 1
-                : (currentIndex - 1 + themes.length) % themes.length;
+                ? families.length - 1
+                : (currentIndex - 1 + families.length) % families.length;
 
-        return store.setTheme(themes[previousIndex].id);
+        const targetId = store.findVariantId(families[previousIndex].id, store.currentMode);
+        return targetId ? store.setTheme(targetId) : Promise.resolve();
     }
 
     /**
@@ -229,6 +248,9 @@ export function useTheme(options: UseThemeOptions = {}): UseThemeReturn {
         selectedThemeId: computed(() => store.selectedThemeId),
         defaultThemeId: computed(() => store.defaultThemeId),
         isDark: computed(() => store.isDark),
+        currentMode: computed(() => store.currentMode),
+        currentFamilyId: computed(() => store.currentFamilyId),
+        themeFamilies: computed(() => store.themeFamilies),
         isReady: computed(() => store.isReady),
         isInitializing,
         initError,
@@ -241,6 +263,7 @@ export function useTheme(options: UseThemeOptions = {}): UseThemeReturn {
         // 方法
         initialize,
         setTheme,
+        setMode,
         followSystemTheme,
         toggleFollowSystem,
         cycleTheme,

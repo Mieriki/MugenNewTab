@@ -276,8 +276,7 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
 }
 
 // 深色模式
-:global(html.dark-mode),
-:global(body.dark-mode) {
+:global(html.dark-mode) {
     .search-history__item-remove {
         background: var(--md-sys-color-surface-variant);
     }

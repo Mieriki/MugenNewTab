@@ -20,8 +20,8 @@ import { ref, computed } from 'vue';
 import { storageManager } from '@/services/storage.service';
 import { loadThemes } from '@/services/config.service';
 import { STORAGE_KEYS } from '@/types/storage';
-import type { Theme } from '@/types/config';
-import { adjustColor, hexToRgba } from '@/utils/color.util';
+import type { Theme, ThemeFamily, ThemeMode } from '@/types/config';
+import { adjustColor, hexToRgba, hexToRgbTriplet } from '@/utils/color.util';
 
 /** 派生 CSS 变量名集合 */
 const DERIVED_VARIABLES = [
@@ -40,6 +40,8 @@ const DERIVED_VARIABLES = [
     '--md-on-surface',
     '--md-outline',
     '--md-shadow',
+    '--md-sys-color-surface-rgb',
+    '--md-sys-color-background-rgb',
 ] as const;
 
 /** 获取系统深色偏好媒体查询对象 */
@@ -53,12 +55,38 @@ function getDarkModeMediaQuery(): MediaQueryList | null {
 export const useThemeStore = defineStore('theme', () => {
     // State
     const themes = ref<Theme[]>([]);
-    const defaultThemeId = ref<string>('material-rose');
+    const defaultThemeId = ref<string>('material-rose-light');
     const selectedThemeId = ref<string | null>(null);
     const systemPrefersDark = ref<boolean>(false);
     const followSystem = ref<boolean>(false);
     const isReady = ref<boolean>(false);
     const error = ref<string | null>(null);
+    /** 旧主题 ID → 新变体 ID 的迁移表（来自 themes.json） */
+    const legacyIds = ref<Record<string, string>>({});
+
+    // Helpers（先于 getter 定义，供 computed 使用）
+    /**
+     * 取主题的模式：优先读 mode 字段，旧配置按 isDark 推断
+     */
+    function resolveMode(theme: Theme | undefined): ThemeMode {
+        if (!theme) {
+            return systemPrefersDark.value ? 'dark' : 'light';
+        }
+        if (theme.mode === 'light' || theme.mode === 'dark') {
+            return theme.mode;
+        }
+        return theme.isDark ? 'dark' : 'light';
+    }
+
+    /**
+     * 取主题所属的族：旧配置没有 family 字段时以 id 兜底
+     */
+    function resolveFamilyId(theme: Theme | undefined): string {
+        if (!theme) {
+            return defaultThemeId.value;
+        }
+        return theme.family || theme.id;
+    }
 
     // Getters
     const currentTheme = computed<Theme | undefined>(() => {
@@ -68,7 +96,7 @@ export const useThemeStore = defineStore('theme', () => {
 
     const isDark = computed<boolean>(() => {
         if (currentTheme.value) {
-            return !!currentTheme.value.isDark;
+            return resolveMode(currentTheme.value) === 'dark';
         }
         return systemPrefersDark.value;
     });
@@ -77,19 +105,74 @@ export const useThemeStore = defineStore('theme', () => {
 
     const availableThemeIds = computed<string[]>(() => themes.value.map(t => t.id));
 
-    // Helpers
+    /** 当前主题模式 */
+    const currentMode = computed<ThemeMode>(() => resolveMode(currentTheme.value));
+
+    /** 当前主题所属的族 ID */
+    const currentFamilyId = computed<string>(() => resolveFamilyId(currentTheme.value));
+
+    /**
+     * 主题族列表：同色系的明/暗变体合并为一项，供选择器按族展示
+     */
+    const themeFamilies = computed<ThemeFamily[]>(() => {
+        const families = new Map<string, ThemeFamily>();
+        for (const theme of themes.value) {
+            const id = resolveFamilyId(theme);
+            let family = families.get(id);
+            if (!family) {
+                family = {
+                    id,
+                    name: theme.name,
+                    description: theme.description,
+                    logo: theme.logo,
+                };
+                families.set(id, family);
+            }
+            family[resolveMode(theme)] = theme;
+        }
+        return Array.from(families.values());
+    });
+
+    /**
+     * 取指定族在指定模式下的变体 ID；该模式缺失时回退到另一模式
+     */
+    function findVariantId(familyId: string, mode: ThemeMode): string | null {
+        const family = themeFamilies.value.find(item => item.id === familyId);
+        if (!family) {
+            return null;
+        }
+        const preferred = mode === 'dark' ? family.dark : family.light;
+        const fallback = mode === 'dark' ? family.light : family.dark;
+        return (preferred ?? fallback)?.id ?? null;
+    }
+
+    /**
+     * 把任意（可能是旧版本的）主题 ID 归一成当前配置里存在的变体 ID。
+     * 迁移顺序：直接命中 → legacyIds 映射 → 当作族名取当前系统模式下的变体。
+     */
+    function normalizeThemeId(themeId: string | null | undefined): string | null {
+        if (!themeId) {
+            return null;
+        }
+        if (themes.value.some(theme => theme.id === themeId)) {
+            return themeId;
+        }
+        const migrated = legacyIds.value[themeId];
+        if (migrated && themes.value.some(theme => theme.id === migrated)) {
+            return migrated;
+        }
+        return findVariantId(themeId, systemPrefersDark.value ? 'dark' : 'light');
+    }
+
     /**
      * 获取默认主题 ID
-     * 若未保存主题且系统偏好深色，返回第一个可用的深色主题；否则返回配置 defaultTheme
+     * 以配置里的 defaultTheme 所属的族为基准，按系统深色偏好挑对应模式
      */
     function resolveDefaultThemeId(): string {
-        if (systemPrefersDark.value) {
-            const firstDark = themes.value.find(theme => theme.isDark);
-            if (firstDark) {
-                return firstDark.id;
-            }
-        }
-        return defaultThemeId.value;
+        const mode: ThemeMode = systemPrefersDark.value ? 'dark' : 'light';
+        const defaultTheme = themes.value.find(theme => theme.id === defaultThemeId.value);
+        const familyId = resolveFamilyId(defaultTheme);
+        return findVariantId(familyId, mode) ?? defaultThemeId.value;
     }
 
     /**
@@ -119,6 +202,16 @@ export const useThemeStore = defineStore('theme', () => {
         root.style.setProperty('--md-on-surface', theme.colors['--md-sys-color-on-surface-variant']);
         root.style.setProperty('--md-outline', theme.colors['--md-sys-color-surface-variant']);
         root.style.setProperty('--md-shadow', hexToRgba(primary, 0.15));
+        // RGB 三元组要跟着主题走：variables.scss 里深色模式给的是写死的 30,30,30，
+        // 换成带色相的深色主题（如深海幽蓝）后，半透明面板会偏中性灰
+        root.style.setProperty(
+            '--md-sys-color-surface-rgb',
+            hexToRgbTriplet(surface)
+        );
+        root.style.setProperty(
+            '--md-sys-color-background-rgb',
+            hexToRgbTriplet(theme.colors['--md-sys-color-background'] ?? surface)
+        );
     }
 
     /**
@@ -151,16 +244,25 @@ export const useThemeStore = defineStore('theme', () => {
     }
 
     /**
-     * 更新 body 的 dark-mode 类
+     * 更新 dark-mode 类
+     *
+     * 必须同时挂在 html 与 body 上：
+     * - theme-preload.js 只能给 html 加（那时 body 还不一定存在）
+     * - 组件里的深色覆盖写的是 `:global(html.dark-mode) .child`，依赖 html 上的类
+     * 只挂 body 会导致预加载失败时深色覆盖整片失效。
      */
     function updateBodyClass(dark: boolean): void {
         if (typeof document === 'undefined') {
             return;
         }
-        if (dark) {
-            document.body.classList.add('dark-mode');
-        } else {
-            document.body.classList.remove('dark-mode');
+        const targets = [document.documentElement, document.body];
+        for (const element of targets) {
+            if (!element) continue;
+            if (dark) {
+                element.classList.add('dark-mode');
+            } else {
+                element.classList.remove('dark-mode');
+            }
         }
     }
 
@@ -176,7 +278,10 @@ export const useThemeStore = defineStore('theme', () => {
 
         injectBaseVariables(theme);
         injectDerivedVariables(theme);
-        updateBodyClass(!!theme.isDark);
+        updateBodyClass(resolveMode(theme) === 'dark');
+        if (typeof document !== 'undefined') {
+            document.documentElement.setAttribute('data-theme', theme.id);
+        }
         selectedThemeId.value = theme.id;
 
         window.dispatchEvent(new CustomEvent('themeChanged', { detail: { themeId: theme.id, theme } }));
@@ -194,7 +299,8 @@ export const useThemeStore = defineStore('theme', () => {
             const config = await loadThemes();
             if (config) {
                 themes.value = config.themes;
-                defaultThemeId.value = config.defaultTheme || config.themes[0]?.id || 'material-rose';
+                legacyIds.value = config.legacyIds ?? {};
+                defaultThemeId.value = config.defaultTheme || config.themes[0]?.id || 'material-rose-light';
             }
 
             const mediaQuery = getDarkModeMediaQuery();
@@ -204,19 +310,20 @@ export const useThemeStore = defineStore('theme', () => {
             }
 
             const savedTheme = await storageManager.get(STORAGE_KEYS.SELECTED_THEME);
+            const normalizedId = typeof savedTheme === 'string'
+                ? normalizeThemeId(savedTheme)
+                : null;
             const hasSavedTheme = typeof savedTheme === 'string';
-            const initialThemeId = hasSavedTheme
-                ? savedTheme
-                : resolveDefaultThemeId();
+            const initialThemeId = normalizedId ?? resolveDefaultThemeId();
 
             applyThemeToDom(initialThemeId);
 
-            // 首次使用默认主题时同步持久化，保证首屏与 StorageManager 一致
-            if (!hasSavedTheme) {
+            // 首次使用默认主题、或旧版主题 ID 被迁移时写回，保证首屏与 StorageManager 一致
+            if (!hasSavedTheme || normalizedId !== savedTheme) {
                 try {
                     await storageManager.set(STORAGE_KEYS.SELECTED_THEME, initialThemeId);
                 } catch (err) {
-                    console.warn('ThemeStore: 持久化默认主题失败', err);
+                    console.warn('ThemeStore: 持久化主题失败', err);
                 }
             }
 
@@ -261,14 +368,16 @@ export const useThemeStore = defineStore('theme', () => {
 
     /**
      * 跟随系统深色偏好
-     * 清除持久化主题，后续系统偏好变化时自动切换
+     * 清除持久化主题，后续系统偏好变化时自动切换。
+     * 保留当前主题族，只让系统决定用明亮还是深色渲染。
      */
     async function followSystemTheme(): Promise<void> {
         const previousThemeId = selectedThemeId.value;
         const previousFollowSystem = followSystem.value;
 
         followSystem.value = true;
-        const targetId = resolveDefaultThemeId();
+        const targetId = findVariantId(currentFamilyId.value, systemPrefersDark.value ? 'dark' : 'light')
+            ?? resolveDefaultThemeId();
         applyThemeToDom(targetId);
 
         try {
@@ -287,13 +396,42 @@ export const useThemeStore = defineStore('theme', () => {
     }
 
     /**
+     * 切换当前主题的明/暗模式（保持主题族不变）
+     * 对应「同一个主题的两套配色」——换模式不换色系。
+     */
+    async function setMode(mode: ThemeMode): Promise<void> {
+        if (mode !== 'light' && mode !== 'dark') {
+            return;
+        }
+        const targetId = findVariantId(currentFamilyId.value, mode);
+        if (!targetId) {
+            // 该族缺少对应变体：至少保证 dark-mode 类与选择器状态一致
+            updateBodyClass(mode === 'dark');
+            return;
+        }
+        if (targetId === selectedThemeId.value) {
+            return;
+        }
+        await setTheme(targetId);
+    }
+
+    /**
      * 系统深色偏好变化处理器
+     *
+     * 跟随系统时保持当前主题族不变、只切明暗，而不是跳到"第一个深色主题"——
+     * 用户选的是色系，系统偏好只该决定这套色系用明亮还是深色渲染。
      */
     function handleSystemDarkChange(event: MediaQueryListEvent): void {
         systemPrefersDark.value = event.matches;
-        if (followSystem.value || !selectedThemeId.value) {
-            const targetId = resolveDefaultThemeId();
-            applyThemeToDom(targetId);
+        if (followSystem.value) {
+            const targetId = findVariantId(currentFamilyId.value, event.matches ? 'dark' : 'light');
+            if (targetId) {
+                applyThemeToDom(targetId);
+            }
+            return;
+        }
+        if (!selectedThemeId.value) {
+            applyThemeToDom(resolveDefaultThemeId());
         }
     }
 
@@ -304,24 +442,31 @@ export const useThemeStore = defineStore('theme', () => {
         const config = await loadThemes();
         if (config) {
             themes.value = config.themes;
-            defaultThemeId.value = config.defaultTheme || config.themes[0]?.id || 'material-rose';
+            legacyIds.value = config.legacyIds ?? {};
+            defaultThemeId.value = config.defaultTheme || config.themes[0]?.id || 'material-rose-light';
         }
-        const currentId = selectedThemeId.value || defaultThemeId.value;
+        const currentId = normalizeThemeId(selectedThemeId.value)
+            ?? resolveDefaultThemeId();
         applyThemeToDom(currentId);
     }
 
     /**
-     * 切换为下一个主题（循环）
+     * 切换为下一个主题族（循环）
+     * 只在族之间轮换，保持当前明暗模式，避免每按一次都翻一次明暗。
      */
     async function cycleTheme(): Promise<void> {
-        if (themes.value.length === 0) {
+        const families = themeFamilies.value;
+        if (families.length === 0) {
             return;
         }
-        const currentIndex = themes.value.findIndex(t => t.id === selectedThemeId.value);
+        const currentIndex = families.findIndex(family => family.id === currentFamilyId.value);
         const nextIndex = currentIndex === -1
             ? 0
-            : (currentIndex + 1) % themes.value.length;
-        await setTheme(themes.value[nextIndex].id);
+            : (currentIndex + 1) % families.length;
+        const targetId = findVariantId(families[nextIndex].id, currentMode.value);
+        if (targetId) {
+            await setTheme(targetId);
+        }
     }
 
     return {
@@ -333,17 +478,24 @@ export const useThemeStore = defineStore('theme', () => {
         followSystem,
         isReady,
         error,
+        legacyIds,
         // Getters
         currentTheme,
         isDark,
+        currentMode,
+        currentFamilyId,
+        themeFamilies,
         themeOptions,
         availableThemeIds,
         // Actions
         initialize,
         setTheme,
+        setMode,
         followSystemTheme,
         refreshThemes,
         cycleTheme,
         resolveDefaultThemeId,
+        normalizeThemeId,
+        findVariantId,
     };
 });

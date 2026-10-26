@@ -27,6 +27,17 @@ export function hexToRgba(hex: string, alpha: number): string {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/**
+ * HEX 颜色转 `r, g, b` 三元组
+ * 供 `rgba(var(--md-sys-color-surface-rgb), 0.9)` 这类需要动态 alpha 的场景使用。
+ */
+export function hexToRgbTriplet(hex: string): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r}, ${g}, ${b}`;
+}
+
 /** 判断颜色是否为浅色系（用于文字颜色反色判断） */
 export function isLightColor(hex: string): boolean {
     const num = parseInt(hex.replace('#', ''), 16);

@@ -34,7 +34,9 @@ export const STORAGE_KEYS = {
     /** 应用内更新检查的缓存结果（含上次检查时间，用于节流） */
     UPDATE_CHECK_CACHE: 'appNavigator_updateCheckCache',
     /** 用户已忽略的版本号，同一版本不再重复提示 */
-    UPDATE_DISMISSED_VERSION: 'appNavigator_updateDismissedVersion'
+    UPDATE_DISMISSED_VERSION: 'appNavigator_updateDismissedVersion',
+    /** 媒体缓存开关（站点图标 / 网络壁纸的本地缓存） */
+    MEDIA_CACHE: 'appNavigator_mediaCache'
 } as const;
 
 /** 需要同步镜像到 localStorage 的首屏设置键（防止 FOUC 闪烁） */
@@ -47,7 +49,12 @@ export const SYNC_MIRROR_KEYS = new Set<string>([
      * 布局设置（含极简约模式）必须同步镜像：
      * storage.local 是异步的，等它回来再渲染会先画标准布局再切成极简约，肉眼就是「闪一下」。
      */
-    STORAGE_KEYS.LAYOUT_SETTINGS
+    STORAGE_KEYS.LAYOUT_SETTINGS,
+    /**
+     * 缓存开关也走同步镜像：图标组件在首帧就要决定「读缓存还是走网络」，
+     * 等异步存储回来再判断会让关闭状态失效一次。
+     */
+    STORAGE_KEYS.MEDIA_CACHE
 ]);
 
 /** 云同步需要收集的本地数据键（仅站点数据与用户图标库，个性化设置不同步） */
@@ -104,6 +111,12 @@ export interface LayoutSettings {
     minimalMode?: boolean;
     /** 点击站点卡片 / 搜索时的跳转方式（缺省按新标签页处理） */
     openMode?: LinkOpenMode;
+}
+
+/** 媒体缓存设置 */
+export interface MediaCacheSettings {
+    /** 是否启用本地缓存（站点图标 / 网络壁纸） */
+    enabled: boolean;
 }
 
 /** 本地壁纸图片元数据 */

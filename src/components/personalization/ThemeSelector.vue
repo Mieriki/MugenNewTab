@@ -2,14 +2,17 @@
 /**
  * ThemeSelector - 主题选择器
  *
- * 从 useTheme 获取可用主题列表与当前主题，渲染为单选列表。
- * 点击主题后调用 store 切换并持久化，同时向父组件抛出事件。
+ * 每套主题都有明亮/深色两套配色，所以选择器拆成两层：
+ * - 上方「明亮 / 深色」开关决定用哪一套配色渲染
+ * - 下方列表只列主题族（色系），点一下即在该色系内切换
+ *
+ * 这样 12 个主题不会变成 24 个卡片，切换明暗也不用重新找位置。
  */
 import { computed } from 'vue';
 import { useTheme } from '@/composables/useTheme';
 import IconSvg from '@/components/icon/IconSvg.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
-import type { Theme } from '@/types/config';
+import type { ThemeFamily, ThemeMode } from '@/types/config';
 
 export interface ThemeSelectorProps {
     /** 面板标题 */
@@ -28,30 +31,76 @@ const props = withDefaults(defineProps<ThemeSelectorProps>(), {
 
 const emit = defineEmits<{
     (e: 'select-theme', themeId: string): void;
+    (e: 'select-mode', mode: ThemeMode): void;
     (e: 'error', message: string): void;
 }>();
 
 const {
-    themes,
+    themeFamilies,
+    currentFamilyId,
+    currentMode,
     selectedThemeId,
     isInitializing,
     isFollowingSystem,
     setTheme,
+    setMode,
     followSystemTheme
 } = useTheme({ autoInit: props.autoInit });
 
-const themeList = computed<Theme[]>(() => themes.value);
+const familyList = computed<ThemeFamily[]>(() => themeFamilies.value);
+
+const MODE_OPTIONS: Array<{ value: ThemeMode; label: string }> = [
+    { value: 'light', label: '明亮' },
+    { value: 'dark', label: '深色' }
+];
 
 const SPARKLE_PATH = 'M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z';
 
-function getThemePreviewColor(theme: Theme): string {
-    return theme.colors['--md-sys-color-primary'] ?? '#B14A6B';
+/**
+ * 预览圆点：左半是明亮模式的表面色、右半是深色模式的表面色，
+ * 中间的小圆是这一族的主色——一眼看出「同一色系的两种渲染」。
+ */
+function getPreviewStyle(family: ThemeFamily): Record<string, string> {
+    const lightSurface = family.light?.colors['--md-sys-color-surface'] ?? '#FFFFFF';
+    const darkSurface = family.dark?.colors['--md-sys-color-surface'] ?? '#121212';
+    const accent = (currentMode.value === 'dark' ? family.dark : family.light)
+        ?.colors['--md-sys-color-primary']
+        ?? family.light?.colors['--md-sys-color-primary']
+        ?? '#B14A6B';
+
+    return {
+        '--preview-light': lightSurface,
+        '--preview-dark': darkSurface,
+        '--preview-accent': accent
+    };
 }
 
-async function handleSelect(theme: Theme): Promise<void> {
+async function handleSelect(family: ThemeFamily): Promise<void> {
+    const target = (currentMode.value === 'dark' ? family.dark : family.light)
+        ?? family.light
+        ?? family.dark;
+    if (!target || target.id === selectedThemeId.value) {
+        return;
+    }
     try {
-        await setTheme(theme.id);
-        emit('select-theme', theme.id);
+        await setTheme(target.id);
+        emit('select-theme', target.id);
+    } catch (err) {
+        emit('error', err instanceof Error ? err.message : String(err));
+    }
+}
+
+async function handleModeChange(mode: ThemeMode): Promise<void> {
+    if (mode === currentMode.value) {
+        return;
+    }
+    try {
+        await setMode(mode);
+        emit('select-mode', mode);
+        // 模式切换同样会落到一个具体变体上，父组件按主题 ID 处理时不必区分来源
+        if (selectedThemeId.value) {
+            emit('select-theme', selectedThemeId.value);
+        }
     } catch (err) {
         emit('error', err instanceof Error ? err.message : String(err));
     }
@@ -73,8 +122,23 @@ async function handleFollowSystem(): Promise<void> {
             <h3 class="theme-selector__title">{{ title }}</h3>
         </header>
 
+        <div class="theme-mode" role="radiogroup" aria-label="明暗模式">
+            <button
+                v-for="option in MODE_OPTIONS"
+                :key="option.value"
+                type="button"
+                class="theme-mode__btn"
+                :class="{ active: currentMode === option.value }"
+                :aria-checked="currentMode === option.value"
+                role="radio"
+                @click="handleModeChange(option.value)"
+            >
+                {{ option.label }}
+            </button>
+        </div>
+
         <div
-            v-if="isInitializing && themeList.length === 0"
+            v-if="isInitializing && familyList.length === 0"
             class="theme-selector__loading"
             role="status"
             aria-live="polite"
@@ -89,24 +153,32 @@ async function handleFollowSystem(): Promise<void> {
             :aria-label="title"
         >
             <button
-                v-for="theme in themeList"
-                :key="theme.id"
+                v-for="family in familyList"
+                :key="family.id"
                 type="button"
                 class="theme-option"
-                :class="{ active: theme.id === selectedThemeId }"
-                :aria-checked="theme.id === selectedThemeId"
+                :class="{ active: family.id === currentFamilyId }"
+                :aria-checked="family.id === currentFamilyId"
                 role="radio"
-                @click="handleSelect(theme)"
+                :title="family.description"
+                @click="handleSelect(family)"
             >
                 <span
                     class="theme-option__preview"
-                    :style="{ backgroundColor: getThemePreviewColor(theme) }"
+                    :style="getPreviewStyle(family)"
                     aria-hidden="true"
-                />
-                <span class="theme-option__name">{{ theme.name }}</span>
-                <span v-if="theme.isDark" class="theme-option__badge">深色</span>
+                >
+                    <span class="theme-option__preview-dot" />
+                </span>
+                <span class="theme-option__name">{{ family.name }}</span>
+                <span
+                    v-if="!family.light || !family.dark"
+                    class="theme-option__badge"
+                >
+                    {{ family.light ? '仅明亮' : '仅深色' }}
+                </span>
                 <IconSvg
-                    v-if="theme.id === selectedThemeId"
+                    v-if="family.id === currentFamilyId"
                     name="check"
                     :size="18"
                     class="theme-option__check"
@@ -166,13 +238,56 @@ async function handleFollowSystem(): Promise<void> {
     }
 }
 
-.theme-options-list {
-    display: flex;
-    flex-direction: column;
+// ==================== 明/暗模式开关 ====================
+.theme-mode {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 4px;
-    max-height: 360px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--md-sys-color-surface-variant);
+    // 深色主题下 surface-variant 与面板底色很接近，加一圈内描边把轨道勾出来
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--md-sys-color-on-surface) 7%, transparent);
+
+    &__btn {
+        @include button-reset;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface-variant);
+        @include md-transition(all, var(--md-transition-fast));
+
+        &:hover {
+            color: var(--md-sys-color-on-surface);
+        }
+
+        &.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: 0 2px 8px var(--md-shadow);
+        }
+    }
+}
+
+.theme-options-list {
+    // 12 个主题族两列排布：一屏能看全，不用在隐藏了滚动条的列表里找
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    max-height: 420px;
     overflow-y: auto;
     @include hide-scrollbar;
+}
+
+@media (max-width: 380px) {
+    .theme-options-list {
+        grid-template-columns: 1fr;
+    }
 }
 
 .theme-option {
@@ -197,12 +312,29 @@ async function handleFollowSystem(): Promise<void> {
     }
 
     &__preview {
+        position: relative;
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        border: 2px solid transparent;
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        // 左半明亮表面、右半深色表面，中间是这一族的主色
+        background: linear-gradient(
+            135deg,
+            var(--preview-light) 0 50%,
+            var(--preview-dark) 50% 100%
+        );
+        box-shadow: inset 0 0 0 1.5px var(--preview-accent);
         @include md-transition(transform, var(--md-transition-fast));
+    }
+
+    &__preview-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--preview-accent);
     }
 
     &:hover &__preview,
@@ -211,8 +343,9 @@ async function handleFollowSystem(): Promise<void> {
     }
 
     &.active &__preview {
-        border-color: var(--md-sys-color-primary);
-        box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+        box-shadow:
+            inset 0 0 0 1.5px var(--preview-accent),
+            0 0 0 2px var(--md-sys-color-primary-container);
     }
 
     &__name {

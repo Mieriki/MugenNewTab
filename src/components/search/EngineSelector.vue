@@ -363,8 +363,7 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
 }
 
 // 深色模式：跟随 surface-rgb 变量即可拿到深色底，这里只补一层不透明度与描边
-:global(html.dark-mode),
-:global(body.dark-mode) {
+:global(html.dark-mode) {
     .engine-selector__dropdown {
         background: rgba(var(--md-sys-color-surface-rgb), 0.98);
         border-color: rgba(255, 255, 255, 0.1);

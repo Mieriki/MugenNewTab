@@ -7,6 +7,7 @@ import { defineComponent, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { BrowserAPI } from '@/services/browserApi.service';
+import { mediaCacheService } from '@/services/mediaCache.service';
 import { useWallpaper, DEFAULT_WALLPAPER_SETTINGS } from '@/composables/useWallpaper';
 import * as fileUtil from '@/utils/file.util';
 import type { UseWallpaperReturn } from '@/composables/useWallpaper';
@@ -49,6 +50,10 @@ describe('useWallpaper', () => {
         BrowserAPI.resetDetection();
         setActivePinia(createPinia());
         wrappers.length = 0;
+        // 壁纸会先查媒体缓存：测试里固定「未命中且抓不到」，走回退到原始地址的分支，
+        // 同时避免真的发网络请求
+        vi.spyOn(mediaCacheService, 'resolve').mockResolvedValue(null);
+        vi.spyOn(mediaCacheService, 'fetchAndCache').mockResolvedValue(null);
     });
 
     afterEach(() => {
@@ -274,6 +279,8 @@ describe('useWallpaper', () => {
         await result.setOpacity(0.8);
         await result.setBlur(4);
         await result.setOverlayOpacity(0.2);
+        // 壁纸地址要等缓存查询（异步）结束后才会写入样式
+        await flushPromises();
 
         expect(result.wallpaperStyle.value).toEqual({
             backgroundImage: 'url(https://example.com/bg.jpg)',

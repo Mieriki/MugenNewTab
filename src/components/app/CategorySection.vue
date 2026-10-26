@@ -146,8 +146,7 @@ function handleDelete(app: AppItem): void {
 }
 
 // 深色模式覆盖
-:global(html.dark-mode),
-:global(body.dark-mode) {
+:global(html.dark-mode) {
     .category-section__title {
         color: rgba(255, 255, 255, 0.7);
     }

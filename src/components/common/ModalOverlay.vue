@@ -279,8 +279,7 @@ const closeIconPath = 'M18 6L6 18M6 6l12 12';
 }
 
 // 深色模式适配
-:global(html.dark-mode),
-:global(body.dark-mode) {
+:global(html.dark-mode) {
     .mnt-modal-content {
         background: rgba(40, 40, 40, 0.98);
         border-color: rgba(255, 255, 255, 0.1);

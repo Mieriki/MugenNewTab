@@ -11,6 +11,7 @@ import IconSvg from '@/components/icon/IconSvg.vue';
 import ThemeSelector from './ThemeSelector.vue';
 import WallpaperSettings from './WallpaperSettings.vue';
 import LayoutSettings from './LayoutSettings.vue';
+import CacheSettings from './CacheSettings.vue';
 
 export interface PersonalizationPanelProps {
     /** 是否显示面板，支持 v-model */
@@ -36,6 +37,7 @@ const tabs = [
     { id: 'theme', label: '主题', icon: 'palette' },
     { id: 'wallpaper', label: '壁纸', icon: 'picture' },
     { id: 'layout', label: '页面布局', icon: 'sort' },
+    { id: 'cache', label: '缓存', icon: 'download' },
 ] as const;
 
 type TabId = (typeof tabs)[number]['id'];
@@ -128,6 +130,9 @@ function handleEsc(event: KeyboardEvent): void {
                                     </div>
                                     <div v-show="activeTab === 'layout'" class="panel-section">
                                         <LayoutSettings />
+                                    </div>
+                                    <div v-show="activeTab === 'cache'" class="panel-section">
+                                        <CacheSettings />
                                     </div>
                                 </div>
                             </div>
@@ -262,7 +267,7 @@ function handleEsc(event: KeyboardEvent): void {
             color: var(--md-sys-color-on-primary);
 
             :deep(.icon-svg) {
-                filter: brightness(0) invert(1);
+                color: var(--md-sys-color-on-primary);
             }
         }
     }

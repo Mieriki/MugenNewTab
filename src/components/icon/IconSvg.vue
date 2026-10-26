@@ -8,7 +8,7 @@
         :is="tag"
         class="icon-svg"
         :class="{
-            'is-monochrome': monochrome,
+            'is-monochrome': isMonochromeIcon,
             'is-inline': isInlineSvg,
         }"
         :style="rootStyle"
@@ -18,8 +18,22 @@
         <template v-if="isInlineSvg">
             <span class="icon-svg__inline" v-html="sanitizedSvg"></span>
         </template>
+        <!--
+            内置单色图标（image/icons/*.svg）用 CSS mask 渲染：
+            图形当遮罩、颜色由 background-color: currentColor 提供，
+            于是 color / currentColor / 主题变量都能直接生效，
+            深色模式下也不必再靠 filter 反转。
+        -->
+        <template v-else-if="isMaskIcon">
+            <span class="icon-svg__mask" :style="maskStyle" aria-hidden="true"></span>
+        </template>
         <template v-else>
+            <!--
+                解析缓存期间不渲染 <img>：src 为空会立即触发 error，
+                从而被误判成「图标加载失败」而永久回退到占位图。
+            -->
             <img
+                v-if="currentSrc"
                 class="icon-svg__img"
                 :src="currentSrc"
                 :alt="safeAlt"
@@ -39,7 +53,7 @@ import {
     getSystemIconUrl,
     createPlaceholderSvg,
 } from '@/utils/image.util';
-import { iconCacheService } from '@/services/iconCache.service';
+import { mediaCacheService } from '@/services/mediaCache.service';
 
 /** 组件接收的属性 */
 interface Props {
@@ -51,9 +65,9 @@ interface Props {
     fallback?: string;
     /** 图标尺寸，默认 24（单位 px） */
     size?: number | string;
-    /** 颜色覆盖（对内联 SVG 有效） */
+    /** 颜色覆盖（内联 SVG 与系统图标均生效；图片图标不生效） */
     color?: string;
-    /** 是否为单色图标，深色模式下自动反转 */
+    /** 是否为单色图标：图片图标在深色模式下自动反转 */
     monochrome?: boolean;
     /** 无障碍替代文本 */
     alt?: string;
@@ -153,6 +167,55 @@ const isInlineSvg = computed(() => {
     return props.inline && isInlineSvgString(effectiveSource.value);
 });
 
+/**
+ * 是否为「内置单色图标」：public/image/icons/*.svg
+ *
+ * 这批文件全是 `fill="#000000"` 的纯黑图形，既没有品牌色也不需要保留颜色，
+ * 渲染成 <img> 后无法跟随 currentColor（深色背景上直接看不见），
+ * 所以统一改成 CSS mask 渲染：图形当遮罩、颜色取 currentColor。
+ */
+const BUILTIN_ICON_SRC_PATTERN = /(?:^|\/)(image\/icons\/[\w-]+\.svg)$/i;
+
+/**
+ * 归一化内置图标地址，返回站点绝对路径 /image/icons/xxx.svg；非内置图标返回空串
+ *
+ * 必须归一化：遮罩地址是通过 --icon-mask 交给样式表里的 mask-image: var(...) 使用的，
+ * 而自定义属性里的 url() 会按「使用它的那条规则所在的样式表」解析，
+ * 不是按元素所在文档解析。打包后样式表在 /js/ 下，`./image/icons/x.svg`
+ * 就会被解析成 /js/image/icons/x.svg 而 404（开发模式样式内联在文档里，看不出来）。
+ */
+function normalizeBuiltinIconSource(source?: string): string {
+    if (!source) {
+        return '';
+    }
+    const match = BUILTIN_ICON_SRC_PATTERN.exec(source);
+    return match ? `/${match[1]}` : '';
+}
+
+function isBuiltinIconSource(source?: string): boolean {
+    return !!normalizeBuiltinIconSource(source);
+}
+
+/**
+ * 是否需要按单色图标处理（图片图标在深色模式下反转成白色）
+ *
+ * 内置单色图标已经走 mask（见 isMaskIcon），颜色天然跟随 currentColor，
+ * 不再需要 filter 反转；这个标记只对仍然走 <img> 的图片图标有意义。
+ * 自动判定规则：
+ * - 内置单色图标（系统图标名 / image/icons 下的 svg）：自动单色
+ * - 显式传了远程或 data URL（应用品牌图标，通常是彩色的）：绝不反转
+ * - path/paths 内联图标：用 currentColor 绘制，反转会反向，不自动处理
+ */
+const isMonochromeIcon = computed(() => {
+    if (props.monochrome) {
+        return true;
+    }
+    if (isInlineSvg.value) {
+        return false;
+    }
+    return isBuiltinIconSource(effectiveSource.value);
+});
+
 /** 内联 SVG 内容 */
 const sanitizedSvg = computed(() => {
     if (props.path || (props.paths && props.paths.length > 0)) {
@@ -179,32 +242,42 @@ const resolvedFallback = computed(() => {
     return resolved !== effectiveSource.value ? resolved : SYSTEM_PLACEHOLDER;
 });
 
-/** 当前源是否为可缓存的远程图标地址 */
-const isRemoteSource = computed(() => {
-    return !isInlineSvg.value && iconCacheService.isCacheableUrl(effectiveSource.value);
-});
-
-/** 从 IndexedDB 缓存解析出的对象地址（未命中时为 null） */
-const cachedObjectUrl = ref<string | null>(null);
+/**
+ * 实际用于渲染的地址
+ *
+ * 空串表示「还在解析缓存」，此时不渲染网络地址——否则每次打开新标签页
+ * 都会先按网络地址发一遍请求，缓存等于白做。解析完再决定用 blob: 还是网络地址。
+ */
+const resolvedSource = ref('');
 
 /** 当前源的图片加载失败次数（需在 watch 之前声明：watch immediate 会立即访问） */
 const imageErrorCount = ref(0);
 
-// 远程图标优先尝试命中缓存；缓存不可用时静默回退到网络加载
+// 远程图标：先查缓存，未命中再抓一次并缓存（只发一次请求），失败才回退网络地址
 watch(
     effectiveSource,
     source => {
-        cachedObjectUrl.value = null;
+        resolvedSource.value = '';
         // 源变化时重置错误计数，让新地址有机会正常加载（否则会一直停留在回退图）
         imageErrorCount.value = 0;
-        if (!iconCacheService.isCacheableUrl(source)) {
+
+        if (!mediaCacheService.isCacheableUrl(source)) {
+            resolvedSource.value = source;
             return;
         }
-        void iconCacheService.resolve(source).then(objectUrl => {
-            if (objectUrl && effectiveSource.value === source) {
-                cachedObjectUrl.value = objectUrl;
+
+        void (async () => {
+            const cached = await mediaCacheService.resolve(source);
+            if (effectiveSource.value !== source) return;
+            if (cached) {
+                resolvedSource.value = cached;
+                return;
             }
-        });
+            const fetched = await mediaCacheService.fetchAndCache(source, 'icon');
+            if (effectiveSource.value !== source) return;
+            // 抓不到（跨域被拦等）时退回原始地址，图标仍能显示
+            resolvedSource.value = fetched ?? source;
+        })();
     },
     { immediate: true }
 );
@@ -214,12 +287,33 @@ const currentSrc = computed(() => {
     if (isInlineSvg.value) {
         return '';
     }
-    if (imageErrorCount.value === 0 && cachedObjectUrl.value) {
-        return cachedObjectUrl.value;
+    if (imageErrorCount.value > 0 && resolvedFallback.value) {
+        return resolvedFallback.value;
     }
-    return imageErrorCount.value > 0 && resolvedFallback.value
-        ? resolvedFallback.value
-        : effectiveSource.value;
+    return resolvedSource.value;
+});
+
+/** 遮罩图地址：内置图标是扩展内置文件，不经媒体缓存，统一用站点绝对路径 */
+const maskUrl = computed(() => {
+    const source = resolvedSource.value || effectiveSource.value;
+    return normalizeBuiltinIconSource(source);
+});
+
+/**
+ * 内置单色图标一律走 CSS mask 渲染
+ *
+ * mask 渲染要求图形是「纯单色轮廓」，image/icons 下的 svg 正好全是
+ * fill="#000000" 的纯黑图形，天生适合当遮罩。
+ * 品牌图标（src 指向远程 / 用户上传的图片）是彩色的，必须继续用 <img>。
+ */
+const isMaskIcon = computed(() => !!maskUrl.value);
+
+/** 遮罩图以 CSS 变量注入，具体尺寸 / 重复方式在样式里声明 */
+const maskStyle = computed(() => {
+    if (!maskUrl.value) {
+        return undefined;
+    }
+    return { '--icon-mask': `url("${maskUrl.value}")` };
 });
 
 const safeAlt = computed(() => props.alt?.trim() ?? '');
@@ -244,11 +338,11 @@ const rootStyle = computed(() => {
 
 function onImageError(event: Event) {
     const img = event.target as HTMLImageElement | null;
-    if (img && cachedObjectUrl.value && img.src === cachedObjectUrl.value) {
+    if (img && resolvedSource.value.startsWith('blob:')) {
         // 缓存内容损坏：移除缓存并回退到原始网络地址重新加载
         const source = effectiveSource.value;
-        cachedObjectUrl.value = null;
-        void iconCacheService.evict(source);
+        void mediaCacheService.evict(source);
+        resolvedSource.value = source;
         return;
     }
     // 只在首次失败时切换回退图；回退图自身再失败时不再重复赋值 img.src，
@@ -262,11 +356,7 @@ function onImageError(event: Event) {
 }
 
 function onImageLoad(event: Event) {
-    const img = event.target as HTMLImageElement | null;
-    if (isRemoteSource.value && img && img.src === effectiveSource.value) {
-        // 网络加载成功：后台写入 IndexedDB 缓存，供下次打开直接使用
-        void iconCacheService.cache(effectiveSource.value);
-    }
+    // 缓存写入已在 fetchAndCache 里完成，这里只负责向上抛事件
     emit('load', event);
 }
 </script>
@@ -292,6 +382,26 @@ function onImageLoad(event: Event) {
         pointer-events: none;
     }
 
+    /*
+      系统图标遮罩：图形来自 --icon-mask，颜色来自 currentColor。
+      显式 color 属性会同时写进 --icon-fill，这里优先用它，保持一致。
+    */
+    &__mask {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background-color: var(--icon-fill, currentColor);
+        -webkit-mask-image: var(--icon-mask);
+        mask-image: var(--icon-mask);
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        pointer-events: none;
+    }
+
     &__inline {
         display: flex;
         align-items: center;
@@ -306,6 +416,10 @@ function onImageLoad(event: Event) {
         }
     }
 
+    /*
+      只对仍然走 <img> 的图片图标做深色反转；
+      __mask 不在选择器里，它的颜色由 currentColor 决定，不能反。
+    */
     &.is-monochrome &__img,
     &.is-monochrome :deep(svg) {
         filter: var(--icon-filter, none);

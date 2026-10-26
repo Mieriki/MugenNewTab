@@ -746,8 +746,7 @@ function close(): void {
 }
 
 // 深色模式适配
-:global(html.dark-mode),
-:global(body.dark-mode) {
+:global(html.dark-mode) {
     .ui-lib-panel__item {
         background: rgba(255, 255, 255, 0.05);
         border-color: rgba(255, 255, 255, 0.08);

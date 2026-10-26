@@ -12,6 +12,7 @@
 import { computed, effectScope, onMounted, onUnmounted, ref, watch } from 'vue';
 import type { ComputedRef, Ref } from 'vue';
 import { useWallpaperStore, DEFAULT_WALLPAPER_SETTINGS } from '@/stores/wallpaper.store';
+import { mediaCacheService } from '@/services/mediaCache.service';
 import type { WallpaperSettings, WallpaperImageData } from '@/types/storage';
 import {
     isImageFile,
@@ -121,18 +122,72 @@ export function useWallpaper(options: UseWallpaperOptions = {}): UseWallpaperRet
 
     const { settings, imageData, initialized, effectiveUrl, hasWallpaper, isLocalImage } = derived;
 
-    /**
-     * 可直接绑定到壁纸背景层的样式对象
-     */
-    const wallpaperStyle = computed<Record<string, string>>(() => ({
-        backgroundImage: effectiveUrl.value ? `url(${effectiveUrl.value})` : 'none',
-        opacity: String(settings.value.opacity),
-        filter: `blur(${settings.value.blur}px)`,
-        '--wallpaper-overlay-opacity': String(settings.value.overlayOpacity)
-    }));
+    /** 缓存命中时的对象地址（未命中为空串，此时用 effectiveUrl 走网络） */
+    const cachedWallpaperUrl = ref('');
 
     /**
-     * 预加载生效的壁纸图片，加载失败时记录错误但不阻断流程
+     * 地址是否已确定（缓存查询 + 首次抓取都结束）
+     *
+     * 为 false 时不给背景层输出 backgroundImage：否则浏览器会先按网络地址
+     * 发一次请求，等缓存解析出来再换成 blob:，等于缓存白做。
+     */
+    const wallpaperReady = ref(false);
+
+    /**
+     * 预加载图片，失败时记录错误但不阻断流程
+     *
+     * 只用于「不走缓存」的地址（本地 data: 图片、以及抓取失败的远程地址），
+     * 缓存写入由 mediaCacheService.fetchAndCache 负责。
+     */
+    function preloadImage(target: string): void {
+        preloadController?.abort();
+        const controller = new AbortController();
+        preloadController = controller;
+        const img = new Image();
+
+        img.onload = () => {
+            if (controller.signal.aborted) {
+                return;
+            }
+            preloadController = null;
+        };
+
+        img.onerror = () => {
+            if (controller.signal.aborted) {
+                return;
+            }
+            error.value = '壁纸图片加载失败';
+            preloadController = null;
+        };
+
+        img.src = target;
+    }
+
+    /**
+     * 可直接绑定到壁纸背景层的样式对象
+     *
+     * 优先用缓存解析出的对象地址（blob:）：网络壁纸一旦缓存过，
+     * 之后每次打开新标签页都不再发请求；本地图片是 data:，不参与缓存。
+     *
+     * 解析完成前（wallpaperReady=false）先不输出 backgroundImage：
+     * 否则浏览器会先按网络地址请求一遍，缓存就白做了。
+     */
+    const wallpaperStyle = computed<Record<string, string>>(() => {
+        const url = cachedWallpaperUrl.value || effectiveUrl.value;
+        const ready = wallpaperReady.value && !!url;
+        return {
+            backgroundImage: ready ? `url(${url})` : 'none',
+            opacity: String(settings.value.opacity),
+            filter: `blur(${settings.value.blur}px)`,
+            '--wallpaper-overlay-opacity': String(settings.value.overlayOpacity)
+        };
+    });
+
+    /**
+     * 壁纸变化时：先查本地缓存，未命中再抓一次并缓存，抓不到才退回网络地址
+     *
+     * 「每次打开都请求一遍」的根源是以前直接把 url 塞进 background-image，
+     * 走不走缓存完全交给浏览器；现在由我们决定地址，命中缓存就是 blob:。
      */
     scope.run(() => {
         watch(
@@ -141,31 +196,50 @@ export function useWallpaper(options: UseWallpaperOptions = {}): UseWallpaperRet
                 preloadController?.abort();
                 preloadController = null;
                 error.value = null;
+                cachedWallpaperUrl.value = '';
+                wallpaperReady.value = false;
 
                 if (!url) {
+                    wallpaperReady.value = true;
                     return;
                 }
 
-                const controller = new AbortController();
-                preloadController = controller;
-                const img = new Image();
+                // 本地图片（data:）与相对路径本来就不走网络，直接预加载即可
+                if (!mediaCacheService.isCacheableUrl(url)) {
+                    wallpaperReady.value = true;
+                    preloadImage(url);
+                    return;
+                }
 
-                img.onload = () => {
-                    if (!controller.signal.aborted) {
-                        preloadController = null;
+                void (async () => {
+                    const cached = await mediaCacheService.resolve(url);
+                    // 期间壁纸已被换掉，丢弃这次结果
+                    if (effectiveUrl.value !== url) {
+                        return;
                     }
-                };
-
-                img.onerror = () => {
-                    if (!controller.signal.aborted) {
-                        error.value = '壁纸图片加载失败';
-                        preloadController = null;
+                    if (cached) {
+                        cachedWallpaperUrl.value = cached;
+                        wallpaperReady.value = true;
+                        return;
                     }
-                };
 
-                img.src = url;
+                    // 未命中：抓一次并写缓存，成功直接用对象地址，避免二次下载
+                    const fetched = await mediaCacheService.fetchAndCache(url, 'wallpaper');
+                    if (effectiveUrl.value !== url) {
+                        return;
+                    }
+                    if (fetched) {
+                        cachedWallpaperUrl.value = fetched;
+                        wallpaperReady.value = true;
+                        return;
+                    }
+
+                    // 抓不到（跨域被拦等）：退回网络地址，交给浏览器自己加载
+                    wallpaperReady.value = true;
+                    preloadImage(url);
+                })();
             },
-            { immediate: false }
+            { immediate: true }
         );
     });
 

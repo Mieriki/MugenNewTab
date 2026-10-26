@@ -218,8 +218,7 @@ function handleFocus(event: FocusEvent): void {
 }
 
 // 深色模式覆盖
-:global(html.dark-mode),
-:global(body.dark-mode) {
+:global(html.dark-mode) {
     .mnt-base-input__wrapper {
         background: rgba(255, 255, 255, 0.05);
         border-color: rgba(255, 255, 255, 0.08);

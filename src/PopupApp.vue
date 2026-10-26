@@ -590,8 +590,7 @@ watch(
 }
 
 // 深色模式覆盖
-:global(html.dark-mode),
-:global(body.dark-mode) {
+:global(html.dark-mode) {
     .popup-root {
         background: rgba(40, 40, 40, 0.98);
     }

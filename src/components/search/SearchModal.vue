@@ -531,7 +531,7 @@ const modalBodyStyle = {
         .icon-svg {
             width: 18px;
             height: 18px;
-            filter: brightness(0) invert(1);
+            color: var(--md-sys-color-on-primary);
         }
     }
 
@@ -621,8 +621,7 @@ const modalBodyStyle = {
 }
 
 // 深色模式（tonal 变量随主题自适应，仅需覆盖容器背景）
-:global(html.dark-mode),
-:global(body.dark-mode) {
+:global(html.dark-mode) {
     .search-modal__content {
         background: rgba(30, 30, 30, 0.88);
         border-color: rgba(255, 255, 255, 0.1);

@@ -57,8 +57,11 @@ withDefaults(defineProps<MainContentProps>(), {
 }
 
 .content-wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
+    // 占满整个内容区：不再限宽居中。
+    // 之前 max-width: 1200px + margin: 0 auto 在缩放（视口变宽）后会把站点挤到
+    // 屏幕中间一小块、两侧大片空白，而缩放本来就是为了看到更多内容。
+    // 宽度交给网格的 auto-fill 自适应列数。
+    width: 100%;
 }
 
 .content-header {

@@ -5,25 +5,84 @@
  * 通过同步 XHR 加载 config/themes.json 并提前应用 CSS 变量，
  * 最后移除 data-theme-loading 属性使页面可见。
  *
+ * 主题 ID 规则：每个主题族都有 `<family>-light` / `<family>-dark` 两个变体。
+ * 老版本存的是不带后缀的 ID（如 material-rose），themes.json 里的 legacyIds
+ * 记录了它们原本属于哪一半，这里按表迁移，保证升级后配色不跳变。
+ *
  * 注意：扩展环境 CSP（script-src 'self'）禁止内联脚本，
  * 因此本脚本必须以外部文件形式放在 public/ 下，由 index.html 以 <script src> 引入。
  */
 (function () {
     try {
-        var selectedTheme = localStorage.getItem('selectedTheme');
+        // 存储层的镜像值是 JSON.stringify 过的，直接当字符串比较永远匹配不上，
+        // 这里先按 JSON 解析，失败再退回原始字符串（兼容手写/旧版遗留值）。
+        var raw = localStorage.getItem('selectedTheme');
+        var selectedTheme = raw;
+        if (raw) {
+            try {
+                var parsed = JSON.parse(raw);
+                if (typeof parsed === 'string') {
+                    selectedTheme = parsed;
+                }
+            } catch (e) {
+                selectedTheme = raw;
+            }
+        }
+
         var request = new XMLHttpRequest();
         request.open('GET', 'config/themes.json', false);
         request.send(null);
         var config = JSON.parse(request.responseText || '{}');
         var themes = config.themes || [];
-        var theme = themes.find(function (t) { return t.id === selectedTheme; });
-        if (!theme) {
-            theme = themes.find(function (t) { return t.id === config.defaultTheme; }) || themes[0];
+        var legacyIds = config.legacyIds || {};
+        var prefersDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var wantedMode = prefersDark ? 'dark' : 'light';
+
+        function byId(id) {
+            for (var i = 0; i < themes.length; i += 1) {
+                if (themes[i].id === id) return themes[i];
+            }
+            return null;
         }
+
+        function familyOf(theme) {
+            return theme ? (theme.family || theme.id) : null;
+        }
+
+        function variantOf(familyId, mode) {
+            for (var i = 0; i < themes.length; i += 1) {
+                if (familyOf(themes[i]) === familyId && themes[i].mode === mode) {
+                    return themes[i];
+                }
+            }
+            return null;
+        }
+
+        var theme = null;
+
+        if (selectedTheme) {
+            theme = byId(selectedTheme);
+            if (!theme && legacyIds[selectedTheme]) {
+                theme = byId(legacyIds[selectedTheme]);
+            }
+            if (!theme) {
+                // 存的是族名（极旧版本）或该变体已被移除：按系统模式取同族变体
+                theme = variantOf(selectedTheme, wantedMode);
+            }
+        }
+
+        if (!theme) {
+            var defaultTheme = byId(config.defaultTheme);
+            theme = variantOf(familyOf(defaultTheme), wantedMode)
+                || defaultTheme
+                || themes[0];
+        }
+
         if (theme && theme.colors) {
             var root = document.documentElement;
             root.setAttribute('data-theme', theme.id);
-            if (theme.isDark) {
+            var isDark = theme.mode ? theme.mode === 'dark' : !!theme.isDark;
+            if (isDark) {
                 root.classList.add('dark-mode');
             }
             for (var key in theme.colors) {
