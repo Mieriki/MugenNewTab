@@ -6,9 +6,9 @@
  * 对 Firefox 目标，同步后台脚本路径为构建产物中的 js/background-firefox.js。
  *
  * 目标说明：
- *   - chromium（默认）：Chrome / 其他 Chromium 浏览器，使用新 Logo 图标
- *   - firefox：Firefox，使用新 Logo 图标
- *   - edge：Microsoft Edge，沿用旧 Logo 图标
+ *   - chromium（默认）：Chrome / 其他 Chromium 浏览器，使用 logo_girl 图标
+ *   - firefox：Firefox，使用 logo_girl 图标
+ *   - edge：Microsoft Edge，使用 logo_girl 图标（全浏览器统一）
  *
  * 注意：manifest 版本号由源 manifest 文件决定，签名脚本（sign-firefox.sh）会另行维护版本号，
  * 因此本脚本不再覆盖版本号。

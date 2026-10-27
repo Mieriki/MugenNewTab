@@ -311,7 +311,11 @@ describe('useTheme', () => {
 
         expect(result.isFollowingSystem.value).toBe(true);
         expect(result.selectedThemeId.value).toBe('azure-sky-dark');
-        expect(localStorage.getItem('selectedTheme')).toBeNull();
+        // 跟随开关与主题族持久化到镜像，重启后仍保持跟随
+        expect(JSON.parse(localStorage.getItem('appNavigator_themeSettings') as string)).toEqual({
+            followSystem: true,
+            familyId: 'azure-sky'
+        });
     });
 
     it('toggleFollowSystem 在跟随与固定主题间切换', async () => {

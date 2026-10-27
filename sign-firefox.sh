@@ -22,19 +22,10 @@ echo "✅ web-ext 已安装"
 echo ""
 
 # ====== 版本号管理 ======
-BUILD_NUM_FILE=".build-num"
-
-# 读取当前构建号（如果文件不存在则初始化）
-if [ -f "$BUILD_NUM_FILE" ]; then
-    BUILD_NUM=$(cat "$BUILD_NUM_FILE")
-else
-    # 首次运行，从较高的起始值开始（避免与旧版本冲突）
-    BUILD_NUM=100
-fi
-
-# 递增构建号
-BUILD_NUM=$((BUILD_NUM + 1))
-VERSION="1.0.0.${BUILD_NUM}"
+# 版本号统一由 scripts/resolve-version.js 从 git tag / manifest 推导，
+# 不再使用可被意外清零的 .build-num。
+git fetch --tags --quiet 2>/dev/null || true
+VERSION="$(node scripts/resolve-version.js)"
 
 # 更新 manifest 版本号
 update_manifest_version() {
@@ -54,9 +45,6 @@ update_manifest_version() {
 echo "🔧 设置版本号: v${VERSION}"
 update_manifest_version "manifest.firefox.json"
 update_manifest_version "manifest.json"
-
-# 保存构建号
-echo "$BUILD_NUM" > "$BUILD_NUM_FILE"
 
 # ====== 步骤 1：构建 ======
 echo ""
@@ -116,7 +104,6 @@ echo "  ✅ 全部打包完成！"
 echo "=========================================="
 echo ""
 echo "版本: v${VERSION}"
-echo "构建号: ${BUILD_NUM}"
 echo ""
 echo "输出文件："
 ls -1 "$DIST_DIR"

@@ -12,7 +12,7 @@ import { getBrandLogo } from '@/utils/browser.util';
 export interface AppHeaderProps {
     /** 主标题 */
     title?: string;
-    /** Logo 图片地址；不传时按浏览器自动选择（Edge 用旧 Logo，其余用新 Logo） */
+    /** Logo 图片地址；不传时使用统一的 logo_girl */
     logoSrc?: string;
     /** 是否显示侧边栏折叠按钮 */
     showCollapseToggle?: boolean;
@@ -41,7 +41,7 @@ const emit = defineEmits<{
     (e: 'brand-dblclick'): void;
 }>();
 
-/** 未显式传入 logoSrc 时按浏览器分流品牌 Logo */
+/** 未显式传入 logoSrc 时使用统一的品牌 Logo */
 const resolvedLogoSrc = computed(() => props.logoSrc || getBrandLogo());
 
 const collapseIconName = computed(() => (props.sidebarCollapsed ? 'Expand' : 'Fold'));

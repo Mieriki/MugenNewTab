@@ -21,6 +21,8 @@ export const STORAGE_KEYS = {
     CLOUD_SYNC_BASE: 'appNavigator_cloudSync_base',
     CLOUD_PROVIDER: 'appNavigator_cloudSync_provider',
     SELECTED_THEME: 'selectedTheme',
+    /** 主题偏好设置（跟随系统开关 + 主题族），见 ThemeSettings */
+    THEME_SETTINGS: 'appNavigator_themeSettings',
     SIDEBAR_COLLAPSED: 'sidebarCollapsed',
     SEARCH_HISTORY: 'searchHistory',
     SELECTED_SEARCH_ENGINE: 'selectedSearchEngine',
@@ -42,6 +44,12 @@ export const STORAGE_KEYS = {
 /** 需要同步镜像到 localStorage 的首屏设置键（防止 FOUC 闪烁） */
 export const SYNC_MIRROR_KEYS = new Set<string>([
     STORAGE_KEYS.SELECTED_THEME,
+    /**
+     * 主题偏好（含跟随系统开关与主题族）必须同步镜像：
+     * 跟随系统时首屏要按系统明暗取同族变体，等异步 storage.local 回来再纠正
+     * 会先错画一次明暗，肉眼就是「闪一下」。
+     */
+    STORAGE_KEYS.THEME_SETTINGS,
     STORAGE_KEYS.SELECTED_SEARCH_ENGINE,
     STORAGE_KEYS.SEARCH_HISTORY,
     STORAGE_KEYS.SIDEBAR_COLLAPSED,
@@ -117,6 +125,17 @@ export interface LayoutSettings {
 export interface MediaCacheSettings {
     /** 是否启用本地缓存（站点图标 / 网络壁纸） */
     enabled: boolean;
+}
+
+/**
+ * 主题偏好设置
+ *
+ * - followSystem：是否跟随系统深色偏好。开启后明暗由系统决定，主题族保持不变。
+ * - familyId：主题族 ID（色系）。跟随系统时保留用户选定的色系，避免重启后跳回默认族。
+ */
+export interface ThemeSettings {
+    followSystem: boolean;
+    familyId: string;
 }
 
 /** 本地壁纸图片元数据 */

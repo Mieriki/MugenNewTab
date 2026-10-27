@@ -22,7 +22,7 @@ const NEW_CATEGORY_VALUE = '__new__';
 // 须用绝对路径：popup 页面位于 view/ 子目录，相对路径会解析为 view/image/... 导致 404
 const DEFAULT_ICON = getSystemIconUrl('picture');
 const HOME_PAGE_URL = 'https://github.com/MugenNewTab/MugenNewTab';
-/** 品牌 Logo：Edge 用旧版，其余浏览器用新版 */
+/** 品牌 Logo（全浏览器统一使用 logo_girl） */
 const brandLogo = getBrandLogo();
 
 const dataManager = useDataManager({ autoInit: true });

@@ -6,7 +6,8 @@
  * - 加载并缓存 public/config/themes.json
  * - 将主题 CSS 变量注入 document.documentElement
  * - 监听系统深色偏好变化
- * - 所有变更持久化到 StorageManager（键名 selectedTheme）
+ * - 所有变更持久化到 StorageManager（selectedTheme 存具体变体，
+ *   appNavigator_themeSettings 存跟随系统开关与主题族）
  *
  * 与原项目 js/ThemeManager.js 行为保持一致：
  * - 默认主题为 themes.json 中的 defaultTheme
@@ -20,8 +21,30 @@ import { ref, computed } from 'vue';
 import { storageManager } from '@/services/storage.service';
 import { loadThemes } from '@/services/config.service';
 import { STORAGE_KEYS } from '@/types/storage';
+import type { StorageValue, ThemeSettings } from '@/types/storage';
 import type { Theme, ThemeFamily, ThemeMode } from '@/types/config';
 import { adjustColor, hexToRgba, hexToRgbTriplet } from '@/utils/color.util';
+
+/**
+ * 解析持久化的主题偏好设置。
+ * 结构不合法（旧版残留 / 手改 / 缺字段）时返回 null，调用方按默认值处理。
+ */
+function parseThemeSettings(raw: StorageValue | null): ThemeSettings | null {
+    if (!raw || typeof raw !== 'object') {
+        return null;
+    }
+    const candidate = raw as Record<string, unknown>;
+    if (
+        typeof candidate.followSystem !== 'boolean' ||
+        typeof candidate.familyId !== 'string'
+    ) {
+        return null;
+    }
+    return {
+        followSystem: candidate.followSystem,
+        familyId: candidate.familyId
+    };
+}
 
 /** 派生 CSS 变量名集合 */
 const DERIVED_VARIABLES = [
@@ -309,21 +332,65 @@ export const useThemeStore = defineStore('theme', () => {
                 mediaQuery.addEventListener('change', handleSystemDarkChange);
             }
 
-            const savedTheme = await storageManager.get(STORAGE_KEYS.SELECTED_THEME);
+            const stored = await storageManager.getMany([
+                STORAGE_KEYS.SELECTED_THEME,
+                STORAGE_KEYS.THEME_SETTINGS
+            ]);
+            const savedTheme = stored[STORAGE_KEYS.SELECTED_THEME];
+            const savedSettings = parseThemeSettings(stored[STORAGE_KEYS.THEME_SETTINGS]);
+
             const normalizedId = typeof savedTheme === 'string'
                 ? normalizeThemeId(savedTheme)
                 : null;
             const hasSavedTheme = typeof savedTheme === 'string';
-            const initialThemeId = normalizedId ?? resolveDefaultThemeId();
+
+            let initialThemeId: string;
+            let shouldFollowSystem = false;
+
+            if (savedSettings?.followSystem) {
+                // 跟随系统：族优先取设置里的 familyId，失效时退回已保存主题的族，再退回默认族
+                shouldFollowSystem = true;
+                const settingsFamilyValid = themeFamilies.value
+                    .some(family => family.id === savedSettings.familyId);
+                const fallbackTheme = normalizedId
+                    ? themes.value.find(theme => theme.id === normalizedId)
+                    : undefined;
+                const familyId = settingsFamilyValid
+                    ? savedSettings.familyId
+                    : resolveFamilyId(fallbackTheme);
+                initialThemeId = findVariantId(
+                    familyId,
+                    systemPrefersDark.value ? 'dark' : 'light'
+                ) ?? resolveDefaultThemeId();
+            } else {
+                initialThemeId = normalizedId ?? resolveDefaultThemeId();
+            }
 
             applyThemeToDom(initialThemeId);
+            followSystem.value = shouldFollowSystem;
 
-            // 首次使用默认主题、或旧版主题 ID 被迁移时写回，保证首屏与 StorageManager 一致
+            // 首次使用默认主题、旧版主题 ID 被迁移、或主题偏好缺失/不一致时写回，
+            // 保证首屏与 StorageManager 一致（包含跟随系统开关，重启后才能恢复）
+            const writes: Record<string, StorageValue> = {};
             if (!hasSavedTheme || normalizedId !== savedTheme) {
+                writes[STORAGE_KEYS.SELECTED_THEME] = initialThemeId;
+            }
+            const expectedSettings: ThemeSettings = {
+                followSystem: shouldFollowSystem,
+                familyId: currentFamilyId.value
+            };
+            if (
+                !savedSettings ||
+                savedSettings.followSystem !== expectedSettings.followSystem ||
+                savedSettings.familyId !== expectedSettings.familyId
+            ) {
+                writes[STORAGE_KEYS.THEME_SETTINGS] = expectedSettings;
+            }
+            if (Object.keys(writes).length > 0) {
                 try {
-                    await storageManager.set(STORAGE_KEYS.SELECTED_THEME, initialThemeId);
+                    await storageManager.setMany(writes);
                 } catch (err) {
-                    console.warn('ThemeStore: 持久化主题失败', err);
+                    console.warn('ThemeStore: 持久化主题设置失败', err);
                 }
             }
 
@@ -352,7 +419,14 @@ export const useThemeStore = defineStore('theme', () => {
         followSystem.value = false;
 
         try {
-            await storageManager.set(STORAGE_KEYS.SELECTED_THEME, themeId);
+            // 具体变体与主题偏好一起持久化：手动选择意味着关闭跟随系统
+            await storageManager.setMany({
+                [STORAGE_KEYS.SELECTED_THEME]: themeId,
+                [STORAGE_KEYS.THEME_SETTINGS]: {
+                    followSystem: false,
+                    familyId: resolveFamilyId(theme)
+                } satisfies ThemeSettings
+            });
         } catch (err) {
             // 持久化失败：回滚本地状态与 DOM
             followSystem.value = previousFollowSystem;
@@ -368,7 +442,7 @@ export const useThemeStore = defineStore('theme', () => {
 
     /**
      * 跟随系统深色偏好
-     * 清除持久化主题，后续系统偏好变化时自动切换。
+     * 持久化跟随系统开关与当前主题族，浏览器重启后仍保持跟随。
      * 保留当前主题族，只让系统决定用明亮还是深色渲染。
      */
     async function followSystemTheme(): Promise<void> {
@@ -376,12 +450,20 @@ export const useThemeStore = defineStore('theme', () => {
         const previousFollowSystem = followSystem.value;
 
         followSystem.value = true;
-        const targetId = findVariantId(currentFamilyId.value, systemPrefersDark.value ? 'dark' : 'light')
+        const familyId = currentFamilyId.value;
+        const targetId = findVariantId(familyId, systemPrefersDark.value ? 'dark' : 'light')
             ?? resolveDefaultThemeId();
         applyThemeToDom(targetId);
 
         try {
-            await storageManager.remove(STORAGE_KEYS.SELECTED_THEME);
+            // 跟随开关与主题族一起落盘；具体变体也同步为当前系统模式下的渲染结果
+            await storageManager.setMany({
+                [STORAGE_KEYS.SELECTED_THEME]: targetId,
+                [STORAGE_KEYS.THEME_SETTINGS]: {
+                    followSystem: true,
+                    familyId
+                } satisfies ThemeSettings
+            });
         } catch (err) {
             // 持久化失败：回滚
             followSystem.value = previousFollowSystem;

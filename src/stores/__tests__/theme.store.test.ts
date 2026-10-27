@@ -291,7 +291,7 @@ describe('useThemeStore', () => {
         const store = useThemeStore();
         await store.initialize();
 
-        const setSpy = vi.spyOn(storageManager, 'set').mockRejectedValueOnce(new Error('Storage failed'));
+        const setSpy = vi.spyOn(storageManager, 'setMany').mockRejectedValueOnce(new Error('Storage failed'));
 
         await expect(store.setTheme('midnight-rose-dark')).rejects.toThrow('Storage failed');
 
@@ -303,7 +303,7 @@ describe('useThemeStore', () => {
         setSpy.mockRestore();
     });
 
-    it('followSystemTheme 应清除持久化并保留当前主题族、切到系统模式', async () => {
+    it('followSystemTheme 应持久化跟随开关与主题族、切到系统模式', async () => {
         matchMediaMock = createMatchMedia(true);
         window.matchMedia = vi.fn().mockReturnValue(matchMediaMock);
 
@@ -316,8 +316,46 @@ describe('useThemeStore', () => {
         expect(store.followSystem).toBe(true);
         expect(store.selectedThemeId).toBe('material-rose-dark');
         expect(store.currentFamilyId).toBe('material-rose');
+        // 跟随开关与主题族都要落盘，重启后才能恢复跟随
+        const settings = await storageManager.get(STORAGE_KEYS.THEME_SETTINGS);
+        expect(settings).toEqual({
+            followSystem: true,
+            familyId: 'material-rose'
+        });
+        // 具体变体同步为系统模式下的渲染结果，不再删除
         const saved = await storageManager.get(STORAGE_KEYS.SELECTED_THEME);
-        expect(saved).toBeNull();
+        expect(saved).toBe('material-rose-dark');
+        // 首屏镜像也要写进去，theme-preload.js 才能按系统明暗提前上色
+        expect(storageManager.getSync(STORAGE_KEYS.THEME_SETTINGS)).toEqual({
+            followSystem: true,
+            familyId: 'material-rose'
+        });
+    });
+
+    it('followSystem 状态应在浏览器重启（重新 initialize）后保持并恢复主题族', async () => {
+        matchMediaMock = createMatchMedia(false);
+        window.matchMedia = vi.fn().mockReturnValue(matchMediaMock);
+
+        const firstStore = useThemeStore();
+        await firstStore.initialize();
+        // 用户选了午夜蔷薇族并开启跟随系统
+        await firstStore.setTheme('midnight-rose-light');
+        await firstStore.followSystemTheme();
+        expect(firstStore.followSystem).toBe(true);
+
+        // 模拟浏览器重启：新 Pinia、新 store，系统当前为深色
+        setActivePinia(createPinia());
+        matchMediaMock = createMatchMedia(true);
+        window.matchMedia = vi.fn().mockReturnValue(matchMediaMock);
+
+        const restartedStore = useThemeStore();
+        await restartedStore.initialize();
+
+        expect(restartedStore.followSystem).toBe(true);
+        // 主题族（色系）保持为用户选择的午夜蔷薇，只切到深色变体
+        expect(restartedStore.currentFamilyId).toBe('midnight-rose');
+        expect(restartedStore.selectedThemeId).toBe('midnight-rose-dark');
+        expect(restartedStore.isDark).toBe(true);
     });
 
     it('followSystemTheme 持久化失败时应回滚', async () => {
@@ -325,13 +363,14 @@ describe('useThemeStore', () => {
         await store.initialize();
         await store.setTheme('midnight-rose-dark');
 
-        const removeSpy = vi.spyOn(storageManager, 'remove').mockRejectedValueOnce(new Error('Remove failed'));
+        const setManySpy = vi.spyOn(storageManager, 'setMany')
+            .mockRejectedValueOnce(new Error('SetMany failed'));
 
-        await expect(store.followSystemTheme()).rejects.toThrow('Remove failed');
+        await expect(store.followSystemTheme()).rejects.toThrow('SetMany failed');
 
         expect(store.selectedThemeId).toBe('midnight-rose-dark');
         expect(store.followSystem).toBe(false);
-        removeSpy.mockRestore();
+        setManySpy.mockRestore();
     });
 
     it('系统深色偏好变化时应保持主题族、只切换明暗', async () => {

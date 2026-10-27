@@ -29,6 +29,25 @@
             }
         }
 
+        // 主题偏好镜像（与存储层 appNavigator_themeSettings 同构）：
+        // 跟随系统时首屏就要按系统明暗取同族变体，否则会先错画一次明暗再被 Vue 纠正。
+        var followSystem = false;
+        var settingsFamilyId = null;
+        var settingsRaw = localStorage.getItem('appNavigator_themeSettings');
+        if (settingsRaw) {
+            try {
+                var settingsParsed = JSON.parse(settingsRaw);
+                if (settingsParsed && typeof settingsParsed === 'object') {
+                    followSystem = settingsParsed.followSystem === true;
+                    settingsFamilyId = typeof settingsParsed.familyId === 'string'
+                        ? settingsParsed.familyId
+                        : null;
+                }
+            } catch (e) {
+                followSystem = false;
+            }
+        }
+
         var request = new XMLHttpRequest();
         request.open('GET', 'config/themes.json', false);
         request.send(null);
@@ -60,7 +79,25 @@
 
         var theme = null;
 
-        if (selectedTheme) {
+        if (followSystem) {
+            // 跟随系统：族优先取设置里的 familyId，失效时退回已保存主题的族，再退回默认族
+            var followFamilyId = settingsFamilyId;
+            if (!followFamilyId && selectedTheme) {
+                var selectedSaved = byId(selectedTheme)
+                    || (legacyIds[selectedTheme] ? byId(legacyIds[selectedTheme]) : null);
+                followFamilyId = familyOf(selectedSaved) || selectedTheme;
+            }
+            if (followFamilyId) {
+                theme = variantOf(followFamilyId, wantedMode)
+                    || variantOf(followFamilyId, wantedMode === 'dark' ? 'light' : 'dark');
+            }
+            if (!theme) {
+                var followDefault = byId(config.defaultTheme);
+                theme = variantOf(familyOf(followDefault), wantedMode)
+                    || followDefault
+                    || themes[0];
+            }
+        } else if (selectedTheme) {
             theme = byId(selectedTheme);
             if (!theme && legacyIds[selectedTheme]) {
                 theme = byId(legacyIds[selectedTheme]);

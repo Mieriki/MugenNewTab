@@ -1,25 +1,26 @@
 #!/bin/bash
 # release.sh - 本地发版入口
 #
-# 做的事情：递增版本号 → 写进两份 manifest → 提交 → 打 tag → 推送。
+# 做的事情：解析下一个版本号 → 写进三份 manifest → 提交 → 打 tag → 推送。
 # 推送 tag 后 GitHub Actions 会自动构建、签名、发 Release、更新 updates.json。
 #
 # 用法：
-#   ./scripts/release.sh              # 构建号自动 +1，例如 1.0.0.103 → 1.0.0.104
-#   ./scripts/release.sh 1.0.1.0      # 指定版本号
+#   ./scripts/release.sh              # 版本号自动 +1（基于最新 tag / manifest，
+#                                     # 如 1.0.1.0 → 1.0.1.1，1.0.0.110 → 1.0.0.111）
+#   ./scripts/release.sh 1.0.2.0      # 指定版本号（必须大于已发布的最新版本）
 #
 # 断点续推：
 #   如果上次提交和 tag 都建好了但推送失败（网络抖动、SSL_ERROR_SYSCALL 等），
 #   直接重新运行本脚本即可——它会检测到 HEAD 上未推送的 tag，跳过版本递增，
 #   只把已有的提交和 tag 补推上去，不会白白消耗一个版本号。
 #
-# 注意：版本号只允许 1~4 段数字，且不能与 AMO 上已提交的版本重复，
+# 注意：版本号只允许 1~4 段数字（每段 0~65535），且不能与已发布版本重复，
 # 否则 web-ext sign 会报 "This upload has already been submitted"。
+# 版本号一律以 git tag 与 manifest 为准，不再使用可被意外清零的 .build-num。
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-BUILD_NUM_FILE=".build-num"
 REMOTE="origin"
 TAG=""
 
@@ -76,19 +77,16 @@ if [ -n "$EXISTING_TAG" ]; then
 fi
 
 # ---------------------------------------------------------------
-# 正常发版：递增版本号
+# 正常发版：解析版本号
 # ---------------------------------------------------------------
-if [ -n "${1:-}" ]; then
-    VERSION="$1"
-else
-    BUILD_NUM=$(cat "$BUILD_NUM_FILE" 2>/dev/null || echo 100)
-    BUILD_NUM=$((BUILD_NUM + 1))
-    VERSION="1.0.0.${BUILD_NUM}"
-fi
+# 先同步远端 tag，保证「最新版本」判断基于当前真实发版历史；
+# 离线时拉取失败也不阻塞，回退到本地 tag + manifest。
+git fetch --tags --quiet 2>/dev/null || true
 
-if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+(\.[0-9]+){0,3}$'; then
-    echo "❌ 版本号格式非法: $VERSION（只允许 1~4 段数字）"
-    exit 1
+if [ $# -ge 1 ]; then
+    VERSION="$(node scripts/resolve-version.js "$1")"
+else
+    VERSION="$(node scripts/resolve-version.js)"
 fi
 
 TAG="v${VERSION}"
@@ -123,9 +121,6 @@ node -e '
         console.log("   " + f + " -> v" + j.version);
     }
 ' "$VERSION"
-
-# 同步 .build-num，保证下次自动递增基于本次版本
-printf '%s' "${VERSION##*.}" > "$BUILD_NUM_FILE"
 
 # 只提交已跟踪文件的改动：避免把 .workbuddy-ai/、build 产物等本地文件带进仓库。
 # 如果本次发版包含新增文件，请先手动 git add。
