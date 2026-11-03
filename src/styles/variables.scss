@@ -25,7 +25,6 @@
     --md-sys-color-background: #FFF8F9;
     --md-sys-color-on-background: #201A1A;
     --md-sys-color-outline: #E0D0D3;
-    --md-sys-color-outline-variant: #F0E5E7;
     --md-sys-color-error: #BA1A1A;
     --md-sys-color-error-container: #FFDAD6;
     --md-sys-color-success: #376B2F;
@@ -36,11 +35,23 @@
     --md-sys-color-surface-rgb: 255, 248, 249;
     --md-sys-color-background-rgb: 255, 248, 249;
 
-    // 组件颜色变量 - 深色模式下会被覆盖
-    --card-bg: var(--md-sys-color-surface);
+    // ==================== 由主题基础色派生的 token ====================
+    //
+    // 24 套主题（12 族 × 明/暗）只提供 Material 基础色，组件级底色一律在这里派生：
+    // 主题换了，卡片、分隔线、悬停底色自动跟着换，不再有「浅色写死一档、深色写死
+    // 另一档」的第二套值 —— 那样浅色主题会丢掉壁纸透视，深色主题会退化成通用白。
+    //
+    // 描边：用 on-surface 混出 18% 的透明色。主题自带的 outline 在浅色下只有
+    // 1.1~1.2:1，贴在 surface 上基本看不见；18% 大约 1.45:1，压在壁纸上也能辨认。
+    --md-sys-color-outline-variant: color-mix(in srgb, var(--md-sys-color-on-surface) 18%, transparent);
+
+    // 卡片 / 面板底：surface 保留 22% 透明，让壁纸能透出来
+    --md-sys-color-surface-container: color-mix(in srgb, var(--md-sys-color-surface) 78%, transparent);
+
+    --card-bg: var(--md-sys-color-surface-container);
     --card-border: var(--md-sys-color-outline-variant);
-    --card-shadow: 0 2px 8px rgba(1, 1, 1, 0.06);
-    --hover-bg: var(--md-sys-color-surface-variant);
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.08);
+    --hover-bg: color-mix(in srgb, var(--md-sys-color-on-surface) 7%, transparent);
 
     // 动效变量
     --md-easing: cubic-bezier(0.4, 0, 0.2, 1);
@@ -77,16 +88,13 @@
 }
 
 // 深色模式变量覆盖
-html.dark-mode,
-body.dark-mode {
-    --card-bg: rgba(255, 255, 255, 0.08);
-    --card-border: transparent;
-    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    --hover-bg: rgba(255, 255, 255, 0.08);
+//
+// 配色本身已经由「暗色变体」主题给出（html.dark-mode 只表示当前这套是暗的），
+// 所以这里不再覆盖任何颜色 token —— 只保留与主题无关的两项：
+// - --icon-filter：仍然走 <img> 的远程图标需要反色（内置图标改走 mask，用 currentColor）
+// - surface-rgb / background-rgb：首帧兜底值，theme.store 初始化后会按当前主题改成真实值
+html.dark-mode {
     --icon-filter: invert(1) brightness(2);
-
-    --md-sys-color-outline: rgba(255, 255, 255, 0.12);
-    --md-sys-color-outline-variant: rgba(255, 255, 255, 0.08);
     --md-sys-color-surface-rgb: 30, 30, 30;
     --md-sys-color-background-rgb: 20, 20, 20;
 }

@@ -308,7 +308,7 @@ async function handleFollowSystem(): Promise<void> {
 
     &.active {
         background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary-container);
     }
 
     &__preview {
@@ -372,10 +372,9 @@ async function handleFollowSystem(): Promise<void> {
     }
 }
 
-html.dark-mode,
-body.dark-mode {
+html.dark-mode {
     .theme-option__badge {
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--hover-bg);
     }
 }
 </style>

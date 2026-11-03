@@ -714,26 +714,21 @@ watch(
     }
 }
 
-// 深色模式覆盖
+// 深色模式只补「比表面深一档」的填充，颜色仍取自主题 token
 :global(html.dark-mode) {
-    .form-select {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-
     .icon-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: var(--hover-bg);
+        border-color: var(--md-sys-color-outline-variant);
     }
 
     .icon-picker {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: var(--hover-bg);
+        border-color: var(--md-sys-color-outline-variant);
     }
 
     .icon-picker-item {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: var(--hover-bg);
+        border-color: var(--md-sys-color-outline-variant);
     }
 }
 

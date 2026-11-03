@@ -620,11 +620,10 @@ const modalBodyStyle = {
     }
 }
 
-// 深色模式（tonal 变量随主题自适应，仅需覆盖容器背景）
+// 深色模式不需要另换底色：容器用的就是当前主题的 surface-rgb
 :global(html.dark-mode) {
     .search-modal__content {
-        background: rgba(30, 30, 30, 0.88);
-        border-color: rgba(255, 255, 255, 0.1);
+        border-color: var(--md-sys-color-outline-variant);
     }
 }
 

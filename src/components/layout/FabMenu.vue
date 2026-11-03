@@ -217,7 +217,7 @@ onUnmounted(() => {
 
     &:hover {
         background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary-container);
     }
 }
 

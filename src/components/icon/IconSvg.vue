@@ -372,7 +372,10 @@ function onImageLoad(event: Event) {
     flex-shrink: 0;
     vertical-align: middle;
     overflow: hidden;
-    color: var(--md-sys-color-on-surface-variant);
+    // 颜色跟随所在容器：内置图标已改走 mask（background-color: currentColor），
+    // 这里若写死 on-surface-variant，按钮 hover / 选中态改了自己的 color 时
+    // 图标就不会跟着变。需要弱化的图标由使用方自己指定颜色。
+    color: inherit;
 
     &__img {
         width: 100%;

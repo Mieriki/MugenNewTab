@@ -421,11 +421,13 @@ watch(
     cursor: pointer;
 }
 
+// 品牌图自带白底：原图直出，只做圆角，不加内边距/边框/投影
 .popup-logo {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
-    border-radius: 6px;
+    border-radius: 9px;
+    flex-shrink: 0;
 }
 
 .popup-title {
@@ -589,15 +591,11 @@ watch(
     gap: 12px;
 }
 
-// 深色模式覆盖
+// 深色模式：表面色/输入框底色都来自主题 token，这里只补一个悬停层
 :global(html.dark-mode) {
-    .popup-root {
-        background: rgba(40, 40, 40, 0.98);
-    }
-
     .form-select {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: var(--hover-bg);
+        border-color: var(--md-sys-color-outline-variant);
     }
 }
 </style>

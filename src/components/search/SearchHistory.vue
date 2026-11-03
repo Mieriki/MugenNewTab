@@ -201,7 +201,7 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
         &:hover,
         &:focus-visible {
             background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary-container);
 
             .search-history__item-icon {
                 background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);

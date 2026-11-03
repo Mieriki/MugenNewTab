@@ -255,7 +255,7 @@ function highlightMatch(suggestion: string): string {
         &:hover,
         &.is-active {
             background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary-container);
 
             .search-suggestions__icon {
                 background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);

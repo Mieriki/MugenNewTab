@@ -278,13 +278,7 @@ const closeIconPath = 'M18 6L6 18M6 6l12 12';
     align-items: center;
 }
 
-// 深色模式适配
-:global(html.dark-mode) {
-    .mnt-modal-content {
-        background: rgba(40, 40, 40, 0.98);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-}
+// 深色模式不需要单独换底色：.mnt-modal-content 用的就是当前主题的 surface
 
 // 移动端适配
 @include respond-to(mobile) {

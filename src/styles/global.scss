@@ -99,15 +99,14 @@ html[data-theme-loaded] body {
     scrollbar-color: var(--md-sys-color-outline) transparent;
 }
 
-// 深色模式滚动条优化
-html.dark-mode,
-body.dark-mode {
+// 深色模式滚动条：色值跟随主题的 on-surface，不再写死白色
+html.dark-mode {
     ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 22%, transparent);
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.35);
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 35%, transparent);
     }
 
     ::-webkit-scrollbar-thumb:active {
@@ -115,66 +114,11 @@ body.dark-mode {
     }
 
     * {
-        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        scrollbar-color: color-mix(in srgb, var(--md-sys-color-on-surface) 22%, transparent) transparent;
     }
 }
 
-// ==================== 深色模式组件覆盖 ====================
-// 以下类名来自原 index.legacy.html，用于在深色模式下覆盖各组件表面色
-html.dark-mode,
-body.dark-mode {
-    .sidebar {
-        border-color: rgba(255, 255, 255, 0.05);
-        background: var(--md-sys-color-surface);
-    }
-
-    .nav-item:hover {
-        background: var(--hover-bg);
-    }
-
-    .category-title {
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    .search-nav-item {
-        background: transparent;
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-
-    .history-item:hover {
-        background: var(--hover-bg);
-    }
-
-    .search-container {
-        background: rgba(30, 30, 30, 0.95);
-        border-color: rgba(255, 255, 255, 0.1);
-        box-shadow:
-            0 20px 60px rgba(0, 0, 0, 0.6),
-            0 0 0 1px rgba(255, 255, 255, 0.05);
-    }
-
-    .engine-dropdown-menu {
-        background: rgba(40, 40, 40, 0.98);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .modal-content,
-    .fab-menu,
-    .ui-lib-panel {
-        background: rgba(40, 40, 40, 0.98);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .ui-lib-item,
-    .form-input,
-    .form-textarea,
-    .form-select {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-
-    .app-card:hover {
-        border-color: rgba(255, 255, 255, 0.15);
-        background: rgba(255, 255, 255, 0.12);
-    }
-}
+// 深色模式不再单独覆盖各组件表面色。
+// 表面色一律来自主题 token（--md-sys-color-surface / --card-bg / --hover-bg），
+// 在这里写死 rgba(40, 40, 40, .98) 会把 12 套深色主题统一糊成同一种灰，
+// 弹窗 / FAB 菜单 / 图标库面板也就丢掉了主题色。

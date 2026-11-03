@@ -132,6 +132,7 @@ const spinnerPath = 'M12 2v4m0 12v4M2 12h4m12 0h4';
 
         &:not(:disabled):hover {
             background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
             border-color: var(--md-sys-color-primary);
         }
     }

@@ -33,12 +33,6 @@ describe('AppHeader', () => {
         expect(wrapper.emitted('toggle-sidebar')).toHaveLength(1);
     });
 
-    it('点击个性化按钮触发 toggle-personalization 事件', async () => {
-        const wrapper = mount(AppHeader);
-        await wrapper.find('.personalization-toggle-btn').trigger('click');
-        expect(wrapper.emitted('toggle-personalization')).toHaveLength(1);
-    });
-
     it('点击移动端菜单按钮触发 menu-click 事件', async () => {
         const wrapper = mount(AppHeader);
         await wrapper.find('.menu-toggle').trigger('click');

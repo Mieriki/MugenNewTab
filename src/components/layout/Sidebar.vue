@@ -211,6 +211,7 @@ watch(
     top: var(--header-height);
     width: var(--sidebar-width);
     height: calc(100vh - var(--header-height));
+    // 侧栏走「新版」：与内容区同色的 surface，靠右侧描边分隔
     background: var(--md-sys-color-surface);
     z-index: 999;
     overflow-y: auto;
@@ -292,7 +293,9 @@ watch(
 
     &.active {
         background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-primary);
+        // 落在 *-container 底上的文字用配套的 on-*-container：
+        // 重新用 primary 会掉到 2.98:1（薄荷绿那套几乎看不清）
+        color: var(--md-sys-color-on-primary-container);
         border-color: transparent;
         font-weight: 600;
     }
@@ -356,7 +359,7 @@ watch(
 
     &:hover {
         background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary-container);
         border-color: var(--md-sys-color-primary);
         transform: translateY(-1px);
     }
@@ -366,7 +369,8 @@ watch(
     margin-left: auto;
     font-size: 11px;
     opacity: 0.6;
-    background: rgba(0, 0, 0, 0.05);
+    // 写死黑色 5% 在深色主题里等于没有背景，用主题 token
+    background: var(--hover-bg);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: monospace;

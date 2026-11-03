@@ -300,11 +300,6 @@ function handleDelete(event: MouseEvent): void {
     }
 }
 
-// 深色模式覆盖
-:global(html.dark-mode) {
-    .app-card:hover {
-        border-color: rgba(255, 255, 255, 0.15);
-        background: rgba(255, 255, 255, 0.12);
-    }
-}
+// 深色模式不需要另一套 hover：卡片底色 / 边框都来自主题 token，
+// 主色描边在明暗两套里都成立
 </style>

@@ -2,8 +2,8 @@
 /**
  * AppHeader - 顶部应用栏
  *
- * 包含品牌区（Logo / 标题）、侧边栏折叠按钮、移动端菜单按钮、
- * 右侧操作区插槽以及个性化设置入口。
+ * 包含品牌区（Logo / 标题）、侧边栏折叠按钮、移动端菜单按钮与右侧操作区插槽。
+ * 个性化入口不在顶栏：已并入右下角 FAB 菜单（极简模式则由控制区的 palette 按钮提供）。
  */
 import { computed } from 'vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
@@ -18,24 +18,17 @@ export interface AppHeaderProps {
     showCollapseToggle?: boolean;
     /** 当前侧边栏是否折叠 */
     sidebarCollapsed?: boolean;
-    /** 是否显示个性化设置按钮 */
-    showPersonalizationToggle?: boolean;
-    /** 个性化下拉面板是否展开 */
-    isPersonalizationOpen?: boolean;
 }
 
 const props = withDefaults(defineProps<AppHeaderProps>(), {
     title: 'Mugen新标签页',
     logoSrc: '',
     showCollapseToggle: true,
-    sidebarCollapsed: false,
-    showPersonalizationToggle: true,
-    isPersonalizationOpen: false
+    sidebarCollapsed: false
 });
 
 const emit = defineEmits<{
     (e: 'toggle-sidebar'): void;
-    (e: 'toggle-personalization'): void;
     (e: 'menu-click'): void;
     /** 双击品牌区（Logo / 标题）：用于切换隐藏站点揭示模式 */
     (e: 'brand-dblclick'): void;
@@ -48,10 +41,6 @@ const collapseIconName = computed(() => (props.sidebarCollapsed ? 'Expand' : 'Fo
 
 function handleCollapseClick(): void {
     emit('toggle-sidebar');
-}
-
-function handlePersonalizationClick(): void {
-    emit('toggle-personalization');
 }
 
 function handleMenuClick(): void {
@@ -105,23 +94,6 @@ function handleBrandDblclick(): void {
 
         <div class="header-actions">
             <slot name="actions" />
-
-            <button
-                v-if="showPersonalizationToggle"
-                type="button"
-                class="personalization-toggle-btn"
-                :class="{ active: isPersonalizationOpen }"
-                :title="isPersonalizationOpen ? '关闭个性化面板' : '打开个性化面板'"
-                @click="handlePersonalizationClick"
-            >
-                <span class="personalization-icon">
-                    <IconSvg name="palette" :size="18" />
-                </span>
-                <span class="personalization-label">个性化</span>
-                <span class="dropdown-arrow">
-                    <IconSvg name="arrow-down" :size="12" />
-                </span>
-            </button>
         </div>
     </header>
 </template>
@@ -136,14 +108,23 @@ function handleBrandDblclick(): void {
     left: 0;
     right: 0;
     height: var(--header-height);
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
+    // 顶栏回到「主色渐变」的主题色语言：主色 → 主色混入一点次色。
+    // 不用满幅 secondary：实测 5 套主题的 on-primary 压在 secondary 上只有 1.8~3.5:1，
+    // 渐变右端的标题/按钮会糊掉；混 38% 后最差 3.1，其余 4.5+，视觉上仍是明显的两段渐变。
+    // 先给纯主色兜底：万一 color-mix 不被支持，顶栏仍是主题色而不是透明。
+    background: var(--md-sys-color-primary);
+    background: linear-gradient(
+        135deg,
+        var(--md-sys-color-primary) 0%,
+        color-mix(in srgb, var(--md-sys-color-primary) 62%, var(--md-sys-color-secondary)) 100%
+    );
+    color: var(--md-sys-color-on-primary);
     padding: 0 16px;
     z-index: 1000;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 18%, transparent);
 }
 
 .header-brand {
@@ -168,7 +149,7 @@ function handleBrandDblclick(): void {
 
 .collapse-toggle-btn {
     @include button-reset;
-    color: var(--md-sys-color-on-surface-variant);
+    color: color-mix(in srgb, var(--md-sys-color-on-primary) 70%, transparent);
     width: 28px;
     height: 28px;
     border-radius: 6px;
@@ -178,8 +159,8 @@ function handleBrandDblclick(): void {
     @include md-transition(color transform);
 
     &:hover {
-        color: var(--md-sys-color-primary);
-        background: var(--md-sys-color-surface-variant);
+        color: var(--md-sys-color-on-primary);
+        background: color-mix(in srgb, var(--md-sys-color-on-primary) 14%, transparent);
         transform: scale(1.1);
     }
 
@@ -191,21 +172,26 @@ function handleBrandDblclick(): void {
 .brand-icon {
     width: 32px;
     height: 32px;
-    background: rgba(255, 255, 255, 0.15);
+    // 顶栏现在是渐变主色，容器色一律用 on-primary 的半透明层
+    background: color-mix(in srgb, var(--md-sys-color-on-primary) 15%, transparent);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 20%, transparent);
     overflow: hidden;
     flex-shrink: 0;
     @include md-transition(all);
 
+    // 品牌图自带白底，直接按原图显示，只做圆角裁切，不加内边距/边框/投影
     &.is-image {
+        width: 36px;
+        height: 36px;
         background: transparent;
         border: none;
-        width: 34px;
-        height: 34px;
+        border-radius: 10px;
+        box-shadow: none;
+        padding: 0;
     }
 
     img {
@@ -217,7 +203,7 @@ function handleBrandDblclick(): void {
 
     &.is-image img {
         padding: 0;
-        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+        filter: none;
     }
 }
 
@@ -234,7 +220,8 @@ function handleBrandDblclick(): void {
     h1 {
         font-size: 1.05rem;
         font-weight: 600;
-        color: var(--md-sys-color-primary);
+        // 顶栏是主色渐变，标题用配套的 on-primary
+        color: var(--md-sys-color-on-primary);
         margin: 0;
         letter-spacing: -0.3px;
         line-height: 1.2;
@@ -245,10 +232,10 @@ function handleBrandDblclick(): void {
     display: none;
     width: 32px;
     height: 32px;
-    background: var(--md-sys-color-surface-variant);
-    border: 1px solid var(--md-sys-color-outline-variant);
+    background: color-mix(in srgb, var(--md-sys-color-on-primary) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 22%, transparent);
     border-radius: 8px;
-    color: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-on-primary);
     cursor: pointer;
     align-items: center;
     justify-content: center;
@@ -256,8 +243,7 @@ function handleBrandDblclick(): void {
     flex-shrink: 0;
 
     &:hover {
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-primary);
+        background: color-mix(in srgb, var(--md-sys-color-on-primary) 22%, transparent);
     }
 }
 
@@ -268,62 +254,6 @@ function handleBrandDblclick(): void {
     flex-shrink: 0;
 }
 
-.personalization-toggle-btn {
-    @include button-reset;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--md-sys-color-primary-container);
-    border-radius: 24px;
-    color: var(--md-sys-color-primary);
-    font-size: 14px;
-    font-weight: 600;
-    position: relative;
-    overflow: hidden;
-    box-shadow: none;
-    @include md-transition(all, 0.25s);
-
-    &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%);
-        opacity: 0;
-        @include md-transition(opacity);
-    }
-
-    &:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    &:hover::before {
-        opacity: 1;
-    }
-
-    &:active {
-        transform: translateY(0);
-        box-shadow: none;
-    }
-
-    &.active .dropdown-arrow :deep(.icon-svg) {
-        transform: rotate(180deg);
-    }
-}
-
-.personalization-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-}
-
-.dropdown-arrow :deep(.icon-svg) {
-    @include md-transition(transform, 0.25s);
-}
-
 @media (max-width: 768px) {
     .collapse-toggle-btn {
         display: none !important;
@@ -332,21 +262,6 @@ function handleBrandDblclick(): void {
     .menu-toggle {
         display: flex;
         margin-right: 8px;
-    }
-
-    .personalization-label,
-    .dropdown-arrow {
-        display: none;
-    }
-
-    .personalization-toggle-btn {
-        padding: 10px;
-        border-radius: 50%;
-    }
-
-    .personalization-icon {
-        width: 20px;
-        height: 20px;
     }
 }
 </style>

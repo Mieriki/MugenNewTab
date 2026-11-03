@@ -756,7 +756,7 @@ defineExpose({ focusInput });
 
     &:hover:not(:disabled) {
         opacity: 1;
-        color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary-container);
         background: var(--md-sys-color-primary-container);
     }
 
@@ -823,7 +823,7 @@ defineExpose({ focusInput });
     &.active {
         opacity: 1;
         background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary-container);
         font-weight: 600;
     }
 }
@@ -1023,13 +1023,13 @@ defineExpose({ focusInput });
 
     &:hover {
         background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary-container);
     }
 
     // 揭示模式开启时高亮，避免用户忘了自己还开着
     &.is-active {
         background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary-container);
     }
 }
 

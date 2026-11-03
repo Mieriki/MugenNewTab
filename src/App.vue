@@ -256,10 +256,6 @@ function closeMobileSidebar(): void {
     mobileSidebarOpen.value = false;
 }
 
-function togglePersonalization(): void {
-    personalizationOpen.value = !personalizationOpen.value;
-}
-
 function openSearch(): void {
     searchOpen.value = true;
 }
@@ -394,6 +390,9 @@ function handleFabSelect(action: string): void {
         case 'ui-lib':
             uiLibPanelOpen.value = true;
             break;
+        case 'personalize':
+            personalizationOpen.value = true;
+            break;
         case 'cloud-sync':
             cloudSyncOpen.value = true;
             break;
@@ -477,6 +476,8 @@ const fabItems = [
     { action: 'add-app', label: '添加网站', icon: 'plus' },
     { action: 'manage-categories', label: '管理分类', icon: 'setting' },
     { action: 'ui-lib', label: '图标库', icon: 'picture' },
+    // 个性化入口：顶栏不再放药丸，统一收进 FAB 菜单
+    { action: 'personalize', label: '个性化', icon: 'palette' },
     { divider: true },
     { section: '数据' },
     { action: 'cloud-sync', label: '云同步', icon: 'cloud' },
@@ -509,9 +510,7 @@ const fabItems = [
             <AppHeader
                 ref="headerRef"
                 :sidebar-collapsed="sidebarCollapsed"
-                :is-personalization-open="personalizationOpen"
                 @toggle-sidebar="toggleSidebar"
-                @toggle-personalization="togglePersonalization"
                 @menu-click="openMobileSidebar"
                 @brand-dblclick="toggleHiddenApps"
             />

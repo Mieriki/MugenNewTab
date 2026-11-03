@@ -297,13 +297,7 @@ function handleEsc(event: KeyboardEvent): void {
     }
 }
 
-html.dark-mode,
-body.dark-mode {
-    .personalization-dropdown {
-        background: rgba(40, 40, 40, 0.98);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-}
+// 下拉面板的底色来自主题 surface，深色模式不需要另换一套灰
 
 @include respond-to(mobile) {
     .personalization-dropdown {

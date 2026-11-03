@@ -326,7 +326,7 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         &:hover,
         &.is-active {
             background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary-container);
         }
 
         &.is-selected {

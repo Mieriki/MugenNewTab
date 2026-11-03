@@ -948,10 +948,9 @@ const statusClass = computed(() => {
     color: var(--md-sys-color-error);
 }
 
-html.dark-mode,
-body.dark-mode {
+html.dark-mode {
     .cloud-sync-user__avatar {
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--hover-bg);
     }
 }
 </style>
