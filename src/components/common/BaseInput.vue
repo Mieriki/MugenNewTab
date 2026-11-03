@@ -217,11 +217,9 @@ function handleFocus(event: FocusEvent): void {
     }
 }
 
-// 深色模式覆盖
-:global(html.dark-mode) {
-    .mnt-base-input__wrapper {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
+// 深色模式覆盖（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
+html.dark-mode .mnt-base-input__wrapper {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 </style>

@@ -271,8 +271,12 @@ export const useThemeStore = defineStore('theme', () => {
      *
      * 必须同时挂在 html 与 body 上：
      * - theme-preload.js 只能给 html 加（那时 body 还不一定存在）
-     * - 组件里的深色覆盖写的是 `:global(html.dark-mode) .child`，依赖 html 上的类
+     * - 组件里的深色覆盖写的是 `html.dark-mode .child`，依赖 html 上的类
      * 只挂 body 会导致预加载失败时深色覆盖整片失效。
+     *
+     * 注意别用 `:global(html.dark-mode) { … }` 包裹后代：Vue 的 scoped 编译会把
+     * 后代选择器整个丢掉，声明直接落到 html 上（曾经因此让 html 带上了背景色，
+     * 盖住 z-index:-1 的壁纸层，深色模式下壁纸整片消失）。
      */
     function updateBodyClass(dark: boolean): void {
         if (typeof document === 'undefined') {

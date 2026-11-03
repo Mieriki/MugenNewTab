@@ -745,34 +745,32 @@ function close(): void {
     }
 }
 
-// 深色模式适配
-:global(html.dark-mode) {
-    .ui-lib-panel__item {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
+// 深色模式适配（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
+html.dark-mode .ui-lib-panel__item {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
 
-        &:hover,
-        &:focus-visible {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
+    &:hover,
+    &:focus-visible {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
+}
 
-    .ui-lib-panel__tab-input {
-        background: rgba(255, 255, 255, 0.06);
-    }
+html.dark-mode .ui-lib-panel__tab-input {
+    background: rgba(255, 255, 255, 0.06);
+}
 
-    .ui-lib-panel__select {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
+html.dark-mode .ui-lib-panel__select {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
 
-    .ui-lib-panel__add-row {
-        border-color: rgba(255, 255, 255, 0.16);
+html.dark-mode .ui-lib-panel__add-row {
+    border-color: rgba(255, 255, 255, 0.16);
 
-        &:hover {
-            border-color: var(--md-sys-color-primary);
-            background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-        }
+    &:hover {
+        border-color: var(--md-sys-color-primary);
+        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
     }
 }
 </style>

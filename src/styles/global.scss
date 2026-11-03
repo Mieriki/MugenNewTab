@@ -17,6 +17,15 @@ html {
     scroll-behavior: smooth;
 }
 
+// html 只承载主题变量，绝不承载背景色。
+// body 的底色只有在 html 没有背景时才会传递给画布；一旦 html 有了背景，
+// body 就退化成普通元素，它自己的不透明底色会盖在 z-index:-1 的壁纸层之上，
+// 深色模式下壁纸整片消失。组件里写错的 scoped 深色规则正是这样把子元素的
+// background 泄漏到 html 上的，这条 !important 是不让它再复发的护栏。
+html {
+    background: transparent !important;
+}
+
 body {
     font-family: 'Noto Sans SC', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: var(--md-sys-color-background);

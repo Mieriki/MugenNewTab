@@ -715,21 +715,13 @@ watch(
 }
 
 // 深色模式只补「比表面深一档」的填充，颜色仍取自主题 token
-:global(html.dark-mode) {
-    .icon-card {
-        background: var(--hover-bg);
-        border-color: var(--md-sys-color-outline-variant);
-    }
-
-    .icon-picker {
-        background: var(--hover-bg);
-        border-color: var(--md-sys-color-outline-variant);
-    }
-
-    .icon-picker-item {
-        background: var(--hover-bg);
-        border-color: var(--md-sys-color-outline-variant);
-    }
+// 注意：后代选择器必须直接写在 scoped 样式里。用 `:global(html.dark-mode) { … }` 包裹时，
+// Vue 的 scoped 编译会把后代选择器丢掉，声明直接落到 html 上（会盖住壁纸层）。
+html.dark-mode .icon-card,
+html.dark-mode .icon-picker,
+html.dark-mode .icon-picker-item {
+    background: var(--hover-bg);
+    border-color: var(--md-sys-color-outline-variant);
 }
 
 @include respond-to(mobile) {

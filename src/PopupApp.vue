@@ -592,10 +592,9 @@ watch(
 }
 
 // 深色模式：表面色/输入框底色都来自主题 token，这里只补一个悬停层
-:global(html.dark-mode) {
-    .form-select {
-        background: var(--hover-bg);
-        border-color: var(--md-sys-color-outline-variant);
-    }
+// （后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
+html.dark-mode .form-select {
+    background: var(--hover-bg);
+    border-color: var(--md-sys-color-outline-variant);
 }
 </style>

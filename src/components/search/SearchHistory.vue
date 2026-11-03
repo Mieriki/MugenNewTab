@@ -275,11 +275,9 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
     }
 }
 
-// 深色模式
-:global(html.dark-mode) {
-    .search-history__item-remove {
-        background: var(--md-sys-color-surface-variant);
-    }
+// 深色模式（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
+html.dark-mode .search-history__item-remove {
+    background: var(--md-sys-color-surface-variant);
 }
 
 @include respond-to(mobile) {

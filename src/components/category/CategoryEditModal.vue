@@ -543,26 +543,24 @@ const activePresetIcon = computed(() =>
     max-height: 320px;
 }
 
-// 深色模式适配
-:global(html.dark-mode) {
-    .mnt-category-form__preview-box--light {
-        background: var(--md-sys-color-surface);
-    }
+// 深色模式适配（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
+html.dark-mode .mnt-category-form__preview-box--light {
+    background: var(--md-sys-color-surface);
+}
 
-    .mnt-category-form__presets {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
+html.dark-mode .mnt-category-form__presets {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
 
-    .mnt-category-form__picker-item {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
+html.dark-mode .mnt-category-form__picker-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
 
-        &--active,
-        &--active:hover {
-            background: color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
-            border-color: var(--md-sys-color-primary);
-        }
+    &--active,
+    &--active:hover {
+        background: color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
+        border-color: var(--md-sys-color-primary);
     }
 }
 </style>

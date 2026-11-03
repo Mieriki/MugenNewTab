@@ -356,26 +356,24 @@ function formatCount(categoryId: string): string {
     }
 }
 
-// 深色模式适配
-:global(html.dark-mode) {
-    .mnt-category-manager__item {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.08);
+// 深色模式适配（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
+html.dark-mode .mnt-category-manager__item {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
 
-        &:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: color-mix(in srgb, var(--md-sys-color-primary) 55%, transparent);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-        }
+    &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: color-mix(in srgb, var(--md-sys-color-primary) 55%, transparent);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
     }
+}
 
-    .mnt-category-manager__add-row {
-        border-color: rgba(255, 255, 255, 0.16);
+html.dark-mode .mnt-category-manager__add-row {
+    border-color: rgba(255, 255, 255, 0.16);
 
-        &:hover {
-            border-color: var(--md-sys-color-primary);
-            background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-        }
+    &:hover {
+        border-color: var(--md-sys-color-primary);
+        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
     }
 }
 </style>
