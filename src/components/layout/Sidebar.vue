@@ -350,12 +350,13 @@ watch(
     align-items: center;
     padding: 10px 12px;
     border-radius: 8px;
-    color: var(--md-sys-color-on-surface-variant);
-    background: transparent;
+    color: var(--md-sys-color-on-surface);
+    background: var(--md-sys-color-surface-variant);
     font-weight: 500;
     font-size: 13px;
     @include md-transition(all, 0.2s);
-    border: 1px solid var(--md-sys-color-outline-variant);
+    // 无可见描边：收起侧栏时这块填充色本身就是左下角那个圆角方块
+    border: 1px solid transparent;
 
     &:hover {
         background: var(--md-sys-color-primary-container);

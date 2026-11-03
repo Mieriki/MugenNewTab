@@ -241,7 +241,7 @@ const closeIconPath = 'M18 6L6 18M6 6l12 12';
 // 容器样式以内联方式下发；下方 scoped 中的 &__content / &__body 仅作同步备份。
 const modalContentStyle = {
     background: 'rgba(var(--md-sys-color-surface-rgb), 0.92)',
-    border: '1px solid var(--md-sys-color-outline-variant)',
+    // 不画描边：容器靠阴影与背景模糊与页面分层
     borderRadius: '24px',
     boxShadow: '0 24px 64px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08)',
     backdropFilter: 'blur(24px)',
@@ -278,8 +278,6 @@ const modalBodyStyle = {
                         :model-value="currentEngineIndex"
                         @update:model-value="handleEngineSelect"
                     />
-
-                    <span class="search-modal__divider" aria-hidden="true" />
 
                     <div class="search-modal__input-wrap">
                         <BaseInput
@@ -383,7 +381,6 @@ const modalBodyStyle = {
     // 同步备份：实际生效的是内联 modalContentStyle（见脚本注释）
     &__content {
         background: rgba(var(--md-sys-color-surface-rgb), 0.92);
-        border: 1px solid var(--md-sys-color-outline-variant);
         border-radius: 24px;
         box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08);
         backdrop-filter: blur(24px);
@@ -431,14 +428,6 @@ const modalBodyStyle = {
             border-color: var(--md-sys-color-primary);
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
         }
-    }
-
-    &__divider {
-        width: 1px;
-        height: 20px;
-        background: var(--md-sys-color-outline-variant);
-        flex-shrink: 0;
-        margin: 0 2px;
     }
 
     &__input-wrap {
@@ -587,7 +576,6 @@ const modalBodyStyle = {
         background: transparent;
         font-size: 12px;
         color: var(--md-sys-color-on-surface-variant);
-        border-top: 1px solid var(--md-sys-color-outline-variant);
     }
 
     &__hints {
@@ -620,13 +608,6 @@ const modalBodyStyle = {
     }
 }
 
-// 深色模式不需要另换底色：容器用的就是当前主题的 surface-rgb
-:global(html.dark-mode) {
-    .search-modal__content {
-        border-color: var(--md-sys-color-outline-variant);
-    }
-}
-
 @include respond-to(mobile) {
     .search-modal__header {
         padding: 10px 12px 8px;
@@ -635,10 +616,6 @@ const modalBodyStyle = {
 
     .search-modal__bar {
         padding-left: 8px;
-    }
-
-    .search-modal__divider {
-        display: none;
     }
 
     .search-modal__submit {
