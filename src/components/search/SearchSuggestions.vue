@@ -230,6 +230,8 @@ function highlightMatch(suggestion: string): string {
     &__list {
         padding: 4px 8px 10px;
         @include md-transition(opacity, var(--md-transition-fast));
+        // 骨架换成真实列表时淡入，避免硬切
+        animation: mnt-suggestions-in 0.16s ease;
     }
 
     // 刷新中：旧列表保持显示，半透明提示正在更新，避免高度跳变
@@ -299,6 +301,16 @@ function highlightMatch(suggestion: string): string {
 
     to {
         background-position: -200% 0;
+    }
+}
+
+@keyframes mnt-suggestions-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
     }
 }
 

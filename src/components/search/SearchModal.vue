@@ -69,8 +69,22 @@ const isVisible = computed({
     set: (value) => emit('update:modelValue', value)
 });
 
-const showHistory = computed(() => !query.value.trim() && history.value.length > 0);
-const showEmptyState = computed(() => !query.value.trim() && history.value.length === 0);
+const hasHistory = computed(() => history.value.length > 0);
+/** 建议区：有结果就显示；无结果时只有「连历史都没有」才用骨架顶住 */
+const showSuggestions = computed(
+    () => hasSuggestions.value || (isLoadingSuggestions.value && !hasHistory.value)
+);
+/**
+ * 历史：只要没有建议可显示就留在原位。
+ *
+ * 不再随 query 变空而卸载 —— 否则敲下第一个字的瞬间正文会空一段，
+ * 等防抖走完骨架才出来，看起来就是「历史消失 → 骨架 → 列表」两次跳变。
+ */
+const showHistory = computed(() => hasHistory.value && !hasSuggestions.value);
+/** 空状态只在「没输入 + 没历史 + 没骨架」时出现 */
+const showEmptyState = computed(
+    () => !query.value.trim() && !hasHistory.value && !showSuggestions.value
+);
 
 /**
  * 幽灵文本预览的补全后缀：
@@ -321,7 +335,7 @@ const modalBodyStyle = {
                     :suggestions="suggestions"
                     :active-index="activeSuggestionIndex"
                     :loading="isLoadingSuggestions"
-                    :visible="hasSuggestions"
+                    :visible="showSuggestions"
                     :query="query"
                     @select="selectSuggestion"
                     @hover="handleSuggestionHover"
