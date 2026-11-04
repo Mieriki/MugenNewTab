@@ -188,7 +188,7 @@ watch(
                 <span class="nav-icon">
                     <IconSvg name="search" :size="20" />
                 </span>
-                <span class="nav-text">全局搜索</span>
+                <span class="nav-text">搜索</span>
                 <span class="search-shortcut">Ctrl+K</span>
             </button>
         </div>
@@ -339,7 +339,6 @@ watch(
 
 .sidebar-footer {
     padding: 12px 8px;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
     margin-top: auto;
 }
 
