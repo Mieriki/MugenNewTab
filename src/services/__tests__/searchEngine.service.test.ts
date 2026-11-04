@@ -141,4 +141,23 @@ describe('SearchEngineService', () => {
 
         consoleSpy.mockRestore();
     });
+
+    it('加载配置后把远程引擎图标交给缓存预热', async () => {
+        vi.stubGlobal(
+            'fetch',
+            createFetchMock([
+                { name: 'Google', url: 'https://www.google.com/search?q={q}', icon: 'https://favicon.im/www.google.com' }
+            ])
+        );
+
+        // 与 service 共享同一个模块实例，才能拿到同一次 resetModules 之后的单例
+        const { mediaCacheService } = await import('../mediaCache.service');
+        const warmSpy = vi.spyOn(mediaCacheService, 'warm').mockResolvedValue(undefined);
+
+        const { getAllSearchEngines } = await import('../searchEngine.service');
+        await getAllSearchEngines();
+
+        expect(warmSpy).toHaveBeenCalledWith(['https://favicon.im/www.google.com']);
+        warmSpy.mockRestore();
+    });
 });

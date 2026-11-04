@@ -2,7 +2,7 @@
  * 媒体缓存服务（IndexedDB）
  *
  * 缓存两类远程资源，避免每次打开新标签页都重新走网络：
- *   - icon：站点 favicon / 远程图片图标（默认 7 天）
+ *   - icon：站点 favicon / 搜索引擎图标 / 远程图片图标（默认 7 天）
  *   - wallpaper：网络壁纸（默认 30 天）
  *
  * 设计要点：
@@ -41,6 +41,9 @@ const TTL_BY_KIND: Record<MediaCacheKind, number> = {
 
 /** 默认缓存类型（兼容旧调用方） */
 const DEFAULT_KIND: MediaCacheKind = 'icon';
+
+/** 预热时的并发上限：首屏一次预热十几个图标，限流避免抢占关键请求 */
+const WARM_CONCURRENCY = 4;
 
 /**
  * 从 localStorage 镜像同步读取开关
@@ -124,6 +127,8 @@ class MediaCacheService {
     private readonly pendingReads = new Map<string, Promise<string | null>>();
     /** 本会话抓取失败过的 URL，避免每次渲染都重试一次注定失败的请求 */
     private readonly failedUrls = new Set<string>();
+    /** 正在预热中的 URL，用于跨调用方去重 */
+    private readonly warmingUrls = new Set<string>();
     /** 是否已在本会话执行过期清理 */
     private swept = false;
     /** 开关：关闭后既不读缓存也不写缓存 */
@@ -240,6 +245,58 @@ class MediaCacheService {
         }
     }
 
+    /**
+     * 预热一组远程资源到缓存
+     *
+     * 用于「已知会用到」的固定列表（如搜索引擎图标）：配置一加载就先抓下来，
+     * 之后组件渲染时直接命中缓存，不再等网络。全程静默——抓不到的地址由
+     * fetchAndCache 记入 failedUrls，调用方无感。
+     *
+     * 内部做三层去重：入参去重、跳过已缓存 / 已失败 / 正在预热的地址，
+     * 因此多个入口重复调用不会重复发请求。
+     *
+     * @param urls 资源地址列表（非 http(s)、空的项会被忽略）
+     * @param kind 资源类型，默认图标
+     */
+    async warm(urls: Iterable<string | undefined>, kind: MediaCacheKind = DEFAULT_KIND): Promise<void> {
+        if (!this.enabled) {
+            return;
+        }
+
+        const queue = [...new Set(urls)].filter(
+            (url): url is string =>
+                !!url &&
+                this.isCacheableUrl(url) &&
+                !this.memoryCache.has(url) &&
+                !this.failedUrls.has(url) &&
+                !this.warmingUrls.has(url)
+        );
+        if (!queue.length) {
+            return;
+        }
+
+        queue.forEach(url => this.warmingUrls.add(url));
+
+        let cursor = 0;
+        const worker = async (): Promise<void> => {
+            while (cursor < queue.length) {
+                const url = queue[cursor];
+                cursor += 1;
+                if (url) {
+                    await this.fetchAndCache(url, kind);
+                }
+            }
+        };
+
+        try {
+            await Promise.all(
+                Array.from({ length: Math.min(WARM_CONCURRENCY, queue.length) }, worker)
+            );
+        } finally {
+            queue.forEach(url => this.warmingUrls.delete(url));
+        }
+    }
+
     /** 移除单个缓存条目（如缓存内容损坏时） */
     async evict(url: string): Promise<void> {
         const objectUrl = this.memoryCache.get(url);
@@ -322,6 +379,7 @@ class MediaCacheService {
         this.memoryCache.clear();
         this.pendingReads.clear();
         this.failedUrls.clear();
+        this.warmingUrls.clear();
         this.swept = false;
         this.enabled = true;
         if (this.dbPromise) {

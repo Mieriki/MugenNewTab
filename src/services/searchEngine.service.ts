@@ -8,6 +8,7 @@
 
 import type { SearchEngine } from '@/types/config';
 import ConfigService from '@/services/config.service';
+import { mediaCacheService } from '@/services/mediaCache.service';
 
 /** 搜索引擎缺少图标时的默认占位图标（使用系统 24×24 SVG） */
 const FALLBACK_ICON_PATH = '/image/icons/search.svg';
@@ -45,10 +46,13 @@ function normalizeEngines(engines: SearchEngine[] | null): SearchEngine[] {
  *
  * 通过 ConfigService 读取 public/config/searchEngines.json 并规范化。
  * ConfigService 内部已维护内存缓存，避免重复网络请求。
+ * 顺带把引擎图标预热进本地缓存：配置一加载就抓，不必等组件渲染。
  */
 async function loadEngines(): Promise<SearchEngine[]> {
     const engines = await ConfigService.loadSearchEngines();
-    return normalizeEngines(engines);
+    const normalized = normalizeEngines(engines);
+    void mediaCacheService.warm(normalized.map(engine => engine.icon));
+    return normalized;
 }
 
 /**

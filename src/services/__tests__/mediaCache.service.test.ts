@@ -249,4 +249,32 @@ describe('mediaCacheService', () => {
         // 内存命中，createObjectURL 只在 cache 写入时调用一次
         expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     });
+
+    it('warm 预热后 resolve 直接命中，且重复调用不重复抓取', async () => {
+        const fetchMock = mockFetchOk();
+
+        await mediaCacheService.warm([ICON_URL, ICON_URL_B, ICON_URL]);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(await mediaCacheService.resolve(ICON_URL)).toMatch(/^blob:/);
+        expect(await mediaCacheService.resolve(ICON_URL_B)).toMatch(/^blob:/);
+
+        fetchMock.mockClear();
+        await mediaCacheService.warm([ICON_URL, ICON_URL_B]);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('warm 忽略非 http(s)、空地址与尚未失效的重复地址', async () => {
+        const fetchMock = mockFetchOk();
+
+        await mediaCacheService.warm(['/image/icons/search.svg', 'data:image/svg+xml,xxx', '', undefined]);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('warm 在缓存开关关闭时不发请求', async () => {
+        const fetchMock = mockFetchOk();
+        mediaCacheService.setEnabled(false);
+
+        await mediaCacheService.warm([ICON_URL, ICON_URL_B]);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
 });

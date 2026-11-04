@@ -2,7 +2,7 @@
 /**
  * CacheSettings - 本地缓存设置
  *
- * 站点图标与网络壁纸默认缓存在 IndexedDB（mediaCacheService）里，
+ * 站点图标、搜索引擎图标与网络壁纸默认缓存在 IndexedDB（mediaCacheService）里，
  * 这里提供总开关、用量展示与一键清理。
  */
 import { computed, onMounted } from 'vue';
@@ -73,7 +73,7 @@ async function handleClear(): Promise<void> {
                     :checked="cacheStore.enabled"
                     @change="handleToggle"
                 />
-                <span>启用本地缓存（站点图标与网络壁纸存到本地，不再每次打开都请求网络）</span>
+                <span>启用本地缓存（站点图标、搜索引擎图标与网络壁纸存到本地，不再每次打开都请求网络）</span>
             </label>
             <p class="cache-settings__hint">
                 关闭后不再读写缓存，已有缓存会保留，重新开启即可继续复用。
@@ -99,6 +99,7 @@ async function handleClear(): Promise<void> {
 
         <p class="cache-settings__note">
             图标缓存 7 天、壁纸缓存 30 天后自动过期；只缓存 http(s) 资源，本地图片与内置图标不占空间。
+            搜索引擎图标会在引擎配置加载后预先缓存。
         </p>
     </section>
 </template>
