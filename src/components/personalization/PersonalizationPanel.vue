@@ -153,8 +153,8 @@ function handleEsc(event: KeyboardEvent): void {
     inset: 0;
     z-index: 1001;
     display: flex;
-    justify-content: flex-end;
-    align-items: flex-start;
+    justify-content: center;
+    align-items: center;
     pointer-events: none;
 }
 
@@ -167,12 +167,10 @@ function handleEsc(event: KeyboardEvent): void {
 }
 
 .personalization-dropdown {
-    position: fixed;
-    top: calc(var(--header-height) + 8px);
-    right: 16px;
+    position: relative;
     width: 640px;
     max-width: calc(100vw - 32px);
-    max-height: calc(100vh - var(--header-height) - 16px);
+    max-height: calc(100vh - 64px);
     background: rgba(var(--md-sys-color-surface-rgb), 0.98);
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
@@ -181,7 +179,7 @@ function handleEsc(event: KeyboardEvent): void {
     flex-direction: column;
     pointer-events: auto;
     overflow: hidden;
-    transform-origin: top right;
+    transform-origin: center;
 
     &__header {
         display: flex;
@@ -293,21 +291,18 @@ function handleEsc(event: KeyboardEvent): void {
 
     .personalization-dropdown {
         opacity: 0;
-        transform: translateY(-8px) scale(0.96);
+        transform: scale(0.96);
     }
 }
 
-// 下拉面板的底色来自主题 surface，深色模式不需要另换一套灰
+// 面板底色来自主题 surface，深色模式不需要另换一套灰
 
 @include respond-to(mobile) {
     .personalization-dropdown {
-        top: var(--header-height);
-        right: 0;
-        left: 0;
-        width: 100%;
+        width: calc(100vw - 24px);
         max-width: none;
-        max-height: calc(100vh - var(--header-height));
-        border-radius: 20px 20px 0 0;
+        max-height: calc(100vh - 48px);
+        border-radius: 20px;
     }
 
     .panel-layout {
