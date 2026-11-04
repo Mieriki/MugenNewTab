@@ -170,6 +170,8 @@ function handleEsc(event: KeyboardEvent): void {
     position: relative;
     width: 640px;
     max-width: calc(100vw - 32px);
+    // 高度写死：四个栏目内容高度差不少（壁纸最高），随内容伸缩会让居中的面板上下跳动
+    height: min(580px, calc(100vh - 64px));
     max-height: calc(100vh - 64px);
     background: rgba(var(--md-sys-color-surface-rgb), 0.98);
     border-radius: 16px;
@@ -223,6 +225,9 @@ function handleEsc(event: KeyboardEvent): void {
     }
 
     &__body {
+        // 面板高度固定后由内容区吃掉剩余高度：内容少时留白在面板内，内容多时这里滚动
+        flex: 1;
+        min-height: 0;
         overflow-y: auto;
         padding: 16px 20px;
         @include hide-scrollbar;
@@ -232,7 +237,8 @@ function handleEsc(event: KeyboardEvent): void {
 .panel-layout {
     display: flex;
     gap: 16px;
-    min-height: 280px;
+    // 撑满内容区高度，让左侧导航的分割线在矮栏目下也画到底
+    min-height: 100%;
 }
 
 .panel-nav {
@@ -301,6 +307,8 @@ function handleEsc(event: KeyboardEvent): void {
     .personalization-dropdown {
         width: calc(100vw - 24px);
         max-width: none;
+        // 与桌面一致：固定高度，内容在面板内滚动，切栏目尺寸不变
+        height: min(580px, calc(100vh - 48px));
         max-height: calc(100vh - 48px);
         border-radius: 20px;
     }
