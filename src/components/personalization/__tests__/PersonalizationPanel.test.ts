@@ -65,10 +65,11 @@ describe('PersonalizationPanel', () => {
 
         const dropdown = document.body.querySelector('.personalization-dropdown');
         expect(dropdown).not.toBeNull();
-        expect(dropdown!.querySelectorAll('.panel-nav__item')).toHaveLength(4);
+        expect(dropdown!.querySelectorAll('.panel-nav__item')).toHaveLength(5);
         expect(dropdown!.querySelector('.theme-selector')).not.toBeNull();
         expect(dropdown!.querySelector('.wallpaper-settings')).not.toBeNull();
         expect(dropdown!.querySelector('.layout-settings')).not.toBeNull();
+        expect(dropdown!.querySelector('.card-style-settings')).not.toBeNull();
         expect(dropdown!.querySelector('.cache-settings')).not.toBeNull();
         // 默认激活「主题」栏目
         expect(dropdown!.querySelector('.panel-nav__item.active')?.textContent).toContain('主题');
@@ -89,6 +90,10 @@ describe('PersonalizationPanel', () => {
         (items[2] as HTMLButtonElement).click();
         await flushPromises();
         expect(document.body.querySelector('.panel-nav__item.active')?.textContent).toContain('页面布局');
+
+        (items[3] as HTMLButtonElement).click();
+        await flushPromises();
+        expect(document.body.querySelector('.panel-nav__item.active')?.textContent).toContain('卡片样式');
     });
 
     it('点击遮罩层触发 update:modelValue 与 close', async () => {

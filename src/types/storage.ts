@@ -38,7 +38,9 @@ export const STORAGE_KEYS = {
     /** 用户已忽略的版本号，同一版本不再重复提示 */
     UPDATE_DISMISSED_VERSION: 'appNavigator_updateDismissedVersion',
     /** 媒体缓存开关（站点图标 / 网络壁纸的本地缓存） */
-    MEDIA_CACHE: 'appNavigator_mediaCache'
+    MEDIA_CACHE: 'appNavigator_mediaCache',
+    /** 卡片样式设置（不透明度 / 磨砂 / 圆角 / 阴影 / 描边） */
+    CARD_STYLE: 'appNavigator_cardStyle'
 } as const;
 
 /** 需要同步镜像到 localStorage 的首屏设置键（防止 FOUC 闪烁） */
@@ -62,7 +64,12 @@ export const SYNC_MIRROR_KEYS = new Set<string>([
      * 缓存开关也走同步镜像：图标组件在首帧就要决定「读缓存还是走网络」，
      * 等异步存储回来再判断会让关闭状态失效一次。
      */
-    STORAGE_KEYS.MEDIA_CACHE
+    STORAGE_KEYS.MEDIA_CACHE,
+    /**
+     * 卡片样式必须同步镜像：卡片是首屏内容，等异步存储回来再套用样式会先按
+     * 默认底色/圆角画一遍，肉眼就是「闪一下」。
+     */
+    STORAGE_KEYS.CARD_STYLE
 ]);
 
 /** 云同步需要收集的本地数据键（仅站点数据与用户图标库，个性化设置不同步） */
@@ -125,6 +132,25 @@ export interface LayoutSettings {
 export interface MediaCacheSettings {
     /** 是否启用本地缓存（站点图标 / 网络壁纸） */
     enabled: boolean;
+}
+
+/**
+ * 卡片样式设置
+ *
+ * 只作用于标准视图的站点卡片（含拖拽幽灵卡），最终落成 :root 上的
+ * --card-* 变量；极简约模式的磁贴、面板与弹窗不受影响。
+ */
+export interface CardStyleSettings {
+    /** 卡片底色不透明度（0-1），越低壁纸透出越多 */
+    opacity: number;
+    /** 磨砂模糊半径（px），0 表示关闭 backdrop-filter */
+    blur: number;
+    /** 圆角（px） */
+    radius: number;
+    /** 阴影强度（0-1），按比例缩放默认阴影的透明度 */
+    shadow: number;
+    /** 是否显示描边 */
+    bordered: boolean;
 }
 
 /**

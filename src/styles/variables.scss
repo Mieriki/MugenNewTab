@@ -48,9 +48,22 @@
     // 卡片 / 面板底：surface 保留 22% 透明，让壁纸能透出来
     --md-sys-color-surface-container: color-mix(in srgb, var(--md-sys-color-surface) 78%, transparent);
 
-    --card-bg: var(--md-sys-color-surface-container);
-    --card-border: var(--md-sys-color-outline-variant);
-    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.08);
+    // ==================== 卡片样式（个性化面板可调） ====================
+    //
+    // 这五个变量由 cardStyle.store 写到 :root 上；下面的 --card-* 只是把数值
+    // 和颜色拼起来，所以卡片外观变化不需要任何组件重新渲染，主题换色时也会
+    // 顺着 --md-sys-color-surface-rgb 自动跟上。
+    --card-surface-opacity: 0.78; // 卡片不透明度 0-1
+    --card-radius: 12px; // 圆角
+    --card-shadow-alpha: 1; // 阴影强度 0-1，按比例缩放下面的两段阴影
+    --card-border-color: var(--md-sys-color-outline-variant); // 关闭描边时被置为 transparent
+    --card-backdrop: none; // 磨砂：none 或 blur(Npx)
+
+    --card-bg: rgba(var(--md-sys-color-surface-rgb), var(--card-surface-opacity));
+    --card-border: var(--card-border-color);
+    --card-shadow:
+        0 1px 2px rgba(0, 0, 0, calc(0.04 * var(--card-shadow-alpha))),
+        0 4px 14px rgba(0, 0, 0, calc(0.08 * var(--card-shadow-alpha)));
     --hover-bg: color-mix(in srgb, var(--md-sys-color-on-surface) 7%, transparent);
 
     // 动效变量

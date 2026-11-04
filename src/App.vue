@@ -21,6 +21,7 @@ import { useToast } from '@/composables/useToast';
 import { useUpdateCheck } from '@/composables/useUpdateCheck';
 import { useAppCardDrag, type AppCardDragCommit } from '@/composables/useAppCardDrag';
 import { useLayoutStore } from '@/stores/layout.store';
+import { useCardStyleStore } from '@/stores/cardStyle.store';
 import { storageManager } from '@/services/storage.service';
 import { isJsonFile, readTextFile } from '@/utils/file.util';
 import { openUrl } from '@/utils/navigation.util';
@@ -82,6 +83,9 @@ const searchOpen = ref(false);
 const activeCategoryId = ref<string>('all');
 const showHiddenApps = ref(false);
 const layoutStore = useLayoutStore();
+// 在 setup 阶段就创建：store 构造时会按同步镜像把 --card-* 写到 :root，
+// 必须早于首帧渲染，否则卡片会先按默认样式画一遍再变。
+const cardStyleStore = useCardStyleStore();
 
 // ==================== 模态框状态 ====================
 const appEditOpen = ref(false);
@@ -200,6 +204,14 @@ onMounted(() => {
         .init()
         .catch((error) => {
             console.error('[App] 初始化布局设置失败:', error);
+        });
+
+    // 加载卡片样式设置（不透明度 / 磨砂 / 圆角 / 阴影 / 描边）。
+    // 首屏兜底靠 store 创建时的同步镜像，这里只是用真实存储再校正一次。
+    cardStyleStore
+        .init()
+        .catch((error) => {
+            console.error('[App] 初始化卡片样式失败:', error);
         });
 
     // 监听外部存储变更，同步侧边栏折叠状态（跨标签页）

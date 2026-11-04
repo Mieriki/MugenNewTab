@@ -169,8 +169,11 @@ function handleDelete(event: MouseEvent): void {
     height: 76px;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    border-radius: 12px;
+    border-radius: var(--card-radius, 12px);
     box-shadow: var(--card-shadow);
+    // 磨砂：默认 none，开启后采样卡片背后的壁纸（值由 cardStyle.store 下发）
+    -webkit-backdrop-filter: var(--card-backdrop, none);
+    backdrop-filter: var(--card-backdrop, none);
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
@@ -183,7 +186,7 @@ function handleDelete(event: MouseEvent): void {
     &:hover {
         transform: translateY(-2px);
         border-color: var(--md-sys-color-primary);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, calc(0.08 * var(--card-shadow-alpha, 1)));
     }
 
     &:hover &__name {

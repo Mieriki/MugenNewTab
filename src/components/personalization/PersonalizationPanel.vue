@@ -11,6 +11,7 @@ import IconSvg from '@/components/icon/IconSvg.vue';
 import ThemeSelector from './ThemeSelector.vue';
 import WallpaperSettings from './WallpaperSettings.vue';
 import LayoutSettings from './LayoutSettings.vue';
+import CardStyleSettings from './CardStyleSettings.vue';
 import CacheSettings from './CacheSettings.vue';
 
 export interface PersonalizationPanelProps {
@@ -37,6 +38,7 @@ const tabs = [
     { id: 'theme', label: '主题', icon: 'palette' },
     { id: 'wallpaper', label: '壁纸', icon: 'picture' },
     { id: 'layout', label: '页面布局', icon: 'sort' },
+    { id: 'card', label: '卡片样式', icon: 'filter' },
     { id: 'cache', label: '缓存', icon: 'download' },
 ] as const;
 
@@ -130,6 +132,9 @@ function handleEsc(event: KeyboardEvent): void {
                                     </div>
                                     <div v-show="activeTab === 'layout'" class="panel-section">
                                         <LayoutSettings />
+                                    </div>
+                                    <div v-show="activeTab === 'card'" class="panel-section">
+                                        <CardStyleSettings />
                                     </div>
                                     <div v-show="activeTab === 'cache'" class="panel-section">
                                         <CacheSettings />

@@ -69,8 +69,10 @@ const ghostStyle = computed(() => ({
     padding: 12px;
     background: var(--card-bg);
     border: 1px solid var(--md-sys-color-primary);
-    border-radius: 12px;
+    border-radius: var(--card-radius, 12px);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    -webkit-backdrop-filter: var(--card-backdrop, none);
+    backdrop-filter: var(--card-backdrop, none);
     pointer-events: none;
     transform: scale(1.03);
 
