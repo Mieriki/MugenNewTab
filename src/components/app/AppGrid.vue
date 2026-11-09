@@ -235,15 +235,14 @@ function handleDelete(app: AppItem): void {
 .app-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
+    gap: var(--ui-space-3);
     min-height: 50px;
 
     &__placeholder {
         min-height: 76px;
-        border: 2px dashed var(--md-sys-color-primary);
-        border-radius: 12px;
-        background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
-        opacity: 0.7;
+        border: 1px dashed color-mix(in srgb, var(--ui-accent) 60%, transparent);
+        border-radius: var(--card-radius, var(--ui-radius-lg));
+        background: var(--ui-accent-softer);
     }
 
     &__pager {
@@ -251,25 +250,25 @@ function handleDelete(app: AppItem): void {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        padding-top: 4px;
+        gap: var(--ui-space-2);
+        padding-top: var(--ui-space-1);
     }
 
     &__pager-btn {
         @include button-reset;
-        width: 26px;
-        height: 26px;
-        border-radius: 8px;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--ui-radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--md-sys-color-on-surface-variant);
-        background: var(--md-sys-color-surface-variant);
-        @include md-transition(all, var(--md-transition-fast));
+        color: var(--ui-muted);
+        background: var(--ui-elevated);
+        @include ui-interactive;
+        @include ui-focus-ring;
 
         &:hover:not(:disabled) {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            color: var(--ui-ink);
         }
 
         &:disabled {
@@ -279,29 +278,30 @@ function handleDelete(app: AppItem): void {
     }
 
     &__pager-info {
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
         min-width: 36px;
         text-align: center;
+        font-variant-numeric: tabular-nums;
     }
 
     &__empty {
         grid-column: 1 / -1;
         text-align: center;
-        padding: 40px 20px;
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 0.9rem;
+        padding: var(--ui-space-8) var(--ui-space-5);
+        color: var(--ui-muted);
+        font-size: var(--ui-font-small);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
+        gap: var(--ui-space-3);
     }
 }
 
 @media (max-width: 768px) {
     .app-grid {
         grid-template-columns: 1fr;
-        gap: 10px;
+        gap: var(--ui-space-2);
     }
 }
 </style>

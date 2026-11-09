@@ -154,32 +154,27 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 14px 6px;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--md-sys-color-on-surface-variant);
-        letter-spacing: 0.3px;
-    }
-
-    &__title {
-        opacity: 0.85;
+        padding: var(--ui-space-2) var(--ui-space-3) 6px;
+        @include ui-caption;
+        font-size: var(--ui-font-micro);
+        color: var(--ui-muted-soft);
     }
 
     &__clear {
         @include button-reset;
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 12px;
-        font-weight: 600;
-        @include md-transition(color, var(--md-transition-fast));
-        @include focus-ring;
+        color: var(--ui-muted);
+        font-size: var(--ui-font-micro);
+        font-weight: 500;
+        @include ui-transition(color);
+        @include ui-focus-ring;
 
         &:hover {
-            color: var(--md-sys-color-error);
+            color: var(--ui-danger);
         }
     }
 
     &__list {
-        padding: 4px 8px 10px;
+        padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-3);
     }
 
     &__item {
@@ -188,23 +183,23 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 9px 10px;
-        border-radius: 12px;
-        color: var(--md-sys-color-on-surface);
-        font-size: 14px;
-        font-weight: 500;
+        gap: var(--ui-space-3);
+        padding: 8px 10px;
+        border-radius: var(--ui-radius-md);
+        color: var(--ui-ink);
+        font-size: var(--ui-font-body);
+        font-weight: 400;
         text-align: left;
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        @include ui-transition(background-color, color);
+        @include ui-focus-ring;
 
         &:hover,
         &:focus-visible {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
+            background: var(--ui-elevated-hover);
 
             .search-history__item-icon {
-                background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);
+                background: var(--ui-accent-soft);
+                color: var(--ui-accent);
             }
 
             .search-history__item-time {
@@ -219,15 +214,16 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
     }
 
     &__item-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        border-radius: var(--ui-radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
-        @include md-transition(all, var(--md-transition-fast));
+        color: var(--ui-muted);
+        background: var(--ui-sunken);
+        @include ui-transition(background-color, color);
     }
 
     &__item-text {
@@ -238,10 +234,10 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
 
     &__item-time {
         flex-shrink: 0;
-        font-size: 11px;
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.7;
-        @include md-transition(opacity, var(--md-transition-fast));
+        font-size: var(--ui-font-micro);
+        color: var(--ui-muted-soft);
+        font-variant-numeric: tabular-nums;
+        transition: opacity var(--ui-dur-fast) var(--ui-ease);
     }
 
     &__item-remove {
@@ -251,34 +247,31 @@ const deleteIconPath = 'M18 6L6 18M6 6l12 12';
         transform: translateY(-50%);
         width: 22px;
         height: 22px;
-        border-radius: 6px;
+        border-radius: var(--ui-radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0;
         pointer-events: none;
-        color: var(--md-sys-color-on-surface-variant);
-        background: var(--md-sys-color-surface);
-        @include md-transition(all, var(--md-transition-fast));
+        color: var(--ui-muted);
+        background: var(--ui-panel);
+        @include ui-transition(background-color, color, opacity);
 
         &:hover {
-            background: var(--md-sys-color-error-container);
-            color: var(--md-sys-color-error);
+            background: var(--ui-danger-soft);
+            color: var(--ui-danger);
         }
 
         &:focus-visible {
             opacity: 1;
             pointer-events: auto;
-            background: var(--md-sys-color-error-container);
-            color: var(--md-sys-color-error);
+            background: var(--ui-panel);
+            color: var(--ui-ink);
         }
     }
 }
 
-// 深色模式（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
-html.dark-mode .search-history__item-remove {
-    background: var(--md-sys-color-surface-variant);
-}
+// 移除按钮的底色来自 --ui-panel，深色变体不需要另写一套
 
 @include respond-to(mobile) {
     .search-history__item-remove {

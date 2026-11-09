@@ -7,9 +7,11 @@
  * 滑块拖动过程中不写存储，松手（change）才落库。
  */
 import { onMounted, ref, watch } from 'vue';
-import IconSvg from '@/components/icon/IconSvg.vue';
 import BaseSlider from '@/components/common/BaseSlider.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
+import BaseSwitch from '@/components/common/BaseSwitch.vue';
+import SettingsSection from '@/components/settings/SettingsSection.vue';
+import SettingsRow from '@/components/settings/SettingsRow.vue';
 import { CARD_STYLE_DEFAULTS, useCardStyleStore } from '@/stores/cardStyle.store';
 import { useToast } from '@/composables/useToast';
 
@@ -79,9 +81,8 @@ function handleRadiusChange(value: number): void {
     void cardStyle.setRadius(value);
 }
 
-function handleBorderedChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    void cardStyle.setBordered(target.checked);
+function handleBorderedChange(value: boolean): void {
+    void cardStyle.setBordered(value);
 }
 
 async function handleReset(): Promise<void> {
@@ -91,142 +92,121 @@ async function handleReset(): Promise<void> {
 </script>
 
 <template>
-    <section class="card-style-settings" aria-label="卡片样式">
-        <header class="card-style-settings__header">
-            <IconSvg name="filter" :size="18" color="var(--md-sys-color-primary)" />
-            <h3 class="card-style-settings__title">卡片样式</h3>
-        </header>
-
-        <div class="card-style-settings__sliders">
-            <BaseSlider
-                v-model="opacityPercent"
-                label="卡片不透明度"
-                :min="0"
-                :max="100"
-                :step="1"
-                :format-value="formatPercent"
-                @change="handleOpacityChange"
-            />
-
-            <BaseSlider
-                v-model="blurPx"
-                label="磨砂程度"
-                :min="0"
-                :max="CARD_STYLE_DEFAULTS.maxBlur"
-                :step="1"
-                :format-value="formatPx"
-                @change="handleBlurChange"
-            />
-
-            <BaseSlider
-                v-model="radiusPx"
-                label="圆角"
-                :min="0"
-                :max="CARD_STYLE_DEFAULTS.maxRadius"
-                :step="1"
-                :format-value="formatPx"
-                @change="handleRadiusChange"
-            />
-
-            <BaseSlider
-                v-model="shadowPercent"
-                label="阴影强度"
-                :min="0"
-                :max="100"
-                :step="1"
-                :format-value="formatPercent"
-                @change="handleShadowChange"
-            />
-        </div>
-
-        <div class="card-style-settings__group">
-            <label class="card-style-settings__toggle">
-                <input
-                    type="checkbox"
-                    :checked="cardStyle.bordered"
-                    @change="handleBorderedChange"
-                />
-                <span>显示卡片描边（关闭后只靠底色与阴影区分卡片）</span>
-            </label>
-        </div>
-
-        <p class="card-style-settings__hint">
-            不透明度越低壁纸透出越多；磨砂会采样卡片背后的壁纸，卡片较多时有一定合成开销。
-            卡片底色始终跟随当前主题，极简约模式的磁贴不受这里影响。
-        </p>
-
-        <BaseButton
-            class="card-style-settings__reset"
-            variant="outlined"
-            size="small"
-            @click="handleReset"
+    <div class="card-style-settings">
+        <SettingsSection
+            title="外观"
+            description="卡片底色始终跟随当前主题；极简约模式的磁贴不受这里影响。"
         >
-            恢复默认
-        </BaseButton>
-    </section>
+            <SettingsRow
+                label="卡片不透明度"
+                description="越低壁纸透出越多"
+                stacked
+            >
+                <template #actions>
+                    <BaseSlider
+                        v-model="opacityPercent"
+                        :show-value="true"
+                        :min="0"
+                        :max="100"
+                        :step="1"
+                        :format-value="formatPercent"
+                        class="card-style-settings__slider"
+                        @change="handleOpacityChange"
+                    />
+                </template>
+            </SettingsRow>
+
+            <SettingsRow
+                label="磨砂程度"
+                description="采样卡片背后的壁纸，卡片较多时有一定合成开销"
+                stacked
+            >
+                <template #actions>
+                    <BaseSlider
+                        v-model="blurPx"
+                        :show-value="true"
+                        :min="0"
+                        :max="CARD_STYLE_DEFAULTS.maxBlur"
+                        :step="1"
+                        :format-value="formatPx"
+                        class="card-style-settings__slider"
+                        @change="handleBlurChange"
+                    />
+                </template>
+            </SettingsRow>
+
+            <SettingsRow label="圆角" stacked>
+                <template #actions>
+                    <BaseSlider
+                        v-model="radiusPx"
+                        :show-value="true"
+                        :min="0"
+                        :max="CARD_STYLE_DEFAULTS.maxRadius"
+                        :step="1"
+                        :format-value="formatPx"
+                        class="card-style-settings__slider"
+                        @change="handleRadiusChange"
+                    />
+                </template>
+            </SettingsRow>
+
+            <SettingsRow
+                label="阴影强度"
+                description="关闭后完全依赖底色与描边分层"
+                stacked
+            >
+                <template #actions>
+                    <BaseSlider
+                        v-model="shadowPercent"
+                        :show-value="true"
+                        :min="0"
+                        :max="100"
+                        :step="1"
+                        :format-value="formatPercent"
+                        class="card-style-settings__slider"
+                        @change="handleShadowChange"
+                    />
+                </template>
+            </SettingsRow>
+
+            <SettingsRow
+                label="显示卡片描边"
+                description="关闭后只靠底色与阴影区分卡片"
+            >
+                <template #actions>
+                    <BaseSwitch
+                        :model-value="cardStyle.bordered"
+                        aria-label="显示卡片描边"
+                        @update:model-value="handleBorderedChange"
+                    />
+                </template>
+            </SettingsRow>
+        </SettingsSection>
+
+        <div class="card-style-settings__footer">
+            <BaseButton variant="outlined" size="small" @click="handleReset">
+                恢复默认
+            </BaseButton>
+        </div>
+    </div>
 </template>
 
 <style scoped lang="scss">
-@use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
 .card-style-settings {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: var(--ui-space-4);
 
-    &__header {
+    // 滑杆本身是块级控件，撑满行宽
+    &__slider {
+        width: 100%;
+    }
+
+    &__footer {
         display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    &__title {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--md-sys-color-primary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 0;
-    }
-
-    &__sliders {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    &__group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    &__toggle {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        font-size: 13px;
-        color: var(--md-sys-color-on-surface);
-
-        input[type='checkbox'] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: var(--md-sys-color-primary);
-        }
-    }
-
-    &__hint {
-        margin: 0;
-        font-size: 12px;
-        line-height: 1.6;
-        color: var(--md-sys-color-on-surface-variant);
-    }
-
-    &__reset {
-        align-self: flex-start;
+        justify-content: flex-start;
     }
 }
 </style>

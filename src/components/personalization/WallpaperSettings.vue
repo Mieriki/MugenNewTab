@@ -5,12 +5,13 @@
  * 提供预设壁纸、网络图片 URL、本地图片上传，以及透明度/模糊/遮罩调节。
  * 所有状态通过 useWallpaper 读写并持久化。
  */
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useWallpaper } from '@/composables/useWallpaper';
-import IconSvg from '@/components/icon/IconSvg.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
 import BaseSlider from '@/components/common/BaseSlider.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
+import SettingsSection from '@/components/settings/SettingsSection.vue';
+import SettingsRow from '@/components/settings/SettingsRow.vue';
 
 export interface WallpaperSettingsProps {
     /** 面板标题 */
@@ -63,9 +64,13 @@ watch(
     { immediate: true }
 );
 
-const PICTURE_PATH = 'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z';
-const UPLOAD_PATH = 'M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z';
-const REFRESH_PATH = 'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z';
+/** 分组说明：直接把「当前是否启用壁纸」写在这里，省掉原来底部那一行状态 */
+const statusText = computed(() => {
+    if (!hasWallpaper.value) {
+        return '尚未设置壁纸';
+    }
+    return `当前已启用${isLocalImage.value ? '本地图片' : '网络图片'}壁纸`;
+});
 
 function isPresetActive(url: string): boolean {
     return !isLocalImage.value && effectiveUrl.value === url;
@@ -156,134 +161,131 @@ function formatPx(value: number): string {
 </script>
 
 <template>
-    <section class="wallpaper-settings" aria-label="壁纸设置">
-        <header class="wallpaper-settings__header">
-            <IconSvg :path="PICTURE_PATH" :size="18" color="var(--md-sys-color-primary)" />
-            <h3 class="wallpaper-settings__title">{{ title }}</h3>
-        </header>
+    <div class="wallpaper-settings">
+        <SettingsSection :title="title" :description="statusText">
+            <SettingsRow label="预设壁纸" description="点击即应用，本地缓存开启时会存到本地" stacked>
+                <template #actions>
+                    <div class="wallpaper-presets" role="group" aria-label="预设壁纸">
+                        <button
+                            v-for="(url, index) in presets"
+                            :key="index"
+                            type="button"
+                            class="wallpaper-preset"
+                            :class="{ active: isPresetActive(url) }"
+                            :style="{ backgroundImage: `url(${url})` }"
+                            :title="`预设壁纸 ${index + 1}`"
+                            @click="handlePresetClick(url)"
+                        />
+                    </div>
+                </template>
+            </SettingsRow>
 
-        <div class="wallpaper-presets" role="group" aria-label="预设壁纸">
-            <button
-                v-for="(url, index) in presets"
-                :key="index"
-                type="button"
-                class="wallpaper-preset"
-                :class="{ active: isPresetActive(url) }"
-                :style="{ backgroundImage: `url(${url})` }"
-                :title="`预设壁纸 ${index + 1}`"
-                @click="handlePresetClick(url)"
-            />
-        </div>
+            <SettingsRow label="图片地址" description="支持任意 http(s) 图片直链" stacked>
+                <template #actions>
+                    <div class="wallpaper-row">
+                        <BaseInput
+                            v-model="urlInput"
+                            placeholder="输入图片 URL..."
+                            type="url"
+                            :disabled="loading"
+                            class="wallpaper-row__input"
+                            @enter="handleApplyUrl"
+                        />
+                        <BaseButton
+                            variant="primary"
+                            size="small"
+                            :loading="loading"
+                            :disabled="!urlInput"
+                            @click="handleApplyUrl"
+                        >
+                            应用
+                        </BaseButton>
+                    </div>
+                </template>
+            </SettingsRow>
 
-        <div class="wallpaper-url">
-            <BaseInput
-                v-model="urlInput"
-                placeholder="输入图片 URL..."
-                type="url"
-                :disabled="loading"
-                @enter="handleApplyUrl"
-            >
-                <template #suffix>
+            <SettingsRow label="本地图片" :description="imageData ? imageData.name : '从设备选择图片，只存在本机'">
+                <template #actions>
+                    <input
+                        ref="fileInputRef"
+                        type="file"
+                        accept="image/*"
+                        class="wallpaper-local__input"
+                        @change="handleFileChange"
+                    >
                     <BaseButton
-                        variant="primary"
+                        variant="outlined"
                         size="small"
                         :loading="loading"
-                        :disabled="!urlInput"
-                        @click="handleApplyUrl"
+                        @click="handleFileSelect"
                     >
-                        应用
+                        选择图片
                     </BaseButton>
                 </template>
-            </BaseInput>
-        </div>
+            </SettingsRow>
+        </SettingsSection>
 
-        <div class="wallpaper-local">
-            <input
-                ref="fileInputRef"
-                type="file"
-                accept="image/*"
-                class="wallpaper-local__input"
-                @change="handleFileChange"
-            >
-            <BaseButton
-                variant="outlined"
-                size="small"
-                block
-                :loading="loading"
-                @click="handleFileSelect"
-            >
-                <template #icon>
-                    <IconSvg :path="UPLOAD_PATH" :size="16" />
+        <SettingsSection title="显示效果" description="调整壁纸与页面的叠加方式。">
+            <SettingsRow label="壁纸透明度" stacked>
+                <template #actions>
+                    <BaseSlider
+                        v-model="settings.opacity"
+                        :show-value="true"
+                        :min="0"
+                        :max="1"
+                        :step="0.01"
+                        :format-value="formatPercent"
+                        :disabled="loading"
+                        class="wallpaper-slider"
+                        @change="handleOpacityChange"
+                    />
                 </template>
-                选择本地图片
-            </BaseButton>
-            <div v-if="imageData" class="wallpaper-local__name">
-                {{ imageData.name }}
-            </div>
-        </div>
+            </SettingsRow>
 
-        <div class="wallpaper-sliders">
-            <BaseSlider
-                v-model="settings.opacity"
-                label="壁纸透明度"
-                :min="0"
-                :max="1"
-                :step="0.01"
-                :format-value="formatPercent"
-                :disabled="loading"
-                @change="handleOpacityChange"
-            />
+            <SettingsRow label="模糊程度" stacked>
+                <template #actions>
+                    <BaseSlider
+                        v-model="settings.blur"
+                        :show-value="true"
+                        :min="0"
+                        :max="20"
+                        :step="0.5"
+                        :format-value="formatPx"
+                        :disabled="loading"
+                        class="wallpaper-slider"
+                        @change="handleBlurChange"
+                    />
+                </template>
+            </SettingsRow>
 
-            <BaseSlider
-                v-model="settings.blur"
-                label="模糊程度"
-                :min="0"
-                :max="20"
-                :step="0.5"
-                :format-value="formatPx"
-                :disabled="loading"
-                @change="handleBlurChange"
-            />
+            <SettingsRow label="背景遮罩" description="遮罩越深，壁纸上的文字越清晰" stacked>
+                <template #actions>
+                    <BaseSlider
+                        v-model="settings.overlayOpacity"
+                        :show-value="true"
+                        :min="0"
+                        :max="1"
+                        :step="0.01"
+                        :format-value="formatPercent"
+                        :disabled="loading"
+                        class="wallpaper-slider"
+                        @change="handleOverlayChange"
+                    />
+                </template>
+            </SettingsRow>
+        </SettingsSection>
 
-            <BaseSlider
-                v-model="settings.overlayOpacity"
-                label="背景遮罩"
-                :min="0"
-                :max="1"
-                :step="0.01"
-                :format-value="formatPercent"
-                :disabled="loading"
-                @change="handleOverlayChange"
-            />
-        </div>
-
-        <div class="wallpaper-actions">
+        <div class="wallpaper-settings__actions">
             <BaseButton
                 variant="outlined"
                 size="small"
                 :loading="loading"
                 @click="handleRemove"
             >
-                <template #icon>
-                    <IconSvg :path="REFRESH_PATH" :size="16" />
-                </template>
-                重置
-            </BaseButton>
-            <BaseButton
-                variant="primary"
-                size="small"
-                :loading="loading"
-                :disabled="!urlInput"
-                @click="handleApplyUrl"
-            >
-                应用
+                恢复默认背景
             </BaseButton>
         </div>
-
-        <div v-if="hasWallpaper" class="wallpaper-status">
-            当前{{ isLocalImage ? '本地图片' : '网络图片' }}壁纸已启用
-        </div>
-    </section>
+    </div>
 </template>
 
 <style scoped lang="scss">
@@ -293,93 +295,70 @@ function formatPx(value: number): string {
 .wallpaper-settings {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--ui-space-5);
 
-    &__header {
+    &__actions {
         display: flex;
-        align-items: center;
-        gap: 8px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    &__title {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--md-sys-color-primary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 0;
+        justify-content: flex-start;
     }
 }
 
+// ==================== 预设壁纸 ====================
 .wallpaper-presets {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ui-space-2);
+    width: 100%;
 }
 
 .wallpaper-preset {
     @include button-reset;
     aspect-ratio: 16 / 10;
-    border-radius: 8px;
+    border-radius: var(--ui-radius-md);
+    // 预设缩略图直接铺满，靠 1px 描边勾出边界
+    box-shadow: inset 0 0 0 1px var(--ui-hairline-strong);
     background-size: cover;
     background-position: center;
-    background-repeat: no-repeat;
-    border: 2px solid transparent;
-    cursor: pointer;
-    @include md-transition(all, var(--md-transition-fast));
+    opacity: 0.72;
+    @include ui-transition(opacity);
+    @include ui-focus-ring;
 
     &:hover {
-        transform: scale(1.05);
-        border-color: var(--md-sys-color-primary);
+        opacity: 1;
     }
 
     &.active {
-        border-color: var(--md-sys-color-primary);
-        box-shadow: 0 0 0 3px var(--md-sys-color-primary-container);
+        opacity: 1;
+        box-shadow:
+            inset 0 0 0 2px var(--ui-accent),
+            0 0 0 3px var(--ui-accent-soft);
     }
 }
 
-.wallpaper-url {
+// ==================== 地址行 ====================
+.wallpaper-row {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.wallpaper-local {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: var(--ui-space-2);
+    width: 100%;
 
     &__input {
-        @include visually-hidden;
-    }
-
-    &__name {
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
-    }
-}
-
-.wallpaper-sliders {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.wallpaper-actions {
-    display: flex;
-    gap: 8px;
-
-    > * {
         flex: 1;
+        min-width: 0;
     }
 }
 
-.wallpaper-status {
-    font-size: 12px;
-    color: var(--md-sys-color-success);
-    text-align: center;
+.wallpaper-local__input {
+    display: none;
+}
+
+.wallpaper-slider {
+    width: 100%;
+}
+
+@include respond-to(mobile) {
+    .wallpaper-presets {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 </style>

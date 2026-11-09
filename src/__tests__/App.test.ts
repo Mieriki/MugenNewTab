@@ -11,6 +11,7 @@ import SearchModal from '@/components/search/SearchModal.vue';
 import AppEditModal from '@/components/appForm/AppEditModal.vue';
 import CategoryEditModal from '@/components/category/CategoryEditModal.vue';
 import CategoryManager from '@/components/category/CategoryManager.vue';
+import SettingsCenter from '@/components/personalization/SettingsCenter.vue';
 import { useDataManager } from '@/composables/useDataManager';
 import { useTheme } from '@/composables/useTheme';
 import { useConfirm, provideConfirm } from '@/composables/useConfirm';
@@ -94,8 +95,13 @@ function createMockTheme() {
         themeOptions: computed(() => []),
         availableThemeIds: computed(() => []),
         storeError: computed(() => null),
+        // 设置中心「外观」栏目会渲染 ThemeSelector，它读这三项
+        themeFamilies: computed(() => []),
+        currentFamilyId: computed(() => 'material-rose'),
+        currentMode: computed(() => 'light'),
         initialize: vi.fn(async () => undefined),
         setTheme: vi.fn(),
+        setMode: vi.fn(),
         followSystemTheme: vi.fn(),
         toggleFollowSystem: vi.fn(),
         cycleTheme: vi.fn(),
@@ -360,7 +366,7 @@ describe('App.vue', () => {
         expect(modal.props('category')).toBeUndefined();
     });
 
-    it('FAB 菜单点击"云同步"打开云同步弹窗', async () => {
+    it('FAB 菜单点击"云同步"打开设置中心的数据栏目', async () => {
         const wrapper = mountApp();
         await flushPromises();
 
@@ -368,7 +374,23 @@ describe('App.vue', () => {
         await fab.vm.$emit('select', 'cloud-sync');
         await flushPromises();
 
-        expect(wrapper.find('.cloud-sync-panel').exists()).toBe(true);
+        // 云同步已并入设置中心，通过整高设置面板承载
+        const settings = wrapper.findComponent(SettingsCenter);
+        expect(settings.props('modelValue')).toBe(true);
+        expect(settings.props('tab')).toBe('data');
+    });
+
+    it('FAB 菜单点击"个性化"打开设置中心的外观栏目', async () => {
+        const wrapper = mountApp();
+        await flushPromises();
+
+        const fab = wrapper.findComponent(FabMenu);
+        await fab.vm.$emit('select', 'personalize');
+        await flushPromises();
+
+        const settings = wrapper.findComponent(SettingsCenter);
+        expect(settings.props('modelValue')).toBe(true);
+        expect(settings.props('tab')).toBe('appearance');
     });
 
     it('关闭「显示全部应用」后侧栏过滤该分类并切换当前分类', async () => {

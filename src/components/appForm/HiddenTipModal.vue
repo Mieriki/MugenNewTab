@@ -78,25 +78,29 @@ watch(
 .hidden-tip {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--ui-space-4);
 
     &__text {
         margin: 0;
-        font-size: 14px;
+        font-size: var(--ui-font-body);
         line-height: 1.7;
-        color: var(--md-sys-color-on-surface);
+        color: var(--ui-body);
+        letter-spacing: var(--ui-track-tight);
 
+        // 键位提示按「浅色键帽」处理：凹陷底色 + 发丝描边 + 底部加厚，模拟实体键
         kbd {
             display: inline-block;
             min-width: 20px;
-            padding: 1px 6px;
+            padding: 1px var(--ui-space-1);
             margin: 0 2px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 12px;
+            border-radius: var(--ui-radius-xs);
+            font-family: inherit;
+            font-size: var(--ui-font-caption);
+            font-weight: 600;
             text-align: center;
-            background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
-            border: 1px solid color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+            color: var(--ui-body);
+            background: var(--ui-sunken);
+            border: 1px solid var(--ui-hairline-strong);
             border-bottom-width: 2px;
         }
     }
@@ -104,16 +108,21 @@ watch(
     &__checkbox {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--ui-space-2);
         cursor: pointer;
-        font-size: 14px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-subtitle);
+        color: var(--ui-muted);
+        @include ui-transition(color);
+
+        &:hover {
+            color: var(--ui-ink);
+        }
 
         input[type='checkbox'] {
             width: 18px;
             height: 18px;
             cursor: pointer;
-            accent-color: var(--md-sys-color-primary);
+            accent-color: var(--ui-accent);
         }
     }
 }

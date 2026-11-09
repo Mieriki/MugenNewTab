@@ -341,35 +341,47 @@ const activePresetIcon = computed(() =>
 .mnt-category-form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: var(--ui-space-5);
+
+    // 预览画布固定为纯白 / 纯黑两级：两个盒子分别演示浅色模式与深色模式下的图标效果，
+    // 不能跟随当前主题（暗色主题里两块都变深就失去对照）。这是唯一刻意脱离语义层的地方，
+    // 只允许出现纯黑 / 纯白这类无品牌含义的中性值。
+    --preview-canvas-light: #ffffff;
+    --preview-canvas-dark: #000000;
+    --preview-ink-light: #000000;
+    --preview-ink-dark: #ffffff;
+    --preview-edge-dark: color-mix(in srgb, #ffffff 16%, transparent);
 
     &__group {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: var(--ui-space-3);
     }
 
+    // 同名提示：与 AppEditModal 的重复站点提示保持同一套外观
     &__warning {
-        margin: -8px 0 0;
-        padding: 8px 10px;
-        border-radius: 8px;
-        font-size: 12px;
+        margin: calc(-1 * var(--ui-space-2)) 0 0;
+        padding: var(--ui-space-2) var(--ui-space-3);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-tertiary) 28%, transparent);
+        border-radius: var(--ui-radius-md);
+        background: var(--md-sys-color-tertiary-container);
+        color: var(--md-sys-color-on-tertiary-container);
+        font-size: var(--ui-font-caption);
         line-height: 1.5;
-        color: var(--md-sys-color-on-tertiary-container, #4a3200);
-        background: var(--md-sys-color-tertiary-container, rgba(255, 179, 0, 0.16));
     }
 
     &__group-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
+        gap: var(--ui-space-2);
     }
 
     &__label {
-        font-size: 13px;
+        font-size: var(--ui-font-small);
         font-weight: 600;
-        color: var(--md-sys-color-on-surface);
+        letter-spacing: var(--ui-track-tight);
+        color: var(--ui-ink);
     }
 
     &__restore-btn {
@@ -380,152 +392,152 @@ const activePresetIcon = computed(() =>
         display: grid;
         grid-template-columns: 36px 1fr auto;
         align-items: center;
-        gap: 10px;
+        gap: var(--ui-space-2);
     }
 
     &__icon-label {
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
         text-align: right;
     }
 
+    // ============ 预览 ============
     &__preview-row {
         display: flex;
-        gap: 16px;
-        margin-top: 4px;
+        gap: var(--ui-space-4);
+        margin-top: var(--ui-space-1);
     }
 
     &__preview-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 6px;
+        gap: var(--ui-space-2);
     }
 
     &__preview-box {
-        width: 64px;
-        height: 64px;
-        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid var(--md-sys-color-outline-variant);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        width: 64px;
+        height: 64px;
         overflow: hidden;
-        @include md-transition(box-shadow, var(--md-transition-fast));
+        border: 1px solid var(--ui-hairline);
+        border-radius: var(--ui-radius-lg);
+        @include ui-transition(border-color);
 
         &:hover {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            border-color: var(--ui-hairline-strong);
         }
 
         &--light {
-            background: var(--md-sys-color-surface);
+            background: var(--preview-canvas-light);
+            color: var(--preview-ink-light);
+            border-color: var(--ui-hairline);
         }
 
         &--dark {
-            background: #1c1b1f;
-            border-color: rgba(255, 255, 255, 0.12);
+            background: var(--preview-canvas-dark);
+            border-color: var(--preview-edge-dark);
             // 内置单色图标走 CSS mask，颜色取 currentColor，
-            // 所以深色预览盒直接给白色，不再依赖 --icon-filter 反转
-            color: #ffffff;
+            // 所以深色预览盒直接给浅色前景，不再依赖 --icon-filter 反转
+            color: var(--preview-ink-dark);
         }
     }
 
     &__preview-label {
-        font-size: 11px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-micro);
+        color: var(--ui-muted-soft);
     }
 
     &__checkbox {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--ui-space-2);
+        font-size: var(--ui-font-small);
+        color: var(--ui-body);
         cursor: pointer;
-        font-size: 13px;
-        color: var(--md-sys-color-on-surface-variant);
 
         input[type='checkbox'] {
             width: 18px;
             height: 18px;
             cursor: pointer;
-            accent-color: var(--md-sys-color-primary);
+            accent-color: var(--ui-accent);
         }
     }
 
+    // ============ 常用图标 ============
+    // 凹陷井底 + 发丝描边，不铺主色；主色只落在选中项上
     &__presets {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding: 12px 14px 14px;
-        border-radius: 12px;
-        background: color-mix(in srgb, var(--md-sys-color-primary) 6%, transparent);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+        gap: var(--ui-space-3);
+        padding: var(--ui-space-3);
+        @include ui-surface(var(--ui-sunken), var(--ui-radius-lg));
     }
 
     &__presets-title {
-        margin: 0;
+        @include ui-caption;
         display: flex;
         align-items: baseline;
         justify-content: space-between;
-        gap: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--md-sys-color-on-surface-variant);
+        gap: var(--ui-space-2);
     }
 
     &__presets-target {
-        font-size: 11px;
+        font-size: var(--ui-font-micro);
         font-weight: 400;
-        color: var(--md-sys-color-primary);
+        letter-spacing: 0;
+        color: var(--ui-muted-soft);
     }
 
     &__presets-grid {
         display: grid;
         grid-template-columns: repeat(6, 1fr);
-        gap: 8px;
+        gap: var(--ui-space-2);
         max-height: 200px;
         overflow-y: auto;
         @include hide-scrollbar;
     }
 
     &__picker-empty {
-        padding: 24px 0;
+        padding: var(--ui-space-6) 0;
         text-align: center;
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted-soft);
     }
 
     &__picker-item {
         @include button-reset;
-        aspect-ratio: 1;
-        border-radius: 8px;
-        background: var(--md-sys-color-surface);
-        border: 1px solid var(--md-sys-color-outline-variant);
-        color: var(--md-sys-color-on-surface-variant);
         @include flex-center(row, 0);
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        @include ui-interactive;
+        @include ui-focus-ring;
+        aspect-ratio: 1;
+        border: 1px solid var(--ui-hairline);
+        border-radius: var(--ui-radius-md);
+        background: var(--ui-panel);
+        color: var(--ui-muted);
 
         &:hover {
-            border-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-primary);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            border-color: var(--ui-hairline-strong);
         }
 
+        // 选中：主色软底 + 主色描边与图标，无位移
         &--active,
         &--active:hover {
-            border-color: var(--md-sys-color-primary);
-            background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-            color: var(--md-sys-color-primary);
-            transform: none;
+            border-color: var(--ui-accent);
+            background: var(--ui-accent-soft);
+            color: var(--ui-accent);
         }
     }
 }
 
 .mnt-category-form__presets-enter-active,
 .mnt-category-form__presets-leave-active {
-    transition: all 0.2s var(--md-easing);
+    transition:
+        opacity var(--ui-dur-base) var(--ui-ease),
+        max-height var(--ui-dur-base) var(--ui-ease),
+        padding var(--ui-dur-base) var(--ui-ease);
     overflow: hidden;
 }
 
@@ -543,24 +555,5 @@ const activePresetIcon = computed(() =>
     max-height: 320px;
 }
 
-// 深色模式适配（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
-html.dark-mode .mnt-category-form__preview-box--light {
-    background: var(--md-sys-color-surface);
-}
-
-html.dark-mode .mnt-category-form__presets {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-html.dark-mode .mnt-category-form__picker-item {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-
-    &--active,
-    &--active:hover {
-        background: color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
-        border-color: var(--md-sys-color-primary);
-    }
-}
+// 底色 / 描边 / 文字全部由 --ui-* 按当前主题派生，深色主题无需另写一套覆盖
 </style>

@@ -48,8 +48,8 @@ withDefaults(defineProps<MainContentProps>(), {
     margin-left: var(--sidebar-width);
     margin-top: var(--header-height);
     min-height: calc(100vh - var(--header-height));
-    padding: 24px 32px;
-    @include md-transition(margin-left);
+    padding: var(--ui-space-6) var(--ui-space-7);
+    transition: margin-left var(--ui-dur-slow) var(--ui-ease);
 
     &.collapsed {
         margin-left: var(--sidebar-collapsed-width);
@@ -65,37 +65,41 @@ withDefaults(defineProps<MainContentProps>(), {
 }
 
 .content-header {
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    margin-bottom: var(--ui-space-5);
+    padding-bottom: var(--ui-space-3);
+    border-bottom: 1px solid var(--ui-hairline);
     position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: var(--ui-space-4);
 
+    // 主色短线：整页唯一的强调笔触，收窄到 28px 才像"标记"而不是"下划线"
     &::after {
         content: '';
         position: absolute;
         bottom: -1px;
         left: 0;
-        width: 40px;
+        width: 28px;
         height: 2px;
-        background: var(--md-sys-color-primary);
+        border-radius: var(--ui-radius-pill);
+        background: var(--ui-accent);
     }
 }
 
 .content-title {
-    font-size: 1.35rem;
-    color: var(--md-sys-color-primary);
+    // 页标题用正文色，不再用主色——主色留给 CTA 与选中态
+    font-size: var(--ui-font-display);
+    color: var(--ui-ink);
     font-weight: 600;
+    letter-spacing: var(--ui-track-tight);
     margin: 0;
 }
 
 .header-extra {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--ui-space-2);
     flex-shrink: 0;
 }
 
@@ -106,11 +110,11 @@ withDefaults(defineProps<MainContentProps>(), {
 @media (max-width: 768px) {
     .main-content {
         margin-left: 0 !important;
-        padding: 16px;
+        padding: var(--ui-space-4);
     }
 
     .content-title {
-        font-size: 1.15rem;
+        font-size: 18px;
     }
 }
 </style>

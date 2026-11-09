@@ -177,15 +177,15 @@ function highlightMatch(suggestion: string): string {
     overflow-y: auto;
     background: transparent;
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--md-sys-color-on-surface) 20%, transparent) transparent;
+    scrollbar-color: var(--ui-hairline-strong) transparent;
 
     &::-webkit-scrollbar {
         width: 8px;
     }
 
     &::-webkit-scrollbar-thumb {
-        background: color-mix(in srgb, var(--md-sys-color-on-surface) 20%, transparent);
-        border-radius: 4px;
+        background: var(--ui-hairline-strong);
+        border-radius: var(--ui-radius-xs);
     }
 
     &::-webkit-scrollbar-track {
@@ -193,45 +193,45 @@ function highlightMatch(suggestion: string): string {
     }
 
     &__skeleton {
-        padding: 4px 8px 10px;
+        padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-3);
     }
 
     &__skeleton-item {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 9px 10px;
+        gap: var(--ui-space-3);
+        padding: 8px 10px;
     }
 
     &__skeleton-icon,
     &__skeleton-text {
         background: linear-gradient(
             90deg,
-            color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent) 25%,
-            color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent) 50%,
-            color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent) 75%
+            var(--ui-sunken) 25%,
+            var(--ui-elevated) 50%,
+            var(--ui-sunken) 75%
         );
         background-size: 200% 100%;
         animation: mnt-skeleton-shimmer 1.4s ease infinite;
     }
 
     &__skeleton-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        border-radius: var(--ui-radius-sm);
         flex-shrink: 0;
     }
 
     &__skeleton-text {
-        height: 14px;
-        border-radius: 7px;
+        height: 12px;
+        border-radius: var(--ui-radius-pill);
     }
 
     &__list {
-        padding: 4px 8px 10px;
-        @include md-transition(opacity, var(--md-transition-fast));
+        padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-3);
+        transition: opacity var(--ui-dur-fast) var(--ui-ease);
         // 骨架换成真实列表时淡入，避免硬切
-        animation: mnt-suggestions-in 0.16s ease;
+        animation: mnt-suggestions-in 0.16s var(--ui-ease);
     }
 
     // 刷新中：旧列表保持显示，半透明提示正在更新，避免高度跳变
@@ -244,41 +244,43 @@ function highlightMatch(suggestion: string): string {
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 9px 10px;
-        border-radius: 12px;
-        color: var(--md-sys-color-on-surface);
-        font-size: 14px;
-        font-weight: 500;
+        gap: var(--ui-space-3);
+        padding: 8px 10px;
+        border-radius: var(--ui-radius-md);
+        color: var(--ui-ink);
+        font-size: var(--ui-font-body);
+        font-weight: 400;
         text-align: left;
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        @include ui-transition(background-color, color);
+        @include ui-focus-ring;
 
         &:hover,
         &.is-active {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
+            background: var(--ui-elevated-hover);
 
             .search-suggestions__icon {
-                background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);
+                background: var(--ui-accent-soft);
+                color: var(--ui-accent);
             }
         }
 
         &.is-active {
-            font-weight: 600;
+            // 键盘高亮靠底色与字重区分，不再用整块主色填充
+            font-weight: 500;
         }
     }
 
     &__icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        border-radius: var(--ui-radius-sm);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
-        @include md-transition(all, var(--md-transition-fast));
+        color: var(--ui-muted);
+        background: var(--ui-sunken);
+        @include ui-transition(background-color, color);
     }
 
     &__text {
@@ -287,8 +289,8 @@ function highlightMatch(suggestion: string): string {
 
         :deep(mark) {
             background: transparent;
-            color: var(--md-sys-color-primary);
-            font-weight: 700;
+            color: var(--ui-accent);
+            font-weight: 600;
             padding: 0;
         }
     }

@@ -253,12 +253,16 @@ const closeIconPath = 'M18 6L6 18M6 6l12 12';
 
 // 注意：ModalOverlay 经 Teleport 渲染，scoped 样式命不中容器，
 // 容器样式以内联方式下发；下方 scoped 中的 &__content / &__body 仅作同步备份。
+/**
+ * 内联样式：ModalOverlay 的 .mnt-modal-content 有固定背景/圆角/描边，
+ * 命令面板形态需要覆盖成「更宽的浮层 + 无 header 边框」，所以走 content-style。
+ */
 const modalContentStyle = {
-    background: 'rgba(var(--md-sys-color-surface-rgb), 0.92)',
-    // 不画描边：容器靠阴影与背景模糊与页面分层
-    borderRadius: '24px',
-    boxShadow: '0 24px 64px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08)',
+    background: 'var(--ui-panel)',
+    borderRadius: 'var(--ui-radius-xl)',
+    boxShadow: 'var(--ui-shadow-3)',
     backdropFilter: 'blur(24px)',
+    border: '1px solid var(--ui-hairline)',
     overflow: 'visible'
 };
 
@@ -394,10 +398,11 @@ const modalBodyStyle = {
 
     // 同步备份：实际生效的是内联 modalContentStyle（见脚本注释）
     &__content {
-        background: rgba(var(--md-sys-color-surface-rgb), 0.92);
-        border-radius: 24px;
-        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.08);
+        background: var(--ui-panel);
+        border-radius: var(--ui-radius-xl);
+        box-shadow: var(--ui-shadow-3);
         backdrop-filter: blur(24px);
+        border: 1px solid var(--ui-hairline);
         overflow: visible;
     }
 
@@ -413,15 +418,15 @@ const modalBodyStyle = {
         min-height: 0;
         overflow-y: auto;
         overflow-x: hidden;
-        border-radius: 0 0 24px 24px;
+        border-radius: 0 0 var(--ui-radius-xl) var(--ui-radius-xl);
         @include hide-scrollbar;
     }
 
     &__header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 12px 14px 10px;
+        gap: var(--ui-space-2);
+        padding: var(--ui-space-3) var(--ui-space-3) var(--ui-space-2);
     }
 
     // 胶囊搜索栏：引擎选择 + 输入 + 提交按钮整合为一体
@@ -430,17 +435,21 @@ const modalBodyStyle = {
         min-width: 0;
         display: flex;
         align-items: center;
-        gap: 4px;
-        padding: 4px 4px 4px 12px;
-        border-radius: 16px;
-        background: color-mix(in srgb, var(--md-sys-color-on-surface) 5%, transparent);
+        gap: var(--ui-space-1);
+        padding: 3px 3px 3px var(--ui-space-3);
+        border-radius: var(--ui-radius-lg);
+        background: var(--ui-sunken);
         border: 1px solid transparent;
-        @include md-transition(all, var(--md-transition-fast));
+        transition:
+            border-color var(--ui-dur-fast) var(--ui-ease),
+            box-shadow var(--ui-dur-fast) var(--ui-ease),
+            background-color var(--ui-dur-fast) var(--ui-ease);
 
+        // 焦点：描边转主色 + 柔和光环，与 BaseInput 保持同一套视觉
         &:focus-within {
-            background: rgba(var(--md-sys-color-surface-rgb), 0.85);
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+            background: var(--ui-panel);
+            border-color: var(--ui-accent);
+            box-shadow: 0 0 0 3px var(--ui-accent-softer);
         }
     }
 
@@ -471,8 +480,7 @@ const modalBodyStyle = {
     }
 
     &__ghost-suffix {
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.55;
+        color: var(--ui-muted);
     }
 
     &__input {
@@ -481,8 +489,8 @@ const modalBodyStyle = {
 
         :deep(.mnt-base-input__wrapper) {
             border: none;
-            border-radius: 12px;
-            padding: 8px 6px;
+            border-radius: var(--ui-radius-md);
+            padding: 7px 6px;
             background: transparent;
             box-shadow: none;
         }
@@ -503,57 +511,51 @@ const modalBodyStyle = {
 
     &__submit {
         @include button-reset;
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         padding: 0;
-        border-radius: 10px;
+        border-radius: var(--ui-radius-md);
         flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--md-sys-color-primary);
-        color: var(--md-sys-color-on-primary);
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        background: var(--ui-accent);
+        color: var(--ui-on-accent);
+        @include ui-transition(background-color);
+        @include ui-focus-ring;
 
-        &:hover {
-            opacity: 0.92;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
-        }
-
-        &:active {
-            transform: translateY(0);
+        &:hover:not(:disabled) {
+            background: var(--ui-accent-hover);
         }
 
         &:disabled {
-            opacity: 0.55;
+            opacity: 0.45;
             cursor: not-allowed;
         }
 
         .icon-svg {
             width: 18px;
             height: 18px;
-            color: var(--md-sys-color-on-primary);
+            color: var(--ui-on-accent);
         }
     }
 
     &__close {
         @include button-reset;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--ui-radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        color: var(--md-sys-color-on-surface-variant);
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        color: var(--ui-muted);
+        @include ui-transition(background-color, color);
+        @include ui-focus-ring;
 
         &:hover {
-            background: color-mix(in srgb, var(--md-sys-color-error) 10%, transparent);
-            color: var(--md-sys-color-error);
+            background: var(--ui-elevated-hover);
+            color: var(--ui-ink);
         }
     }
 
@@ -564,37 +566,38 @@ const modalBodyStyle = {
         align-items: center;
         justify-content: center;
         gap: 6px;
-        padding: 36px 24px;
+        padding: var(--ui-space-7) var(--ui-space-6);
         text-align: center;
     }
 
     &__empty-title {
         margin: 0;
-        font-size: 14px;
+        font-size: var(--ui-font-subtitle);
         font-weight: 600;
-        color: var(--md-sys-color-on-surface);
+        letter-spacing: var(--ui-track-tight);
+        color: var(--ui-ink);
     }
 
     &__empty-text {
         margin: 0;
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.8;
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
     }
 
     &__footer {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 9px 16px;
+        padding: 8px var(--ui-space-4);
+        border-top: 1px solid var(--ui-hairline);
         background: transparent;
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-micro);
+        color: var(--ui-muted);
     }
 
     &__hints {
         display: flex;
-        gap: 14px;
+        gap: var(--ui-space-3);
         flex-wrap: wrap;
 
         span {
@@ -605,49 +608,50 @@ const modalBodyStyle = {
 
         kbd {
             min-width: 20px;
-            padding: 2px 5px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 11px;
+            padding: 1px 5px;
+            border-radius: var(--ui-radius-xs);
+            font-family: inherit;
+            font-size: var(--ui-font-micro);
+            font-variant-numeric: tabular-nums;
             text-align: center;
-            background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
-            border: 1px solid color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
-            border-bottom-width: 2px;
+            background: var(--ui-sunken);
+            border: 1px solid var(--ui-hairline);
         }
     }
 
     &__engine-name {
-        font-weight: 600;
-        color: var(--md-sys-color-primary);
+        font-weight: 500;
+        color: var(--ui-muted);
     }
 }
 
 @include respond-to(mobile) {
     .search-modal__header {
-        padding: 10px 12px 8px;
+        padding: var(--ui-space-2) var(--ui-space-2) var(--ui-space-1);
         gap: 6px;
     }
 
     .search-modal__bar {
-        padding-left: 8px;
+        padding-left: var(--ui-space-2);
     }
 
-    .search-modal__submit {
-        width: 34px;
-        height: 34px;
+    .search-modal__submit,
+    .search-modal__close {
+        width: 30px;
+        height: 30px;
     }
 
     .search-modal__empty {
-        padding: 28px 20px;
+        padding: var(--ui-space-6) var(--ui-space-5);
     }
 
     .search-modal__footer {
-        font-size: 11px;
-        padding: 8px 12px;
+        font-size: var(--ui-font-micro);
+        padding: 6px var(--ui-space-3);
     }
 
     .search-modal__hints {
-        gap: 10px;
+        gap: var(--ui-space-2);
     }
 }
 </style>

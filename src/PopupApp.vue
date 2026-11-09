@@ -396,28 +396,30 @@ watch(
 .popup-root {
     width: 360px;
     min-height: 240px;
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
+    background: var(--ui-canvas);
+    color: var(--ui-ink);
     display: flex;
     flex-direction: column;
-    border-radius: 12px;
+    border-radius: var(--ui-radius-lg);
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--ui-shadow-2);
 }
 
+// 顶部主色渐变是品牌元素，保留；但把渐变收窄成同色系明度差，
+// 不再从主色横向拉到次要色，避免整条头变成一块色板
 .popup-header {
-    padding: 14px 16px;
+    padding: var(--ui-space-3) var(--ui-space-4);
     background: linear-gradient(
         135deg,
-        var(--md-sys-color-primary) 0%,
-        var(--md-sys-color-secondary) 100%
+        var(--ui-accent) 0%,
+        color-mix(in srgb, var(--ui-accent) 74%, var(--md-sys-color-secondary)) 100%
     );
 }
 
 .popup-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--ui-space-2);
     cursor: pointer;
 }
 
@@ -426,19 +428,21 @@ watch(
     width: 32px;
     height: 32px;
     object-fit: contain;
-    border-radius: 9px;
+    border-radius: var(--ui-radius-md);
     flex-shrink: 0;
 }
 
 .popup-title {
-    font-size: 15px;
+    font-size: var(--ui-font-title);
     font-weight: 600;
-    color: #fff;
+    letter-spacing: var(--ui-track-tight);
+    // 头部是主色渐变，文字固定取配套的 on-accent
+    color: var(--ui-on-accent);
 }
 
 .popup-body {
     flex: 1;
-    padding: 16px;
+    padding: var(--ui-space-4);
     display: flex;
     flex-direction: column;
 }
@@ -446,7 +450,7 @@ watch(
 .popup-form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: var(--ui-space-3);
 }
 
 .popup-state {
@@ -455,81 +459,89 @@ watch(
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 32px 16px;
-    color: var(--md-sys-color-on-surface-variant);
+    gap: var(--ui-space-2);
+    padding: var(--ui-space-6) var(--ui-space-4);
+    color: var(--ui-muted);
     text-align: center;
 
     &--error {
-        color: var(--md-sys-color-error);
+        color: var(--ui-danger);
     }
 }
 
 .popup-state-hint {
-    font-size: 12px;
-    color: var(--md-sys-color-on-surface-variant);
+    font-size: var(--ui-font-caption);
+    color: var(--ui-muted-soft);
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--ui-space-1);
 }
 
 .form-label {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--md-sys-color-on-surface);
+    gap: var(--ui-space-1);
+    font-size: var(--ui-font-small);
+    font-weight: 500;
+    letter-spacing: var(--ui-track-tight);
+    color: var(--ui-ink);
 }
 
 .form-required {
-    color: var(--md-sys-color-error);
+    color: var(--ui-danger);
 }
 
+// 与 BaseInput 的外框对齐：同底色、同描边、同圆角、同最小高度
 .form-select {
     width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: 10px;
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-    font-size: 14px;
+    min-height: 36px;
+    padding: 0 var(--ui-space-3);
+    border: 1px solid var(--ui-hairline-strong);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-panel);
+    color: var(--ui-ink);
+    font-size: var(--ui-font-body);
     font-family: inherit;
     outline: none;
     cursor: pointer;
-    @include md-transition(border-color, var(--md-transition-fast));
+    transition:
+        border-color var(--ui-dur-fast) var(--ui-ease),
+        box-shadow var(--ui-dur-fast) var(--ui-ease);
 
+    // 焦点：描边转主色 + 柔和光环，与 BaseInput 同一套
     &:focus {
-        border-color: var(--md-sys-color-primary);
-        box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.08);
+        border-color: var(--ui-accent);
+        box-shadow: 0 0 0 3px var(--ui-accent-softer);
     }
 
     &--error {
-        border-color: var(--md-sys-color-error);
+        border-color: var(--ui-danger);
     }
 }
 
 .form-error {
     margin: 0;
-    font-size: 12px;
-    color: var(--md-sys-color-error);
+    font-size: var(--ui-font-caption);
     line-height: 1.4;
+    color: var(--ui-danger);
 }
 
+// 重复站点提示：语义色块，不再是半透明黄底
 .popup-warning {
     display: flex;
     align-items: flex-start;
-    gap: 6px;
+    gap: var(--ui-space-1);
     margin: 0;
-    padding: 8px 10px;
-    border-radius: 8px;
-    font-size: 12px;
+    padding: var(--ui-space-2) var(--ui-space-3);
+    border-radius: var(--ui-radius-md);
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-tertiary) 22%, transparent);
+    font-size: var(--ui-font-caption);
     line-height: 1.5;
-    color: var(--md-sys-color-on-tertiary-container, #4a3200);
-    background: var(--md-sys-color-tertiary-container, rgba(255, 179, 0, 0.16));
+    color: var(--md-sys-color-on-tertiary-container);
+    background: var(--md-sys-color-tertiary-container);
 
     :deep(.icon-svg) {
         margin-top: 1px;
@@ -541,16 +553,16 @@ watch(
 .icon-selector {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--ui-space-2);
 }
 
 .icon-preview {
     width: 40px;
     height: 40px;
     flex-shrink: 0;
-    border-radius: 10px;
-    background: var(--md-sys-color-surface-variant);
-    border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-sunken);
+    border: 1px solid var(--ui-hairline);
     @include flex-center(row, 0);
 }
 
@@ -560,7 +572,7 @@ watch(
 
 .icon-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--ui-space-2);
     margin-top: 2px;
     align-items: center;
 }
@@ -568,9 +580,9 @@ watch(
 .icon-larger-toggle {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--md-sys-color-on-surface);
+    gap: var(--ui-space-1);
+    font-size: var(--ui-font-small);
+    color: var(--ui-ink);
     cursor: pointer;
     margin-left: auto;
 
@@ -578,23 +590,18 @@ watch(
         width: 16px;
         height: 16px;
         cursor: pointer;
-        accent-color: var(--md-sys-color-primary);
+        accent-color: var(--ui-accent);
     }
 }
 
 .popup-footer {
-    padding: 12px 16px;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
+    padding: var(--ui-space-3) var(--ui-space-4);
+    border-top: 1px solid var(--ui-hairline);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    gap: var(--ui-space-3);
 }
 
-// 深色模式：表面色/输入框底色都来自主题 token，这里只补一个悬停层
-// （后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
-html.dark-mode .form-select {
-    background: var(--hover-bg);
-    border-color: var(--md-sys-color-outline-variant);
-}
+// 底色 / 描边 / 文字全部来自语义 token，明暗主题自动适配，不再需要深色特例
 </style>

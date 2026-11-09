@@ -38,14 +38,13 @@ import AppEditModal from '@/components/appForm/AppEditModal.vue';
 import CategoryEditModal from '@/components/category/CategoryEditModal.vue';
 import CategoryManager from '@/components/category/CategoryManager.vue';
 import UiLibPanel from '@/components/uiLib/UiLibPanel.vue';
-import PersonalizationPanel from '@/components/personalization/PersonalizationPanel.vue';
+import SettingsCenter from '@/components/personalization/SettingsCenter.vue';
+import type { SettingsTabId } from '@/components/personalization/SettingsCenter.vue';
 import ToastContainer from '@/components/common/ToastContainer.vue';
 import UpdateBanner from '@/components/common/UpdateBanner.vue';
 import CategorySection from '@/components/app/CategorySection.vue';
 import AppGrid from '@/components/app/AppGrid.vue';
 import AppCardDragGhost from '@/components/app/AppCardDragGhost.vue';
-import ModalOverlay from '@/components/common/ModalOverlay.vue';
-import CloudSyncPanel from '@/components/personalization/CloudSyncPanel.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
 // ==================== 初始化与全局能力 ====================
@@ -76,7 +75,9 @@ useAppCardDrag().onCommit((payload) => {
  */
 const sidebarCollapsed = ref(!!storageManager.getSync(STORAGE_KEYS.SIDEBAR_COLLAPSED));
 const mobileSidebarOpen = ref(false);
-const personalizationOpen = ref(false);
+/** 设置中心：条目选择与激活栏目都由这里持有，FAB / 极简模式只是指定初始栏目 */
+const settingsOpen = ref(false);
+const settingsTab = ref<SettingsTabId>('appearance');
 const searchOpen = ref(false);
 
 // ==================== 分类与应用状态 ====================
@@ -92,7 +93,6 @@ const appEditOpen = ref(false);
 const categoryEditOpen = ref(false);
 const categoryManagerOpen = ref(false);
 const uiLibPanelOpen = ref(false);
-const cloudSyncOpen = ref(false);
 const fabOpen = ref(false);
 
 const editingApp = ref<AppItem | null>(null);
@@ -391,6 +391,12 @@ function handleExitMinimal(): void {
     void layoutStore.setMinimalMode(false);
 }
 
+/** 打开设置中心并定位到指定栏目 */
+function openSettings(tab: SettingsTabId = 'appearance'): void {
+    settingsTab.value = tab;
+    settingsOpen.value = true;
+}
+
 function handleFabSelect(action: string): void {
     switch (action) {
         case 'add-app':
@@ -403,10 +409,11 @@ function handleFabSelect(action: string): void {
             uiLibPanelOpen.value = true;
             break;
         case 'personalize':
-            personalizationOpen.value = true;
+            openSettings('appearance');
             break;
         case 'cloud-sync':
-            cloudSyncOpen.value = true;
+            // 云同步已并入设置中心「数据与同步」，入口保留并直接定位过去
+            openSettings('data');
             break;
         case 'export':
             void handleExport();
@@ -507,13 +514,13 @@ const fabItems = [
             v-if="layoutStore.minimalMode"
             ref="minimalHomeRef"
             :show-hidden="showHiddenApps"
-            @open-personalization="personalizationOpen = true"
+            @open-personalization="openSettings('appearance')"
             @add-app="openAddApp(activeCategoryId)"
             @edit-app="openEditApp"
             @delete-app="handleDeleteApp"
             @toggle-hidden-reveal="toggleHiddenApps"
             @open-full-search="openSearch"
-            @open-cloud-sync="cloudSyncOpen = true"
+            @open-cloud-sync="openSettings('data')"
             @exit-minimal="handleExitMinimal"
         />
 
@@ -637,11 +644,12 @@ const fabItems = [
 
         <UiLibPanel v-model="uiLibPanelOpen" />
 
-        <ModalOverlay v-model="cloudSyncOpen" title="云同步" :max-width="420" close-on-overlay>
-            <CloudSyncPanel />
-        </ModalOverlay>
-
-        <PersonalizationPanel v-model="personalizationOpen" />
+        <SettingsCenter
+            v-model="settingsOpen"
+            v-model:tab="settingsTab"
+            @export-data="handleExport"
+            @import-data="triggerImport"
+        />
 
         <MntConfirmHost />
         <ToastContainer position="top-right" />
@@ -680,22 +688,23 @@ const fabItems = [
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
-    border-radius: 20px;
-    background: var(--md-sys-color-primary);
-    color: var(--md-sys-color-on-primary);
-    font-size: 13px;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    @include md-transition(all, var(--md-transition-fast));
+    min-height: 32px;
+    padding: 0 14px;
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-accent);
+    color: var(--ui-on-accent);
+    font-size: var(--ui-font-small);
+    font-weight: 500;
+    letter-spacing: var(--ui-track-tight);
+    @include ui-transition(background-color);
+    @include ui-focus-ring;
 
     &:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        background: var(--ui-accent-hover);
     }
 
     :deep(.icon-svg) {
-        color: var(--md-sys-color-on-primary);
+        color: var(--ui-on-accent);
     }
 }
 

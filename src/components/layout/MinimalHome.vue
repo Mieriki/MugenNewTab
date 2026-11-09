@@ -667,7 +667,8 @@ defineExpose({ focusInput });
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 14vh 24px 96px;
+    // 底部留白不是元素间距，而是给右下角控制区让位，故不走 --ui-space-* 阶梯
+    padding: 14vh var(--ui-space-6) 96px;
 }
 
 .minimal-home__inner {
@@ -686,38 +687,40 @@ defineExpose({ focusInput });
     max-width: 580px;
 }
 
+// 居中大搜索框：胶囊形状 + 面板底色 + 发丝描边，焦点时才让描边转主色。
+// 它压在壁纸上但不是一个浮层，所以不打投影，层级只靠底色差与描边表达
 .minimal-search__box {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--ui-space-2);
     height: 52px;
-    padding: 0 10px 0 8px;
-    border-radius: 26px;
-    background: rgba(var(--md-sys-color-surface-rgb), 0.9);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(12px);
-    @include md-transition(all, var(--md-transition-fast));
+    padding: 0 var(--ui-space-2) 0 var(--ui-space-1);
+    border-radius: var(--ui-radius-pill);
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-hairline-strong);
+    transition:
+        background-color var(--ui-dur-base) var(--ui-ease),
+        border-color var(--ui-dur-base) var(--ui-ease),
+        box-shadow var(--ui-dur-base) var(--ui-ease);
 
     &:focus-within {
-        background: rgba(var(--md-sys-color-surface-rgb), 0.98);
-        border-color: var(--md-sys-color-primary);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border-color: var(--ui-accent);
+        box-shadow: 0 0 0 3px var(--ui-accent-softer);
     }
 }
 
 // 左侧搜索引擎选择器（复用 EngineSelector，与完整搜索弹窗共享同一份 store 状态）
 .minimal-search__engine-selector {
     :deep(.engine-selector__trigger) {
-        padding: 6px 8px;
-        border-radius: 999px;
-        font-size: 13px;
+        padding: var(--ui-space-1) var(--ui-space-2);
+        border-radius: var(--ui-radius-pill);
+        font-size: var(--ui-font-small);
         font-weight: 600;
-        color: var(--md-sys-color-on-surface-variant);
+        color: var(--ui-muted);
 
         &:hover:not(:disabled) {
-            background: var(--md-sys-color-surface-variant);
-            color: var(--md-sys-color-primary);
+            background: var(--ui-elevated-hover);
+            color: var(--ui-ink);
         }
     }
 
@@ -726,7 +729,7 @@ defineExpose({ focusInput });
     }
 
     :deep(.engine-selector__dropdown) {
-        top: calc(100% + 16px);
+        top: calc(100% + var(--ui-space-4));
         left: 0;
         min-width: 190px;
     }
@@ -736,8 +739,7 @@ defineExpose({ focusInput });
     flex-shrink: 0;
     width: 1px;
     height: 20px;
-    background: var(--md-sys-color-outline-variant);
-    opacity: 0.8;
+    background: var(--ui-hairline-strong);
 }
 
 // 右侧搜索按钮（与浏览器原生新标签页一致：放大镜在右）
@@ -746,22 +748,23 @@ defineExpose({ focusInput });
     flex-shrink: 0;
     width: 34px;
     height: 34px;
-    border-radius: 50%;
+    border-radius: var(--ui-radius-pill);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--md-sys-color-on-surface-variant);
-    opacity: 0.75;
-    @include md-transition(all, var(--md-transition-fast));
+    color: var(--ui-muted);
+    transition:
+        background-color var(--ui-dur-fast) var(--ui-ease),
+        color var(--ui-dur-fast) var(--ui-ease);
+    @include ui-focus-ring;
 
     &:hover:not(:disabled) {
-        opacity: 1;
-        color: var(--md-sys-color-on-primary-container);
-        background: var(--md-sys-color-primary-container);
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
     }
 
     &:disabled {
-        opacity: 0.3;
+        opacity: 0.35;
         cursor: default;
     }
 }
@@ -774,26 +777,23 @@ defineExpose({ focusInput });
     outline: none;
     background: transparent;
     font-family: inherit;
-    font-size: 16px;
-    color: var(--md-sys-color-on-surface);
+    font-size: var(--ui-font-title);
+    letter-spacing: var(--ui-track-tight);
+    color: var(--ui-ink);
 
     &::placeholder {
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.6;
+        color: var(--ui-muted-soft);
     }
 }
 
+// 建议面板：真正的浮层，才配阴影
 .minimal-search__panel {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + var(--ui-space-2));
     left: 0;
     right: 0;
-    padding: 6px;
-    border-radius: 20px;
-    background: rgba(var(--md-sys-color-surface-rgb), 0.98);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
-    backdrop-filter: blur(16px);
+    padding: var(--ui-space-1);
+    @include ui-floating(3, var(--ui-radius-xl));
     z-index: 20;
 }
 
@@ -802,28 +802,33 @@ defineExpose({ focusInput });
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 6px;
-    margin-top: 22px;
+    gap: var(--ui-space-1);
+    margin-top: var(--ui-space-5);
 }
 
 .minimal-chips__item {
     @include button-reset;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    color: var(--md-sys-color-on-surface-variant);
-    opacity: 0.55;
-    @include md-transition(all, var(--md-transition-fast));
+    padding: var(--ui-space-1) var(--ui-space-3);
+    border-radius: var(--ui-radius-pill);
+    border: 1px solid transparent;
+    font-size: var(--ui-font-caption);
+    color: var(--ui-muted-soft);
+    transition:
+        background-color var(--ui-dur-fast) var(--ui-ease),
+        border-color var(--ui-dur-fast) var(--ui-ease),
+        color var(--ui-dur-fast) var(--ui-ease);
+    @include ui-focus-ring;
 
     &:hover {
-        opacity: 0.9;
-        background: var(--md-sys-color-surface-variant);
+        background: var(--ui-elevated);
+        color: var(--ui-ink);
     }
 
+    // 选中：淡主色底 + 主色字，是页面上少数几处主色之一
     &.active {
-        opacity: 1;
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
+        background: var(--ui-accent-softer);
+        border-color: color-mix(in srgb, var(--ui-accent) 30%, transparent);
+        color: var(--ui-accent);
         font-weight: 600;
     }
 }
@@ -833,26 +838,37 @@ defineExpose({ focusInput });
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 4px 8px;
-    margin-top: 28px;
+    gap: var(--ui-space-1) var(--ui-space-2);
+    margin-top: var(--ui-space-6);
     width: 100%;
 }
 
+// 磁贴 = 中性小卡片：面板底色 + 1px 发丝描边，hover 才把描边转主色、底色抬一档，
+// 不做上浮 / 缩放 —— 一屏几十个磁贴同时位移会让整页发晃
 .minimal-tile {
     @include button-reset;
     position: relative;
     width: 88px;
-    padding: 12px 4px 10px;
-    border-radius: 14px;
+    padding: var(--ui-space-3) var(--ui-space-1) var(--ui-space-2);
+    border-radius: var(--ui-radius-lg);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    @include md-transition(all, var(--md-transition-fast));
-    @include focus-ring;
+    gap: var(--ui-space-2);
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-hairline);
+    transition:
+        background-color var(--ui-dur-fast) var(--ui-ease),
+        border-color var(--ui-dur-fast) var(--ui-ease);
+    @include ui-focus-ring;
 
     &:hover {
-        background: var(--md-sys-color-primary-container);
+        background: var(--ui-elevated);
+        border-color: color-mix(in srgb, var(--ui-accent) 55%, transparent);
+
+        .minimal-tile__name {
+            color: var(--ui-ink);
+        }
 
         .minimal-tile__more {
             opacity: 1;
@@ -864,7 +880,7 @@ defineExpose({ focusInput });
         opacity: 0.55;
 
         .minimal-tile__icon {
-            border: 1px dashed var(--md-sys-color-outline-variant);
+            border: 1px dashed var(--ui-hairline-strong);
         }
     }
 
@@ -881,86 +897,102 @@ defineExpose({ focusInput });
         top: 10%;
         bottom: 10%;
         width: 2px;
-        border-radius: 2px;
-        background: var(--md-sys-color-primary);
+        border-radius: var(--ui-radius-pill);
+        background: var(--ui-accent);
     }
 }
 
 .minimal-tile__icon {
     width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: var(--ui-radius-pill);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 5%, transparent);
+    background: var(--ui-sunken);
 }
 
 .minimal-tile__name {
     max-width: 100%;
-    font-size: 12px;
+    font-size: var(--ui-font-caption);
+    font-weight: 500;
+    letter-spacing: var(--ui-track-tight);
     line-height: 1.3;
-    color: var(--md-sys-color-on-surface);
+    color: var(--ui-body);
     text-align: center;
     @include line-clamp(2);
+    @include ui-transition(color);
 }
 
 .minimal-tile__more {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: var(--ui-space-1);
+    right: var(--ui-space-1);
     width: 20px;
     height: 20px;
-    border-radius: 50%;
+    border-radius: var(--ui-radius-pill);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(var(--md-sys-color-surface-rgb), 0.95);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    color: var(--md-sys-color-on-surface-variant);
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-hairline);
+    color: var(--ui-muted);
     opacity: 0;
-    @include md-transition(opacity, var(--md-transition-fast));
+    transition:
+        opacity var(--ui-dur-fast) var(--ui-ease),
+        background-color var(--ui-dur-fast) var(--ui-ease),
+        color var(--ui-dur-fast) var(--ui-ease);
 
     &:hover {
-        background: var(--md-sys-color-primary);
-        color: var(--md-sys-color-on-primary);
-        border-color: transparent;
+        background: var(--ui-accent);
+        border-color: var(--ui-accent);
+        color: var(--ui-on-accent);
     }
 }
 
 // ==================== 辅助文案 ====================
 .minimal-hint {
-    margin: 28px 0 0;
-    font-size: 13px;
-    color: var(--md-sys-color-on-surface-variant);
-    opacity: 0.6;
+    margin: var(--ui-space-6) 0 0;
+    font-size: var(--ui-font-small);
+    color: var(--ui-muted);
 }
 
 .minimal-hint__link {
     @include button-reset;
-    color: var(--md-sys-color-primary);
+    color: var(--ui-accent);
     text-decoration: underline;
-    margin-left: 4px;
+    text-underline-offset: 2px;
+    margin-left: var(--ui-space-1);
+    @include ui-focus-ring;
+
+    &:hover {
+        color: var(--ui-accent-hover);
+    }
 }
 
 .minimal-more {
     @include button-reset;
-    margin-top: 24px;
+    margin-top: var(--ui-space-5);
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-size: 12px;
-    color: var(--md-sys-color-on-surface-variant);
-    opacity: 0.6;
-    @include md-transition(all, var(--md-transition-fast));
+    gap: var(--ui-space-1);
+    padding: var(--ui-space-1) var(--ui-space-3);
+    border-radius: var(--ui-radius-pill);
+    border: 1px solid var(--ui-hairline);
+    font-size: var(--ui-font-small);
+    color: var(--ui-muted);
+    transition:
+        background-color var(--ui-dur-fast) var(--ui-ease),
+        border-color var(--ui-dur-fast) var(--ui-ease),
+        color var(--ui-dur-fast) var(--ui-ease);
+    @include ui-focus-ring;
 
     &:hover {
-        opacity: 1;
-        background: var(--md-sys-color-surface-variant);
+        background: var(--ui-elevated);
+        border-color: var(--ui-hairline-strong);
+        color: var(--ui-ink);
     }
 }
 
@@ -968,18 +1000,17 @@ defineExpose({ focusInput });
 // 放右下角而不是右上角：Toast 固定在右上角，站点操作后的提示会盖住控制区
 .minimal-controls {
     position: fixed;
-    right: 16px;
-    bottom: 16px;
+    right: var(--ui-space-4);
+    bottom: var(--ui-space-4);
     display: flex;
     align-items: center;
-    padding: 6px;
-    border-radius: 999px;
-    background: rgba(var(--md-sys-color-surface-rgb), 0.85);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    backdrop-filter: blur(12px);
-    // 默认灰暗隐藏
-    opacity: 0.25;
-    @include md-transition(opacity, var(--md-transition-fast));
+    padding: var(--ui-space-1);
+    border-radius: var(--ui-radius-pill);
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-hairline-strong);
+    // 默认压暗隐藏
+    opacity: 0.3;
+    transition: opacity var(--ui-dur-base) var(--ui-ease);
 
     &:hover,
     &:focus-within {
@@ -991,19 +1022,22 @@ defineExpose({ focusInput });
 .minimal-controls__actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--ui-space-1);
     max-width: 0;
     margin-right: 0;
     overflow: hidden;
     opacity: 0;
     pointer-events: none;
-    @include md-transition(all, var(--md-transition-fast));
+    transition:
+        max-width var(--ui-dur-base) var(--ui-ease),
+        margin-right var(--ui-dur-base) var(--ui-ease),
+        opacity var(--ui-dur-base) var(--ui-ease);
 }
 
 .minimal-controls:hover .minimal-controls__actions,
 .minimal-controls:focus-within .minimal-controls__actions {
     max-width: 300px;
-    margin-right: 6px;
+    margin-right: var(--ui-space-1);
     opacity: 1;
     pointer-events: auto;
 }
@@ -1013,23 +1047,26 @@ defineExpose({ focusInput });
     @include button-reset;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: var(--ui-radius-pill);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: var(--md-sys-color-on-surface-variant);
-    @include md-transition(all, var(--md-transition-fast));
+    color: var(--ui-muted);
+    transition:
+        background-color var(--ui-dur-fast) var(--ui-ease),
+        color var(--ui-dur-fast) var(--ui-ease);
+    @include ui-focus-ring;
 
     &:hover {
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
+        background: var(--ui-elevated-hover);
+        color: var(--ui-ink);
     }
 
     // 揭示模式开启时高亮，避免用户忘了自己还开着
     &.is-active {
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
     }
 }
 
@@ -1052,12 +1089,12 @@ defineExpose({ focusInput });
     }
 
     .minimal-home {
-        padding: 10vh 16px 80px;
+        padding: 10vh var(--ui-space-4) 80px;
     }
 
     .minimal-search__box {
         height: 48px;
-        padding: 0 14px;
+        padding: 0 var(--ui-space-3);
     }
 
     .minimal-tile {

@@ -98,6 +98,87 @@
     --md-on-surface: var(--md-sys-color-on-surface-variant);
     --md-outline: var(--md-sys-color-surface-variant);
     --md-shadow: rgba(177, 74, 107, 0.15);
+
+    // ==================== UI 语义层（组件一律读这里） ====================
+    //
+    // 这一层不引入任何新的"设计色"，全部由上面的主题 token 派生：
+    // 换主题时自动跟随，深色变体也不需要另写一套覆盖。
+    //
+    // 层级只靠「底色差 + 1px 发丝描边」表达，阴影留给浮层（弹窗 / 菜单 / Toast），
+    // 于是 surface 上的卡片不再靠投影堆体积，深色主题里也不会糊成一片灰。
+
+    // ---- 表面：canvas（底）→ panel（卡片）→ elevated（行内控件/hover） ----
+    --ui-canvas: var(--md-sys-color-surface);
+    --ui-panel: color-mix(in srgb, var(--md-sys-color-surface) 96%, var(--md-sys-color-on-surface));
+    --ui-elevated: color-mix(in srgb, var(--md-sys-color-surface) 94%, var(--md-sys-color-on-surface));
+    --ui-elevated-hover: color-mix(in srgb, var(--md-sys-color-surface) 90%, var(--md-sys-color-on-surface));
+    // 分段控件轨道、滑杆槽一类"凹陷"表面
+    --ui-sunken: color-mix(in srgb, var(--md-sys-color-surface) 91%, var(--md-sys-color-on-surface));
+
+    // ---- 描边 ----
+    --ui-hairline: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+    --ui-hairline-strong: color-mix(in srgb, var(--md-sys-color-on-surface) 18%, transparent);
+
+    // ---- 文字 ----
+    --ui-ink: var(--md-sys-color-on-surface);
+    --ui-body: color-mix(in srgb, var(--md-sys-color-on-surface) 92%, transparent);
+    --ui-muted: var(--md-sys-color-on-surface-variant);
+    --ui-muted-soft: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 78%, transparent);
+
+    // ---- 主色：只用于 CTA / 选中 / 焦点 / 链接 ----
+    --ui-accent: var(--md-sys-color-primary);
+    --ui-accent-hover: color-mix(in srgb, var(--md-sys-color-primary) 88%, var(--md-sys-color-on-surface));
+    --ui-accent-soft: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+    --ui-accent-softer: color-mix(in srgb, var(--md-sys-color-primary) 7%, transparent);
+    --ui-on-accent: var(--md-sys-color-on-primary);
+
+    // ---- 语义状态色：错误 / 成功，供表单校验、危险操作与 Toast 使用 ----
+    // 主题只提供 --md-sys-color-error / success，这里补上"淡底"档位，
+    // 免得每个组件各写一遍 color-mix。
+    --ui-danger: var(--md-sys-color-error);
+    --ui-danger-soft: color-mix(in srgb, var(--md-sys-color-error) 12%, transparent);
+    --ui-success: var(--md-sys-color-success);
+    --ui-success-soft: color-mix(in srgb, var(--md-sys-color-success) 12%, transparent);
+
+    // ---- 圆角：6 档，不再逐个组件随手取值 ----
+    --ui-radius-xs: 4px;
+    --ui-radius-sm: 6px;
+    --ui-radius-md: 8px;
+    --ui-radius-lg: 12px;
+    --ui-radius-xl: 16px;
+    --ui-radius-pill: 999px;
+
+    // ---- 间距：4px 基准 ----
+    --ui-space-1: 4px;
+    --ui-space-2: 8px;
+    --ui-space-3: 12px;
+    --ui-space-4: 16px;
+    --ui-space-5: 20px;
+    --ui-space-6: 24px;
+    --ui-space-7: 32px;
+    --ui-space-8: 48px;
+
+    // ---- 阴影：中性、低透明度，只给浮层 ----
+    --ui-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --ui-shadow-2: 0 4px 14px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+    --ui-shadow-3: 0 18px 48px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+    // ---- 字体阶梯：全无衬线，靠字重 / 字号 / 负字距建层级 ----
+    --ui-font-display: 22px; // 页面主标题
+    --ui-font-title: 16px; // 弹窗 / 卡片标题
+    --ui-font-subtitle: 14px; // 设置行标题、列表主文字
+    --ui-font-body: 14px; // 正文
+    --ui-font-small: 13px; // 次要正文、按钮
+    --ui-font-caption: 12.5px; // 说明文字
+    --ui-font-micro: 11.5px; // 徽标、键位
+    --ui-track-tight: -0.01em; // 中文标题收紧
+    --ui-track-caps: 0.06em; // 分组小标题放开
+
+    // ---- 动效：只做颜色 / 底色 / 描边，不做位移 ----
+    --ui-dur-fast: 0.12s;
+    --ui-dur-base: 0.16s;
+    --ui-dur-slow: 0.24s;
+    --ui-ease: cubic-bezier(0.2, 0, 0.2, 1);
 }
 
 // 深色模式变量覆盖

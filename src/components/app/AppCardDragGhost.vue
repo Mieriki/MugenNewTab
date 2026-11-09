@@ -65,26 +65,27 @@ const ghostStyle = computed(() => ({
     z-index: 10000;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: var(--ui-space-3);
+    padding: var(--ui-space-3);
     background: var(--card-bg);
-    border: 1px solid var(--md-sys-color-primary);
-    border-radius: var(--card-radius, 12px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--ui-accent);
+    border-radius: var(--card-radius, var(--ui-radius-lg));
+    box-shadow: var(--ui-shadow-3);
     -webkit-backdrop-filter: var(--card-backdrop, none);
     backdrop-filter: var(--card-backdrop, none);
     pointer-events: none;
+    // 拖拽幽灵是唯一保留缩放的元素：它需要"被拎起来"的手感
     transform: scale(1.03);
 
     &__icon {
         width: 40px;
         height: 40px;
-        border-radius: 10px;
+        border-radius: var(--ui-radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
         flex-shrink: 0;
         overflow: hidden;
     }
@@ -104,18 +105,18 @@ const ghostStyle = computed(() => ({
 
     &__name {
         margin: 0;
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--md-sys-color-on-surface);
+        font-size: var(--ui-font-subtitle);
+        font-weight: 500;
+        letter-spacing: var(--ui-track-tight);
+        color: var(--ui-ink);
         @include text-ellipsis;
     }
 
     &__description {
         margin: 0;
-        font-size: 0.75rem;
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.85;
-        line-height: 1.3;
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
+        line-height: 1.35;
         @include line-clamp(2);
         max-height: 2.8em;
     }

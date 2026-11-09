@@ -163,13 +163,13 @@ function handleDelete(event: MouseEvent): void {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: var(--ui-space-3);
+    padding: var(--ui-space-3);
     // 固定等高：容纳两行简介，无简介时内容垂直居中
     height: 76px;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    border-radius: var(--card-radius, 12px);
+    border-radius: var(--card-radius, var(--ui-radius-lg));
     box-shadow: var(--card-shadow);
     // 磨砂：默认 none，开启后采样卡片背后的壁纸（值由 cardStyle.store 下发）
     -webkit-backdrop-filter: var(--card-backdrop, none);
@@ -180,35 +180,38 @@ function handleDelete(event: MouseEvent): void {
     touch-action: manipulation;
     contain: layout style paint;
     transform: translateZ(0);
-    @include md-transition(all, var(--md-transition-fast));
-    @include focus-ring;
+    // 悬停只换描边与底色，不做位移——几十张卡片同时上浮会让整页发晃
+    transition:
+        border-color var(--ui-dur-fast) var(--ui-ease),
+        background-color var(--ui-dur-fast) var(--ui-ease),
+        box-shadow var(--ui-dur-fast) var(--ui-ease);
+    @include ui-focus-ring;
 
     &:hover {
-        transform: translateY(-2px);
-        border-color: var(--md-sys-color-primary);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, calc(0.08 * var(--card-shadow-alpha, 1)));
+        border-color: color-mix(in srgb, var(--ui-accent) 55%, transparent);
+        // 悬停只往卡片底色里掺一点主色，保留用户设定的不透明度
+        background: color-mix(in srgb, var(--ui-accent) 4%, var(--card-bg));
     }
 
     &:hover &__name {
-        color: var(--md-sys-color-primary);
+        color: var(--ui-accent);
     }
 
     &.is-hidden {
         opacity: 0.7;
-        background: var(--md-sys-color-surface-variant);
+        background: var(--ui-elevated);
         border-style: dashed;
     }
 
     &.is-dragging {
         opacity: 0.6;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        box-shadow: var(--ui-shadow-3);
         cursor: grabbing;
         z-index: 1000;
-        transform: scale(1.02);
     }
 
     &.is-pressing {
-        background: var(--md-sys-color-surface-variant);
+        background: var(--ui-elevated);
     }
 
     &.is-draggable {
@@ -223,12 +226,12 @@ function handleDelete(event: MouseEvent): void {
     &__icon {
         width: 40px;
         height: 40px;
-        border-radius: 10px;
+        border-radius: var(--ui-radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
         flex-shrink: 0;
         overflow: hidden;
     }
@@ -248,32 +251,32 @@ function handleDelete(event: MouseEvent): void {
 
     &__name {
         margin: 0;
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--md-sys-color-on-surface);
+        font-size: var(--ui-font-subtitle);
+        font-weight: 500;
+        letter-spacing: var(--ui-track-tight);
+        color: var(--ui-ink);
         @include text-ellipsis;
-        @include md-transition(color, var(--md-transition-fast));
+        @include ui-transition(color);
     }
 
     &__description {
         margin: 0;
-        font-size: 0.75rem;
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.85;
-        line-height: 1.3;
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
+        line-height: 1.35;
         @include line-clamp(2);
         max-height: 2.8em;
     }
 
     &__actions {
         position: absolute;
-        top: 8px;
-        right: 8px;
+        top: 6px;
+        right: 6px;
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 2px;
         opacity: 0;
-        transition: opacity 0.2s ease;
+        transition: opacity var(--ui-dur-fast) var(--ui-ease);
     }
 
     &:hover &__actions,
@@ -283,26 +286,29 @@ function handleDelete(event: MouseEvent): void {
     }
 
     &__action-btn {
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
         min-width: auto;
         padding: 0 !important;
-        border-radius: 6px;
-        background: var(--md-sys-color-surface-variant);
-        color: var(--md-sys-color-on-surface-variant);
+        border-radius: var(--ui-radius-sm);
+        background: var(--ui-elevated);
+        border: 1px solid var(--ui-hairline);
+        color: var(--ui-muted);
 
         &:hover {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
+            background: var(--ui-accent);
+            border-color: var(--ui-accent);
+            color: var(--ui-on-accent);
         }
 
         &--delete:hover {
-            background: var(--md-sys-color-error);
+            background: var(--ui-danger);
+            border-color: var(--ui-danger);
             color: #fff;
         }
     }
 }
 
-// 深色模式不需要另一套 hover：卡片底色 / 边框都来自主题 token，
-// 主色描边在明暗两套里都成立
+// 卡片底色 / 边框全部来自主题与 cardStyle 下发的 --card-*，
+// 深色变体不需要另一套规则
 </style>

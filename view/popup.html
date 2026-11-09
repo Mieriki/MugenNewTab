@@ -7,6 +7,13 @@
     <!-- 同上：Firefox 需要文档内显式声明图标，否则标签栏空白 -->
     <link rel="icon" type="image/png" sizes="16x16" href="/image/logo/logo_girl-16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/image/logo/logo_girl-32.png" />
+    <!--
+        与 index.html 共用同一份主题预加载脚本：popup 里的 --ui-* 语义令牌全部由
+        --md-sys-color-* 派生，不预先注入主题就会退回 variables.scss 的默认值，
+        用户选的主题在弹窗里完全不生效。
+        CSP（script-src 'self'）禁止内联脚本，必须以外部文件引入。
+    -->
+    <script src="/theme-preload.js"></script>
 </head>
 <body>
     <div id="app"></div>

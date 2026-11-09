@@ -204,84 +204,85 @@ function formatCount(categoryId: string): string {
     flex-direction: column;
 
     &__summary {
-        margin: 0 4px 10px;
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
+        @include ui-description;
+        margin: 0 var(--ui-space-1) var(--ui-space-2);
     }
 
+    // ============ 空状态 ============
     &__empty {
-        @include flex-center(column, 12px);
-        padding: 32px 16px;
-        color: var(--md-sys-color-on-surface-variant);
+        @include flex-center(column, var(--ui-space-3));
+        padding: var(--ui-space-7) var(--ui-space-4);
+        color: var(--ui-muted-soft);
         text-align: center;
 
+        :deep(.icon-svg) {
+            color: var(--ui-muted);
+        }
+
+        // 只重置外边距，字号由下面两个具体 class 决定，避免 !important
         p {
             margin: 0;
-            font-size: 14px;
         }
     }
 
     &__empty-title {
+        font-size: var(--ui-font-body);
         font-weight: 600;
-        color: var(--md-sys-color-on-surface);
+        letter-spacing: var(--ui-track-tight);
+        color: var(--ui-ink);
     }
 
     &__empty-hint {
-        font-size: 12px !important;
-        opacity: 0.8;
+        @include ui-description;
+        color: var(--ui-muted-soft);
     }
 
+    // ============ 列表 ============
     &__list {
         list-style: none;
         margin: 0;
-        padding: 4px;
+        padding: var(--ui-space-1);
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: var(--ui-space-2);
         max-height: 400px;
         overflow-y: auto;
         @include hide-scrollbar;
     }
 
+    // 列表行：中性底 + 发丝描边，hover 只换底色与描边，不做位移
     &__item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        padding: 14px 16px;
-        border-radius: 12px;
-        background: var(--md-sys-color-surface-variant);
-        border: 1px solid var(--md-sys-color-outline-variant);
-        @include md-transition(all, var(--md-transition-fast));
+        gap: var(--ui-space-3);
+        padding: var(--ui-space-3) var(--ui-space-4);
+        @include ui-surface(var(--ui-elevated), var(--ui-radius-lg));
+        @include ui-interactive;
 
         &:hover {
-            background: var(--md-sys-color-surface);
-            border-color: color-mix(in srgb, var(--md-sys-color-primary) 45%, transparent);
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            border-color: var(--ui-hairline-strong);
         }
     }
 
     &__info {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: var(--ui-space-3);
         flex: 1;
         min-width: 0;
     }
 
     &__icon {
+        @include flex-center(row, 0);
         width: 40px;
         height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         flex-shrink: 0;
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);
         overflow: hidden;
+        border: 1px solid var(--ui-hairline);
+        border-radius: var(--ui-radius-md);
+        background: var(--ui-panel);
+        color: var(--ui-ink);
     }
 
     &__text {
@@ -292,88 +293,71 @@ function formatCount(categoryId: string): string {
     }
 
     &__name {
-        font-weight: 600;
-        font-size: 15px;
-        color: var(--md-sys-color-on-surface);
+        @include ui-label;
+        font-size: var(--ui-font-body);
         line-height: 1.3;
-        @include text-ellipsis;
     }
 
     &__meta {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: var(--ui-space-2);
     }
 
     &__count {
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-caption);
         line-height: 1.3;
+        color: var(--ui-muted);
     }
 
+    // 状态徽标：主色留给「选中 / CTA」，徽标只做弱提示
     &__badge {
-        font-size: 10px;
+        padding: 1px var(--ui-space-2);
+        border-radius: var(--ui-radius-pill);
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
+        font-size: var(--ui-font-micro);
         line-height: 1.4;
-        padding: 1px 6px;
-        border-radius: 999px;
-        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-        color: var(--md-sys-color-primary);
     }
 
     &__actions {
         display: flex;
-        gap: 4px;
+        gap: var(--ui-space-1);
         flex-shrink: 0;
     }
 
     &__delete-btn {
-        color: var(--md-sys-color-error);
+        color: var(--ui-danger);
 
         &:hover {
             background: var(--md-sys-color-error-container);
+            color: var(--ui-danger);
         }
     }
 
+    // ============ 底部「新建分类」行 ============
+    // 虚线描边的空位提示，hover 才点亮主色
     &__add-row {
         @include button-reset;
-        margin-top: 10px;
+        @include flex-center(row, var(--ui-space-2));
+        @include ui-focus-ring;
+        @include ui-transition(border-color, color);
         width: 100%;
-        padding: 12px 16px;
-        border-radius: 12px;
-        border: 1.5px dashed var(--md-sys-color-outline);
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 14px;
+        margin-top: var(--ui-space-3);
+        padding: var(--ui-space-3) var(--ui-space-4);
+        border: 1px dashed var(--ui-hairline-strong);
+        border-radius: var(--ui-radius-lg);
+        font-size: var(--ui-font-body);
         font-weight: 500;
-        @include flex-center(row, 8px);
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        color: var(--ui-muted);
 
         &:hover {
-            border-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-primary);
-            background: color-mix(in srgb, var(--md-sys-color-primary) 6%, transparent);
+            border-color: var(--ui-accent);
+            background: var(--ui-accent-softer);
+            color: var(--ui-accent);
         }
     }
 }
 
-// 深色模式适配（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
-html.dark-mode .mnt-category-manager__item {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-
-    &:hover {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: color-mix(in srgb, var(--md-sys-color-primary) 55%, transparent);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-    }
-}
-
-html.dark-mode .mnt-category-manager__add-row {
-    border-color: rgba(255, 255, 255, 0.16);
-
-    &:hover {
-        border-color: var(--md-sys-color-primary);
-        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-    }
-}
+// 底色 / 描边 / 文字全部由 --ui-* 按当前主题派生，深色主题无需另写一套覆盖
 </style>

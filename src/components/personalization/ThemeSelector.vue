@@ -11,7 +11,10 @@
 import { computed } from 'vue';
 import { useTheme } from '@/composables/useTheme';
 import IconSvg from '@/components/icon/IconSvg.vue';
-import BaseButton from '@/components/common/BaseButton.vue';
+import BaseSegmented, { type SegmentedOption } from '@/components/common/BaseSegmented.vue';
+import BaseSwitch from '@/components/common/BaseSwitch.vue';
+import SettingsSection from '@/components/settings/SettingsSection.vue';
+import SettingsRow from '@/components/settings/SettingsRow.vue';
 import type { ThemeFamily, ThemeMode } from '@/types/config';
 
 export interface ThemeSelectorProps {
@@ -49,12 +52,10 @@ const {
 
 const familyList = computed<ThemeFamily[]>(() => themeFamilies.value);
 
-const MODE_OPTIONS: Array<{ value: ThemeMode; label: string }> = [
+const MODE_OPTIONS: SegmentedOption[] = [
     { value: 'light', label: '明亮' },
     { value: 'dark', label: '深色' }
 ];
-
-const SPARKLE_PATH = 'M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z';
 
 /**
  * 预览圆点：左半是明亮模式的表面色、右半是深色模式的表面色，
@@ -106,9 +107,22 @@ async function handleModeChange(mode: ThemeMode): Promise<void> {
     }
 }
 
-async function handleFollowSystem(): Promise<void> {
+/**
+ * 跟随系统开关
+ *
+ * 打开时调用 followSystemTheme()；关闭时要显式落一次当前主题——setTheme 会把
+ * followSystem 置回 false，否则开关看着关了、存储里还写着跟随，重启又会跳回去。
+ */
+async function handleFollowSystem(enabled: boolean): Promise<void> {
     try {
-        await followSystemTheme();
+        if (enabled) {
+            await followSystemTheme();
+            return;
+        }
+        const currentId = selectedThemeId.value;
+        if (currentId) {
+            await setTheme(currentId);
+        }
     } catch (err) {
         emit('error', err instanceof Error ? err.message : String(err));
     }
@@ -116,89 +130,86 @@ async function handleFollowSystem(): Promise<void> {
 </script>
 
 <template>
-    <section class="theme-selector" aria-label="主题选择">
-        <header class="theme-selector__header">
-            <IconSvg :path="SPARKLE_PATH" :size="18" color="var(--md-sys-color-primary)" />
-            <h3 class="theme-selector__title">{{ title }}</h3>
-        </header>
+    <div class="theme-selector">
+        <SettingsSection title="外观" description="明暗决定用哪一套配色渲染；主题族决定色系。">
+            <SettingsRow label="外观" description="选择应用的明暗外观">
+                <template #actions>
+                    <BaseSegmented
+                        :model-value="currentMode"
+                        :options="MODE_OPTIONS"
+                        aria-label="明暗模式"
+                        @change="handleModeChange($event as ThemeMode)"
+                    />
+                </template>
+            </SettingsRow>
 
-        <div class="theme-mode" role="radiogroup" aria-label="明暗模式">
-            <button
-                v-for="option in MODE_OPTIONS"
-                :key="option.value"
-                type="button"
-                class="theme-mode__btn"
-                :class="{ active: currentMode === option.value }"
-                :aria-checked="currentMode === option.value"
-                role="radio"
-                @click="handleModeChange(option.value)"
+            <SettingsRow
+                v-if="showFollowSystem"
+                label="跟随系统"
+                description="系统切换深色时自动切到同一色系的暗色变体"
             >
-                {{ option.label }}
-            </button>
-        </div>
+                <template #actions>
+                    <BaseSwitch
+                        :model-value="isFollowingSystem"
+                        aria-label="跟随系统深色偏好"
+                        @update:model-value="handleFollowSystem"
+                    />
+                </template>
+            </SettingsRow>
+        </SettingsSection>
 
-        <div
-            v-if="isInitializing && familyList.length === 0"
-            class="theme-selector__loading"
-            role="status"
-            aria-live="polite"
-        >
-            正在加载主题…
-        </div>
-
-        <div
-            v-else
-            class="theme-options-list"
-            role="radiogroup"
-            :aria-label="title"
-        >
-            <button
-                v-for="family in familyList"
-                :key="family.id"
-                type="button"
-                class="theme-option"
-                :class="{ active: family.id === currentFamilyId }"
-                :aria-checked="family.id === currentFamilyId"
-                role="radio"
-                :title="family.description"
-                @click="handleSelect(family)"
+        <SettingsSection :title="title">
+            <div
+                v-if="isInitializing && familyList.length === 0"
+                class="theme-selector__loading"
+                role="status"
+                aria-live="polite"
             >
-                <span
-                    class="theme-option__preview"
-                    :style="getPreviewStyle(family)"
-                    aria-hidden="true"
-                >
-                    <span class="theme-option__preview-dot" />
-                </span>
-                <span class="theme-option__name">{{ family.name }}</span>
-                <span
-                    v-if="!family.light || !family.dark"
-                    class="theme-option__badge"
-                >
-                    {{ family.light ? '仅明亮' : '仅深色' }}
-                </span>
-                <IconSvg
-                    v-if="family.id === currentFamilyId"
-                    name="check"
-                    :size="18"
-                    class="theme-option__check"
-                    aria-hidden="true"
-                />
-            </button>
-        </div>
+                正在加载主题…
+            </div>
 
-        <BaseButton
-            v-if="showFollowSystem"
-            variant="outlined"
-            size="small"
-            block
-            class="theme-selector__follow"
-            :aria-label="isFollowingSystem ? '已跟随系统深色偏好' : '跟随系统深色偏好'"
-            @click="handleFollowSystem"
-        >
-            {{ isFollowingSystem ? '已跟随系统深色偏好' : '跟随系统深色偏好' }}
-        </BaseButton>
-    </section>
+            <div
+                v-else
+                class="theme-options-list"
+                role="radiogroup"
+                :aria-label="title"
+            >
+                <button
+                    v-for="family in familyList"
+                    :key="family.id"
+                    type="button"
+                    class="theme-option"
+                    :class="{ active: family.id === currentFamilyId }"
+                    :aria-checked="family.id === currentFamilyId"
+                    role="radio"
+                    :title="family.description"
+                    @click="handleSelect(family)"
+                >
+                    <span
+                        class="theme-option__preview"
+                        :style="getPreviewStyle(family)"
+                        aria-hidden="true"
+                    >
+                        <span class="theme-option__preview-dot" />
+                    </span>
+                    <span class="theme-option__name">{{ family.name }}</span>
+                    <span
+                        v-if="!family.light || !family.dark"
+                        class="theme-option__badge"
+                    >
+                        {{ family.light ? '仅明亮' : '仅深色' }}
+                    </span>
+                    <IconSvg
+                        v-if="family.id === currentFamilyId"
+                        name="check"
+                        :size="16"
+                        class="theme-option__check"
+                        aria-hidden="true"
+                    />
+                </button>
+            </div>
+        </SettingsSection>
+    </div>
 </template>
 
 <style scoped lang="scss">
@@ -208,83 +219,25 @@ async function handleFollowSystem(): Promise<void> {
 .theme-selector {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-
-    &__header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    &__title {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--md-sys-color-primary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 0;
-    }
+    gap: var(--ui-space-5);
 
     &__loading {
-        font-size: 13px;
-        color: var(--md-sys-color-on-surface-variant);
-        padding: 8px 0;
-    }
-
-    &__follow {
-        margin-top: 4px;
+        font-size: var(--ui-font-small);
+        color: var(--ui-muted);
+        padding: var(--ui-space-4) 0;
     }
 }
 
-// ==================== 明/暗模式开关 ====================
-.theme-mode {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    padding: 4px;
-    border-radius: 12px;
-    background: var(--md-sys-color-surface-variant);
-    // 深色主题下 surface-variant 与面板底色很接近，加一圈内描边把轨道勾出来
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--md-sys-color-on-surface) 7%, transparent);
-
-    &__btn {
-        @include button-reset;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 8px 10px;
-        border-radius: 9px;
-        font-size: 12.5px;
-        font-weight: 600;
-        color: var(--md-sys-color-on-surface-variant);
-        @include md-transition(all, var(--md-transition-fast));
-
-        &:hover {
-            color: var(--md-sys-color-on-surface);
-        }
-
-        &.active {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            box-shadow: 0 2px 8px var(--md-shadow);
-        }
-    }
-}
-
+// ==================== 主题族列表 ====================
 .theme-options-list {
     // 12 个主题族两列排布：一屏能看全，不用在隐藏了滚动条的列表里找
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
-    max-height: 420px;
-    overflow-y: auto;
-    @include hide-scrollbar;
+    gap: 2px;
+    padding: var(--ui-space-2) 0;
 }
 
-@media (max-width: 380px) {
+@media (max-width: 560px) {
     .theme-options-list {
         grid-template-columns: 1fr;
     }
@@ -295,20 +248,17 @@ async function handleFollowSystem(): Promise<void> {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px;
-    border-radius: 10px;
-    color: var(--md-sys-color-on-surface);
+    padding: 9px 10px;
+    border-radius: var(--ui-radius-md);
+    color: var(--ui-ink);
     text-align: left;
     width: 100%;
-    @include md-transition(all, var(--md-transition-fast));
-
-    &:hover {
-        background: var(--md-sys-color-primary-container);
-    }
+    @include ui-interactive;
+    @include ui-focus-ring;
 
     &.active {
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
+        background: var(--ui-elevated);
+        box-shadow: inset 0 0 0 1px var(--ui-hairline);
     }
 
     &__preview {
@@ -326,8 +276,8 @@ async function handleFollowSystem(): Promise<void> {
             var(--preview-light) 0 50%,
             var(--preview-dark) 50% 100%
         );
-        box-shadow: inset 0 0 0 1.5px var(--preview-accent);
-        @include md-transition(transform, var(--md-transition-fast));
+        // 预览色可能接近面板底色，用一圈中性描边勾出轮廓
+        box-shadow: inset 0 0 0 1px var(--ui-hairline-strong);
     }
 
     &__preview-dot {
@@ -337,19 +287,8 @@ async function handleFollowSystem(): Promise<void> {
         background: var(--preview-accent);
     }
 
-    &:hover &__preview,
-    &.active &__preview {
-        transform: scale(1.1);
-    }
-
-    &.active &__preview {
-        box-shadow:
-            inset 0 0 0 1.5px var(--preview-accent),
-            0 0 0 2px var(--md-sys-color-primary-container);
-    }
-
     &__name {
-        font-size: 13px;
+        font-size: var(--ui-font-small);
         font-weight: 500;
         flex: 1;
         min-width: 0;
@@ -357,24 +296,17 @@ async function handleFollowSystem(): Promise<void> {
     }
 
     &__badge {
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 10px;
-        background: var(--md-sys-color-surface-variant);
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-micro);
+        padding: 1px 6px;
+        border-radius: var(--ui-radius-pill);
+        background: var(--ui-sunken);
+        color: var(--ui-muted);
         flex-shrink: 0;
     }
 
     &__check {
-        color: var(--md-sys-color-primary);
+        color: var(--ui-accent);
         flex-shrink: 0;
-        @include md-transition(all, var(--md-transition-fast));
-    }
-}
-
-html.dark-mode {
-    .theme-option__badge {
-        background: var(--hover-bg);
     }
 }
 </style>

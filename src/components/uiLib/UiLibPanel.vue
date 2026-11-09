@@ -438,6 +438,12 @@ function close(): void {
 @use '@/styles/variables.scss' as *;
 @use '@/styles/mixins.scss' as *;
 
+// =====================================================
+// 图标库面板
+// 层级只用「底色差 + 1px 发丝描边」表达，投影留给真正的浮层（弹窗本身）；
+// 主色稀缺：仅出现在选中标签、焦点环与可点元素的 hover 描边上，容器一律中性表面。
+// 底色 / 描边 / 文字全部来自 --ui-* 语义 token，明暗主题自动适配，因此不再有 dark-mode 覆盖。
+// =====================================================
 .ui-lib-panel {
     display: flex;
     flex-direction: column;
@@ -446,40 +452,42 @@ function close(): void {
     &__title {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 1.1rem;
+        gap: var(--ui-space-2);
+        font-size: var(--ui-font-title);
         font-weight: 600;
-        color: var(--md-sys-color-on-surface);
+        color: var(--ui-ink);
+        letter-spacing: var(--ui-track-tight);
     }
 
     &__footer-total {
         margin-right: auto;
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
     }
 
     &__search {
-        padding: 12px 24px 0;
+        padding: var(--ui-space-3) var(--ui-space-6) 0;
     }
 
     &__state {
         flex: 1;
-        @include flex-center(column, 12px);
-        padding: 48px 24px;
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 14px;
+        @include flex-center(column, var(--ui-space-3));
+        padding: var(--ui-space-8) var(--ui-space-6);
+        color: var(--ui-muted);
+        font-size: var(--ui-font-body);
 
         p {
             margin: 0;
         }
     }
 
+    // ==================== 分类标签栏 ====================
     &__tabs {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 12px 24px;
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        gap: var(--ui-space-2);
+        padding: var(--ui-space-3) var(--ui-space-6);
+        border-bottom: 1px solid var(--ui-hairline);
         overflow-x: auto;
         @include hide-scrollbar;
     }
@@ -489,38 +497,45 @@ function close(): void {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 14px;
-        border-radius: 20px;
-        border: 1px solid var(--md-sys-color-outline);
-        background: transparent;
-        color: var(--md-sys-color-on-surface);
-        font-size: 13px;
+        padding: 6px var(--ui-space-3);
+        border-radius: var(--ui-radius-pill);
+        border: 1px solid var(--ui-hairline-strong);
+        background: var(--ui-panel);
+        color: var(--ui-muted);
+        font-size: var(--ui-font-small);
+        font-weight: 500;
         white-space: nowrap;
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        transition:
+            background-color var(--ui-dur-fast) var(--ui-ease),
+            border-color var(--ui-dur-fast) var(--ui-ease),
+            color var(--ui-dur-fast) var(--ui-ease);
+        @include ui-focus-ring;
 
         &:hover {
-            border-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-primary);
+            background: var(--ui-elevated-hover);
+            color: var(--ui-ink);
         }
 
+        // 选中：浅主色底 + 主色发丝描边，不做整块主色填充
         &.is-active {
-            background: var(--md-sys-color-primary);
-            color: var(--md-sys-color-on-primary);
-            border-color: var(--md-sys-color-primary);
+            background: var(--ui-accent-soft);
+            border-color: var(--ui-accent);
+            color: var(--ui-accent);
         }
     }
 
     &__tab-count {
-        font-size: 11px;
         padding: 0 6px;
-        border-radius: 999px;
-        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-        color: var(--md-sys-color-primary);
+        border-radius: var(--ui-radius-pill);
+        font-size: var(--ui-font-micro);
+        font-weight: 600;
+        background: var(--ui-accent-softer);
+        color: var(--ui-muted);
 
+        // 选中标签内的小徽标是这一行唯一允许实色主色的地方
         .is-active & {
-            background: rgba(255, 255, 255, 0.22);
-            color: var(--md-sys-color-on-primary);
+            background: var(--ui-accent);
+            color: var(--ui-on-accent);
         }
     }
 
@@ -530,12 +545,14 @@ function close(): void {
         justify-content: center;
         width: 16px;
         height: 16px;
-        border-radius: 50%;
+        border-radius: var(--ui-radius-pill);
         cursor: pointer;
-        @include md-transition(background, var(--md-transition-fast));
+        color: inherit;
+        @include ui-transition(background-color, var(--ui-dur-fast));
 
         &:hover {
-            background: rgba(255, 255, 255, 0.28);
+            background: var(--ui-accent);
+            color: var(--ui-on-accent);
         }
     }
 
@@ -543,86 +560,100 @@ function close(): void {
         @include button-reset;
         width: 30px;
         height: 30px;
-        border-radius: 50%;
-        border: 1.5px dashed var(--md-sys-color-outline);
-        color: var(--md-sys-color-on-surface-variant);
         flex-shrink: 0;
+        border-radius: var(--ui-radius-pill);
+        border: 1.5px dashed var(--ui-hairline-strong);
+        color: var(--ui-muted);
         @include flex-center(row, 0);
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        transition:
+            background-color var(--ui-dur-fast) var(--ui-ease),
+            border-color var(--ui-dur-fast) var(--ui-ease),
+            color var(--ui-dur-fast) var(--ui-ease);
+        @include ui-focus-ring;
 
         &:hover {
-            border-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-primary);
-            background: color-mix(in srgb, var(--md-sys-color-primary) 6%, transparent);
+            border-color: var(--ui-accent);
+            color: var(--ui-accent);
+            background: var(--ui-accent-softer);
         }
     }
 
     &__tab-input {
         width: 120px;
-        padding: 6px 12px;
-        border-radius: 20px;
-        border: 1px solid var(--md-sys-color-primary);
-        background: var(--md-sys-color-surface);
-        color: var(--md-sys-color-on-surface);
-        font-size: 13px;
+        flex-shrink: 0;
+        padding: 6px var(--ui-space-3);
+        border-radius: var(--ui-radius-pill);
+        border: 1px solid var(--ui-accent);
+        background: var(--ui-elevated);
+        color: var(--ui-ink);
+        font-size: var(--ui-font-small);
         font-family: inherit;
         outline: none;
-        flex-shrink: 0;
+
+        &::placeholder {
+            color: var(--ui-muted-soft);
+        }
+
+        &:focus-visible {
+            box-shadow: 0 0 0 3px var(--ui-accent-softer);
+        }
     }
 
+    // ==================== 图标网格 ====================
     &__content {
         flex: 1;
         overflow-y: auto;
-        padding: 16px 24px;
+        padding: var(--ui-space-4) var(--ui-space-6);
         @include hide-scrollbar;
     }
 
     &__grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-        gap: 12px;
+        gap: var(--ui-space-3);
     }
 
     &__item {
         @include button-reset;
         position: relative;
         aspect-ratio: 1;
-        border-radius: 12px;
-        border: 1px solid var(--md-sys-color-outline-variant);
-        background: var(--md-sys-color-surface);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        padding: 8px;
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        gap: var(--ui-space-1);
+        padding: var(--ui-space-2);
+        border-radius: var(--ui-radius-lg);
+        border: 1px solid var(--ui-hairline);
+        background: var(--ui-panel);
+        transition:
+            background-color var(--ui-dur-base) var(--ui-ease),
+            border-color var(--ui-dur-base) var(--ui-ease);
+        @include ui-focus-ring;
 
+        // hover / 键盘聚焦：描边转主色 + 底色微提，不做位移也不加投影
         &:hover,
         &:focus-visible {
-            border-color: var(--md-sys-color-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: var(--ui-accent);
+            background: var(--ui-accent-softer);
         }
     }
 
     &__item-delete {
         position: absolute;
-        top: 4px;
-        right: 4px;
+        top: var(--ui-space-1);
+        right: var(--ui-space-1);
         width: 18px;
         height: 18px;
-        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        border-radius: var(--ui-radius-pill);
         cursor: pointer;
-        color: var(--md-sys-color-error);
+        color: var(--ui-danger);
         background: var(--md-sys-color-error-container);
         opacity: 0;
-        @include md-transition(opacity, var(--md-transition-fast));
+        @include ui-transition(opacity, var(--ui-dur-fast));
 
         .ui-lib-panel__item:hover &,
         .ui-lib-panel__item:focus-visible & {
@@ -630,54 +661,64 @@ function close(): void {
         }
     }
 
+    // 图标底座：常态中性抬升底，hover 时染一层浅主色
     &__icon {
         width: 40px;
         height: 40px;
-        border-radius: 10px;
+        border-radius: var(--ui-radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
-    }
+        background: var(--ui-elevated);
+        transition: background-color var(--ui-dur-base) var(--ui-ease);
 
-    &__item-name {
-        font-size: 11px;
-        color: var(--md-sys-color-on-surface-variant);
-        text-align: center;
-        @include text-ellipsis;
-        width: 100%;
-    }
-
-    &__add-row {
-        @include button-reset;
-        margin-top: 12px;
-        width: 100%;
-        padding: 12px 16px;
-        border-radius: 12px;
-        border: 1.5px dashed var(--md-sys-color-outline);
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 14px;
-        font-weight: 500;
-        @include flex-center(row, 8px);
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
-
-        &:hover {
-            border-color: var(--md-sys-color-primary);
-            color: var(--md-sys-color-primary);
-            background: color-mix(in srgb, var(--md-sys-color-primary) 6%, transparent);
+        .ui-lib-panel__item:hover &,
+        .ui-lib-panel__item:focus-visible & {
+            background: var(--ui-accent-soft);
         }
     }
 
+    &__item-name {
+        width: 100%;
+        font-size: var(--ui-font-micro);
+        color: var(--ui-muted);
+        text-align: center;
+        @include text-ellipsis;
+    }
+
+    // ==================== 新增图标 ====================
+    &__add-row {
+        @include button-reset;
+        margin-top: var(--ui-space-3);
+        width: 100%;
+        padding: var(--ui-space-3) var(--ui-space-4);
+        border-radius: var(--ui-radius-lg);
+        border: 1.5px dashed var(--ui-hairline-strong);
+        color: var(--ui-muted);
+        font-size: var(--ui-font-body);
+        font-weight: 500;
+        @include flex-center(row, var(--ui-space-2));
+        transition:
+            background-color var(--ui-dur-base) var(--ui-ease),
+            border-color var(--ui-dur-base) var(--ui-ease),
+            color var(--ui-dur-base) var(--ui-ease);
+        @include ui-focus-ring;
+
+        &:hover {
+            border-color: var(--ui-accent);
+            color: var(--ui-accent);
+            background: var(--ui-accent-softer);
+        }
+    }
+
+    // 表单区块比面板深一档，内部控件再浅回来，形成「降 - 升」层次
     &__item-form {
-        margin-top: 12px;
-        padding: 14px;
-        border-radius: 12px;
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);
-        background: color-mix(in srgb, var(--md-sys-color-primary) 4%, transparent);
+        margin-top: var(--ui-space-3);
+        padding: var(--ui-space-4);
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: var(--ui-space-3);
+        @include ui-surface(var(--ui-sunken), var(--ui-radius-lg));
     }
 
     &__form-group {
@@ -687,90 +728,68 @@ function close(): void {
     }
 
     &__label {
-        font-size: 13px;
+        font-size: var(--ui-font-small);
         font-weight: 600;
-        color: var(--md-sys-color-on-surface);
+        letter-spacing: var(--ui-track-tight);
+        color: var(--ui-ink);
     }
 
     &__select {
         width: 100%;
-        padding: 10px 14px;
-        border: 1px solid var(--md-sys-color-outline);
-        border-radius: 10px;
-        background: var(--md-sys-color-surface);
-        color: var(--md-sys-color-on-surface);
-        font-size: 14px;
+        min-height: 36px;
+        padding: 0 var(--ui-space-3);
+        border: 1px solid var(--ui-hairline-strong);
+        border-radius: var(--ui-radius-md);
+        background: var(--ui-panel);
+        color: var(--ui-ink);
+        font-size: var(--ui-font-body);
         font-family: inherit;
         outline: none;
+        cursor: pointer;
+        @include ui-transition(border-color, var(--ui-dur-fast));
 
+        // 焦点：主色描边 + 柔和主色光晕（不再写死主色 rgba）
         &:focus-visible {
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.08);
+            border-color: var(--ui-accent);
+            box-shadow: 0 0 0 3px var(--ui-accent-softer);
         }
     }
 
     &__form-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 8px;
+        gap: var(--ui-space-2);
     }
 
+    // ==================== 预览弹层 ====================
     &__preview {
-        padding: 16px 8px;
+        padding: var(--ui-space-4) var(--ui-space-2);
         text-align: center;
     }
 
     &__preview-box {
         width: 120px;
         height: 120px;
-        margin: 0 auto 16px;
+        margin: 0 auto var(--ui-space-4);
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--md-sys-color-surface-variant);
-        border: 1px solid var(--md-sys-color-outline-variant);
-        border-radius: 16px;
+        background: var(--ui-sunken);
+        border: 1px solid var(--ui-hairline);
+        border-radius: var(--ui-radius-xl);
     }
 
     &__preview-name {
-        font-size: 16px;
-        font-weight: 500;
-        color: var(--md-sys-color-on-surface);
-        margin-bottom: 8px;
+        margin-bottom: var(--ui-space-2);
+        font-size: var(--ui-font-title);
+        font-weight: 600;
+        letter-spacing: var(--ui-track-tight);
+        color: var(--ui-ink);
     }
 
     &__preview-desc {
-        font-size: 13px;
-        color: var(--md-sys-color-on-surface-variant);
-    }
-}
-
-// 深色模式适配（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
-html.dark-mode .ui-lib-panel__item {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-
-    &:hover,
-    &:focus-visible {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-}
-
-html.dark-mode .ui-lib-panel__tab-input {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-html.dark-mode .ui-lib-panel__select {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-
-html.dark-mode .ui-lib-panel__add-row {
-    border-color: rgba(255, 255, 255, 0.16);
-
-    &:hover {
-        border-color: var(--md-sys-color-primary);
-        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
     }
 }
 </style>

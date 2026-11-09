@@ -103,23 +103,22 @@ function handleKeydown(event: KeyboardEvent): void {
 .mnt-base-slider {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 
     &__label {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 8px;
-        font-size: 11px;
-        color: var(--md-sys-color-on-surface-variant);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
+        font-weight: 500;
     }
 
     &__value {
-        color: var(--md-sys-color-primary);
-        font-weight: 700;
+        color: var(--ui-ink);
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
     }
 
     &__track {
@@ -135,9 +134,9 @@ function handleKeydown(event: KeyboardEvent): void {
         left: 0;
         top: 50%;
         transform: translateY(-50%);
-        height: 4px;
-        border-radius: 2px;
-        background: var(--md-sys-color-primary);
+        height: 3px;
+        border-radius: var(--ui-radius-pill);
+        background: var(--ui-accent);
         pointer-events: none;
     }
 
@@ -145,9 +144,9 @@ function handleKeydown(event: KeyboardEvent): void {
         position: relative;
         z-index: 1;
         width: 100%;
-        height: 4px;
-        border-radius: 2px;
-        background: var(--md-sys-color-surface-variant);
+        height: 3px;
+        border-radius: var(--ui-radius-pill);
+        background: var(--ui-sunken);
         outline: none;
         -webkit-appearance: none;
         appearance: none;
@@ -155,37 +154,38 @@ function handleKeydown(event: KeyboardEvent): void {
 
         &::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: var(--md-sys-color-primary);
+            background: var(--ui-accent);
+            border: 2px solid var(--ui-panel);
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            @include md-transition(transform, var(--md-transition-fast));
+            box-shadow: var(--ui-shadow-1);
+            transition: box-shadow var(--ui-dur-fast) var(--ui-ease);
         }
 
         &::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            border: none;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--ui-panel);
             border-radius: 50%;
-            background: var(--md-sys-color-primary);
+            background: var(--ui-accent);
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            @include md-transition(transform, var(--md-transition-fast));
+            box-shadow: var(--ui-shadow-1);
         }
 
+        // 悬停只加一圈主色光环，不做缩放位移
         &::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
+            box-shadow: 0 0 0 3px var(--ui-accent-soft);
         }
 
         &::-moz-range-thumb:hover {
-            transform: scale(1.2);
+            box-shadow: 0 0 0 3px var(--ui-accent-soft);
         }
 
         &:focus-visible {
-            outline: 2px solid var(--md-sys-color-primary);
-            outline-offset: 2px;
+            outline: 2px solid var(--ui-accent);
+            outline-offset: 4px;
         }
     }
 
@@ -201,8 +201,8 @@ function handleKeydown(event: KeyboardEvent): void {
 // Firefox 进度条背景
 .mnt-base-slider__input::-moz-range-track {
     width: 100%;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--md-sys-color-surface-variant);
+    height: 3px;
+    border-radius: var(--ui-radius-pill);
+    background: var(--ui-sunken);
 }
 </style>

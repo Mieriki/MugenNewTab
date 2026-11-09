@@ -117,41 +117,39 @@ function handleClose(item: ToastItem): void {
 }
 
 .mnt-toast {
-    // 类型强调色：success / error / info 跟随主题变量，warning 使用固定琥珀色
-    --toast-accent: var(--md-sys-color-primary);
+    // 类型强调色：success / error / info 跟随主题变量
+    --toast-accent: var(--ui-accent);
 
     pointer-events: auto;
     position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 16px;
-    border-radius: 14px;
-    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: var(--ui-radius-lg);
+    font-size: var(--ui-font-small);
     font-weight: 500;
     line-height: 1.5;
-    color: var(--md-sys-color-on-surface);
-    // 淡色整条填充：类型强调色低透明度叠加在主题 surface 之上，边框同色稍深
-    border: 1px solid rgba(127, 127, 127, 0.35);
-    border: 1px solid color-mix(in srgb, var(--toast-accent) 40%, transparent);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-    background: rgba(var(--md-sys-color-surface-rgb), 0.88);
-    background: color-mix(in srgb, var(--toast-accent) 20%, rgba(var(--md-sys-color-surface-rgb), 0.88));
+    color: var(--ui-ink);
+    // 浮层：面板底 + 发丝描边 + 一档中性投影，左侧一条 3px 类型色作为唯一强调
+    border: 1px solid var(--ui-hairline);
+    border-left: 3px solid var(--toast-accent);
+    box-shadow: var(--ui-shadow-2);
+    background: var(--ui-panel);
     backdrop-filter: blur(12px);
-    @include md-transition(all, var(--md-transition-fast));
 
     &__icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         color: var(--toast-accent);
 
         svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             display: block;
         }
     }
@@ -169,57 +167,53 @@ function handleClose(item: ToastItem): void {
         justify-content: center;
         width: 24px;
         height: 24px;
-        border-radius: 6px;
-        color: var(--toast-accent);
-        opacity: 0.7;
+        border-radius: var(--ui-radius-sm);
+        color: var(--ui-muted);
         flex-shrink: 0;
-        @include focus-ring;
+        @include ui-transition(background-color, color);
+        @include ui-focus-ring;
 
         svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             display: block;
         }
 
         &:hover {
-            opacity: 1;
-            background: var(--hover-bg);
+            background: var(--ui-elevated-hover);
+            color: var(--ui-ink);
         }
     }
 
     &--success {
-        --toast-accent: var(--md-sys-color-success);
+        --toast-accent: var(--ui-success);
     }
 
     &--error {
-        --toast-accent: var(--md-sys-color-error);
+        --toast-accent: var(--ui-danger);
     }
 
     &--warning {
-        --toast-accent: #F59E0B;
+        --toast-accent: #f59e0b;
     }
 
     &--info {
-        --toast-accent: var(--md-sys-color-primary);
+        --toast-accent: var(--ui-accent);
     }
 }
 
-// 进入/离开动画
+// 进入/离开动画：只动透明度与极小的位移，不做弹跳
 .mnt-toast-enter-active,
 .mnt-toast-leave-active {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        opacity var(--ui-dur-slow) var(--ui-ease),
+        transform var(--ui-dur-slow) var(--ui-ease);
 }
 
 .mnt-toast-enter-from,
 .mnt-toast-leave-to {
     opacity: 0;
-    transform: translateY(-6px) scale(0.98);
-}
-
-.mnt-toast-leave-from,
-.mnt-toast-enter-to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(-4px);
 }
 
 @include respond-to(mobile) {

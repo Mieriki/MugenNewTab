@@ -309,21 +309,18 @@ onBeforeUnmount(() => {
 @use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
+// 浮层菜单：不透明面板 + 发丝描边 + 一档中性投影，与 FabMenu 的列表保持同一套外观
 .site-menu {
     position: fixed;
     z-index: 60;
     min-width: 196px;
     max-width: 260px;
-    padding: 6px;
-    border-radius: 14px;
-    background: rgba(var(--md-sys-color-surface-rgb), 0.98);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(16px);
+    padding: var(--ui-space-1);
+    @include ui-floating(3, var(--ui-radius-lg));
     // 定位完成前隐藏，避免在指针处闪一下再跳到正确位置
     visibility: hidden;
     opacity: 0;
-    @include md-transition(opacity, var(--md-transition-fast));
+    transition: opacity var(--ui-dur-fast) var(--ui-ease);
 
     &.is-ready {
         visibility: visible;
@@ -334,21 +331,21 @@ onBeforeUnmount(() => {
 .site-menu__header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px 8px;
+    gap: var(--ui-space-2);
+    padding: var(--ui-space-1) var(--ui-space-2) var(--ui-space-2);
     min-width: 0;
 }
 
 .site-menu__header-icon {
     width: 24px;
     height: 24px;
-    border-radius: 7px;
+    border-radius: var(--ui-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     overflow: hidden;
-    background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
+    background: var(--ui-sunken);
 }
 
 .site-menu__header-text {
@@ -360,26 +357,27 @@ onBeforeUnmount(() => {
 }
 
 .site-menu__header-name {
-    font-size: 12px;
+    font-size: var(--ui-font-subtitle);
     font-weight: 600;
-    color: var(--md-sys-color-on-surface);
+    letter-spacing: var(--ui-track-tight);
+    color: var(--ui-ink);
     @include text-ellipsis;
 }
 
 .site-menu__header-host {
-    font-size: 10px;
-    color: var(--md-sys-color-on-surface-variant);
-    opacity: 0.7;
+    font-size: var(--ui-font-micro);
+    color: var(--ui-muted-soft);
     @include text-ellipsis;
 }
 
 .site-menu__badge {
     flex-shrink: 0;
-    padding: 1px 6px;
-    border-radius: 999px;
-    font-size: 10px;
-    color: var(--md-sys-color-on-surface-variant);
-    background: var(--md-sys-color-surface-variant);
+    padding: 1px var(--ui-space-1);
+    border-radius: var(--ui-radius-pill);
+    font-size: var(--ui-font-micro);
+    color: var(--ui-muted);
+    background: var(--ui-elevated);
+    border: 1px solid var(--ui-hairline);
 }
 
 .site-menu__list {
@@ -392,46 +390,64 @@ onBeforeUnmount(() => {
     @include button-reset;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--ui-space-2);
     width: 100%;
-    padding: 7px 8px;
-    border-radius: 8px;
-    font-size: 12.5px;
-    color: var(--md-sys-color-on-surface);
+    min-height: 32px;
+    padding: 0 var(--ui-space-2);
+    border-radius: var(--ui-radius-md);
+    font-size: var(--ui-font-small);
+    color: var(--ui-ink);
     text-align: left;
-    @include md-transition(all, var(--md-transition-fast));
+    @include ui-interactive;
 
-    &:hover:not(:disabled) {
-        background: var(--md-sys-color-surface-variant);
+    // 图标跟着文字弱化，hover 时回到正文色
+    :deep(.icon-svg) {
+        color: var(--ui-muted);
+        transition: color var(--ui-dur-fast) var(--ui-ease);
+    }
+
+    &:hover:not(:disabled) :deep(.icon-svg) {
+        color: var(--ui-ink);
     }
 
     &:focus-visible {
-        outline: 2px solid var(--md-sys-color-primary);
+        outline: 2px solid var(--ui-accent);
         outline-offset: -2px;
     }
 
     &:disabled {
         opacity: 0.45;
         cursor: default;
+        background: transparent;
     }
 
     &--danger {
-        color: var(--md-sys-color-error);
+        color: var(--ui-danger);
+
+        :deep(.icon-svg) {
+            color: var(--ui-danger);
+        }
 
         &:hover:not(:disabled) {
-            background: color-mix(in srgb, var(--md-sys-color-error) 12%, transparent);
+            background: var(--ui-danger-soft);
+            color: var(--ui-danger);
         }
     }
 
     &--sub {
-        padding-left: 20px;
-        font-size: 12px;
+        padding-left: var(--ui-space-5);
+        font-size: var(--ui-font-caption);
     }
 
+    // 当前分类：主色文字 + 淡主色底，是菜单里唯一的彩色行
     &.is-current {
-        color: var(--md-sys-color-primary);
+        color: var(--ui-accent);
+        background: var(--ui-accent-softer);
         font-weight: 600;
-        opacity: 1;
+
+        :deep(.icon-svg) {
+            color: var(--ui-accent);
+        }
     }
 }
 
@@ -442,7 +458,7 @@ onBeforeUnmount(() => {
 }
 
 .site-menu__chevron {
-    opacity: 0.6;
+    color: var(--ui-muted-soft);
 }
 
 .site-menu__dot {
@@ -457,15 +473,15 @@ onBeforeUnmount(() => {
     gap: 1px;
     max-height: 168px;
     overflow-y: auto;
-    margin: 1px 0 1px 8px;
-    padding-left: 4px;
-    border-left: 1px solid var(--md-sys-color-outline-variant);
+    margin: 1px 0 1px var(--ui-space-2);
+    padding-left: var(--ui-space-1);
+    border-left: 1px solid var(--ui-hairline);
+    @include hide-scrollbar;
 }
 
 .site-menu__divider {
     height: 1px;
-    margin: 4px 6px;
-    background: var(--md-sys-color-outline-variant);
-    opacity: 0.7;
+    margin: var(--ui-space-1) var(--ui-space-2);
+    background: var(--ui-hairline);
 }
 </style>

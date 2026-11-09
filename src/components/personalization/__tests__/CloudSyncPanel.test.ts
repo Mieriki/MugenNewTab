@@ -138,10 +138,11 @@ describe('CloudSyncPanel', () => {
         const wrapper = mount(CloudSyncPanel);
         await flushPromises();
 
-        const toggle = wrapper.find('.cloud-sync-cross .cloud-sync-toggle input[type="checkbox"]');
+        // 开关已改为 BaseSwitch（role="switch"），点击触发而不是 setValue
+        const toggle = wrapper.find('.cloud-sync-cross .mnt-switch');
         expect(toggle.exists()).toBe(true);
 
-        await toggle.setValue(true);
+        await toggle.trigger('click');
         await flushPromises();
 
         expect(wrapper.text()).toContain('同步密码只保存在本机');
@@ -165,8 +166,9 @@ describe('CloudSyncPanel', () => {
         const wrapper = mount(CloudSyncPanel);
         await flushPromises();
 
-        const toggle = wrapper.find('.cloud-sync-cross .cloud-sync-toggle input[type="checkbox"]');
-        await toggle.setValue(true);
+        // 开关已改为 BaseSwitch（role="switch"），点击触发而不是 setValue
+        const toggle = wrapper.find('.cloud-sync-cross .mnt-switch');
+        await toggle.trigger('click');
         await flushPromises();
 
         await wrapper.find('.cloud-sync-cross input[type="password"]').setValue('my-sync-pass');

@@ -14,11 +14,13 @@ describe('WallpaperSettings', () => {
             props: { autoInit: false }
         });
 
+        // 标题改由分组容器呈现
         expect(wrapper.text()).toContain('壁纸背景');
         expect(wrapper.findAll('.wallpaper-preset')).toHaveLength(4);
-        expect(wrapper.find('.wallpaper-url .mnt-base-input').exists()).toBe(true);
+        expect(wrapper.find('.wallpaper-row .mnt-base-input').exists()).toBe(true);
         expect(wrapper.findAll('.mnt-base-slider')).toHaveLength(3);
-        expect(wrapper.findAll('.wallpaper-actions .mnt-base-button')).toHaveLength(2);
+        // 底部只保留一个「恢复默认背景」
+        expect(wrapper.findAll('.wallpaper-settings__actions .mnt-base-button')).toHaveLength(1);
     });
 
     it('点击预设壁纸触发 change 事件', async () => {
@@ -38,8 +40,9 @@ describe('WallpaperSettings', () => {
             props: { autoInit: false }
         });
 
-        const buttons = wrapper.findAll('.wallpaper-actions .mnt-base-button');
-        const resetButton = buttons.find((btn) => btn.text().includes('重置'));
+        const resetButton = wrapper
+            .findAll('.wallpaper-settings__actions .mnt-base-button')
+            .find((btn) => btn.text().includes('恢复默认背景'));
         expect(resetButton).toBeDefined();
 
         await resetButton!.trigger('click');

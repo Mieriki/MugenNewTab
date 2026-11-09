@@ -211,15 +211,15 @@ watch(
     top: var(--header-height);
     width: var(--sidebar-width);
     height: calc(100vh - var(--header-height));
-    // 侧栏走「新版」：与内容区同色的 surface，靠右侧描边分隔
-    background: var(--md-sys-color-surface);
+    // 侧栏与内容区同色的表面，靠右侧发丝描边分隔
+    background: var(--ui-canvas);
     z-index: 999;
     overflow-y: auto;
     overflow-x: hidden;
-    border-right: 1px solid var(--md-sys-color-outline-variant);
+    border-right: 1px solid var(--ui-hairline);
     display: flex;
     flex-direction: column;
-    @include md-transition(width);
+    transition: width var(--ui-dur-slow) var(--ui-ease);
     contain: layout;
     will-change: width;
 
@@ -251,20 +251,21 @@ watch(
         left: calc(100% + 8px);
         top: 50%;
         transform: translateY(-50%);
-        background: var(--md-sys-color-inverse-surface);
-        color: var(--md-sys-color-inverse-on-surface);
+        background: var(--ui-elevated);
+        color: var(--ui-ink);
+        border: 1px solid var(--ui-hairline);
         padding: 6px 10px;
-        border-radius: 6px;
-        font-size: 12px;
+        border-radius: var(--ui-radius-sm);
+        font-size: var(--ui-font-micro);
         white-space: nowrap;
         z-index: 1003;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--ui-shadow-2);
         pointer-events: none;
     }
 }
 
 .nav-menu {
-    padding: 12px 8px;
+    padding: var(--ui-space-3) var(--ui-space-2);
     flex: 1;
 }
 
@@ -273,41 +274,43 @@ watch(
     width: 100%;
     display: flex;
     align-items: center;
-    padding: 10px 12px;
-    margin: 4px 0;
-    border-radius: 8px;
-    color: var(--md-sys-color-on-surface-variant);
+    min-height: 36px;
+    padding: 0 var(--ui-space-3);
+    margin: 2px 0;
+    border-radius: var(--ui-radius-md);
+    color: var(--ui-muted);
     text-decoration: none;
     font-weight: 500;
-    font-size: 13px;
+    font-size: var(--ui-font-small);
     position: relative;
     white-space: nowrap;
-    border: 1px solid transparent;
     user-select: none;
-    @include md-transition(all, var(--md-transition-fast));
+    @include ui-interactive;
+    @include ui-focus-ring;
 
     &:hover {
-        background: var(--hover-bg);
-        color: var(--md-sys-color-primary);
+        color: var(--ui-ink);
     }
 
+    // 选中：主色淡底 + 主色文字（保留原有的 pill 语义，只把配色收进令牌）
     &.active {
-        background: var(--md-sys-color-primary-container);
-        // 落在 *-container 底上的文字用配套的 on-*-container：
-        // 重新用 primary 会掉到 2.98:1（薄荷绿那套几乎看不清）
-        color: var(--md-sys-color-on-primary-container);
-        border-color: transparent;
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
         font-weight: 600;
+
+        :deep(.icon-svg) {
+            color: var(--ui-accent);
+        }
     }
 
     &.pressing {
-        background: var(--md-sys-color-surface-variant);
+        background: var(--ui-sunken);
     }
 
     &.dragging {
         opacity: 0.6;
-        background: var(--md-sys-color-surface-variant);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        background: var(--ui-elevated);
+        box-shadow: var(--ui-shadow-2);
         cursor: grabbing;
         z-index: 100;
     }
@@ -322,23 +325,23 @@ watch(
 }
 
 .nav-icon {
-    margin-right: 12px;
+    margin-right: var(--ui-space-3);
     width: 20px;
     height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    @include md-transition(margin);
+    transition: margin var(--ui-dur-slow) var(--ui-ease);
 }
 
 .nav-text {
-    @include md-transition(opacity, var(--md-transition-fast));
+    transition: opacity var(--ui-dur-fast) var(--ui-ease);
     overflow: hidden;
 }
 
 .sidebar-footer {
-    padding: 12px 8px;
+    padding: var(--ui-space-3) var(--ui-space-2);
     margin-top: auto;
 }
 
@@ -347,33 +350,28 @@ watch(
     width: 100%;
     display: flex;
     align-items: center;
-    padding: 10px 12px;
-    border-radius: 8px;
-    color: var(--md-sys-color-on-surface);
-    background: var(--md-sys-color-surface-variant);
+    min-height: 36px;
+    padding: 0 var(--ui-space-3);
+    border-radius: var(--ui-radius-md);
+    color: var(--ui-ink);
+    background: var(--ui-elevated);
     font-weight: 500;
-    font-size: 13px;
-    @include md-transition(all, 0.2s);
-    // 无可见描边：收起侧栏时这块填充色本身就是左下角那个圆角方块
-    border: 1px solid transparent;
+    font-size: var(--ui-font-small);
+    @include ui-transition(background-color, color);
 
     &:hover {
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
-        border-color: var(--md-sys-color-primary);
-        transform: translateY(-1px);
+        background: var(--ui-elevated-hover);
     }
 }
 
 .search-shortcut {
     margin-left: auto;
-    font-size: 11px;
-    opacity: 0.6;
-    // 写死黑色 5% 在深色主题里等于没有背景，用主题 token
-    background: var(--hover-bg);
+    font-size: var(--ui-font-micro);
+    color: var(--ui-muted);
+    background: var(--ui-sunken);
     padding: 2px 6px;
-    border-radius: 4px;
-    font-family: monospace;
+    border-radius: var(--ui-radius-xs);
+    font-variant-numeric: tabular-nums;
 }
 
 .sidebar-overlay {

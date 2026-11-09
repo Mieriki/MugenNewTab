@@ -34,14 +34,17 @@ describe('CardStyleSettings', () => {
         const wrapper = mountSettings();
         await flushPromises();
 
+        // 滑杆不再自带标签（标签交给设置行），改为通过 aria-label 定位
         const sliders = wrapper.findAll('.mnt-base-slider');
         expect(sliders).toHaveLength(4);
-        expect(sliders[0].text()).toContain('卡片不透明度');
-        expect(sliders[1].text()).toContain('磨砂程度');
-        expect(sliders[2].text()).toContain('圆角');
-        expect(sliders[3].text()).toContain('阴影强度');
+        expect(wrapper.findAll('.settings-row__label').map((row) => row.text())).toEqual(
+            expect.arrayContaining(['卡片不透明度', '磨砂程度', '圆角', '阴影强度'])
+        );
 
-        expect(wrapper.find('input[type="checkbox"]').exists()).toBe(true);
+        // 描边开关改用 BaseSwitch（role="switch"），不再是原生 checkbox
+        const switchEl = wrapper.find('[role="switch"]');
+        expect(switchEl.exists()).toBe(true);
+        expect(switchEl.attributes('aria-label')).toBe('显示卡片描边');
         expect(wrapper.text()).toContain('恢复默认');
     });
 
@@ -66,8 +69,8 @@ describe('CardStyleSettings', () => {
         const wrapper = mountSettings();
         await flushPromises();
 
-        const checkbox = wrapper.find('input[type="checkbox"]');
-        await checkbox.setValue(false);
+        // BaseSwitch 通过点击切换，不再依赖原生 checkbox 的 setValue
+        await wrapper.find('[role="switch"]').trigger('click');
         await flushPromises();
 
         const store = useCardStyleStore();

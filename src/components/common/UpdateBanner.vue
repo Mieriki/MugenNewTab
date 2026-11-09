@@ -80,24 +80,20 @@ const emit = defineEmits<{
     gap: 12px;
     max-width: 420px;
     padding: 12px 12px 12px 14px;
-    border-radius: 16px;
-    border: 1px solid var(--md-sys-color-outline-variant);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
-
-    color: var(--md-sys-color-on-surface);
-    @include glass(0.94, 16px);
-    @include md-transition(transform, var(--md-transition-fast));
+    border-radius: var(--ui-radius-lg);
+    color: var(--ui-ink);
+    @include ui-floating(2, var(--ui-radius-lg));
 
     &__icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
-        background: var(--md-sys-color-primary-container);
-        color: var(--md-sys-color-on-primary-container);
+        width: 30px;
+        height: 30px;
+        border-radius: var(--ui-radius-md);
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
     }
 
     &__text {
@@ -107,70 +103,72 @@ const emit = defineEmits<{
 
     &__title {
         margin: 0;
-        font-size: 13px;
+        font-size: var(--ui-font-small);
         font-weight: 600;
+        letter-spacing: var(--ui-track-tight);
         line-height: 1.4;
         @include text-ellipsis;
     }
 
     &__sub {
         margin: 2px 0 0;
-        font-size: 11px;
+        font-size: var(--ui-font-micro);
         line-height: 1.4;
-        color: var(--md-sys-color-on-surface-variant);
+        color: var(--ui-muted);
         @include text-ellipsis;
     }
 
     &__action {
         @include button-reset;
-        @include focus-ring;
+        @include ui-focus-ring;
         flex-shrink: 0;
-        padding: 7px 14px;
-        border-radius: 18px;
-        font-size: 12px;
-        font-weight: 600;
+        min-height: 28px;
+        padding: 0 12px;
+        border-radius: var(--ui-radius-sm);
+        font-size: var(--ui-font-small);
+        font-weight: 500;
         white-space: nowrap;
-        background: var(--md-sys-color-primary);
-        color: var(--md-sys-color-on-primary);
-        @include md-transition(all, var(--md-transition-fast));
+        background: var(--ui-accent);
+        color: var(--ui-on-accent);
+        @include ui-transition(background-color);
 
         &:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            background: var(--ui-accent-hover);
         }
     }
 
     &__close {
         @include button-reset;
-        @include focus-ring;
+        @include ui-focus-ring;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         width: 24px;
         height: 24px;
-        border-radius: 8px;
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.7;
-        @include md-transition(all, var(--md-transition-fast));
+        border-radius: var(--ui-radius-sm);
+        color: var(--ui-muted);
+        @include ui-transition(background-color, color);
 
         &:hover {
-            opacity: 1;
-            background: var(--hover-bg);
+            background: var(--ui-elevated-hover);
+            color: var(--ui-ink);
         }
     }
 }
 
-// 入场/出场：从下方滑入
+// 入场/出场：只做淡入淡出与 8px 位移
 .update-banner-enter-active,
 .update-banner-leave-active {
-    transition: opacity 0.25s var(--md-easing), transform 0.25s var(--md-easing);
+    transition:
+        opacity var(--ui-dur-slow) var(--ui-ease),
+        transform var(--ui-dur-slow) var(--ui-ease);
 }
 
 .update-banner-enter-from,
 .update-banner-leave-to {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(8px);
 }
 
 @include respond-to(mobile) {

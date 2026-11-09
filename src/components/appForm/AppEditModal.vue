@@ -322,7 +322,7 @@ watch(
         <form class="app-edit-form" @submit.prevent="handleSubmit">
             <section class="form-section">
                 <header class="form-section__header">
-                    <IconSvg name="edit" :size="16" color="var(--md-sys-color-primary)" monochrome />
+                    <IconSvg name="edit" :size="16" monochrome />
                     <h3 class="form-section__title">基本信息</h3>
                 </header>
 
@@ -400,7 +400,7 @@ watch(
 
             <section class="form-section">
                 <header class="form-section__header">
-                    <IconSvg name="picture" :size="16" color="var(--md-sys-color-primary)" monochrome />
+                    <IconSvg name="picture" :size="16" monochrome />
                     <h3 class="form-section__title">图标设置</h3>
                 </header>
 
@@ -511,96 +511,102 @@ watch(
 .app-edit-form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: var(--ui-space-5);
 }
 
+// ==================== 表单区块 ====================
+// 层级只靠底色差与发丝描边：区块头一条下划线，区块之间靠留白分隔
 .form-section {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: var(--ui-space-3);
 
     &__header {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--ui-space-2);
+        padding-bottom: var(--ui-space-2);
+        border-bottom: 1px solid var(--ui-hairline);
+        // 图标走 currentColor（内置图标是 CSS mask），随标题一起弱化
+        color: var(--ui-muted);
     }
 
+    // 装饰性小标题：小字 + 放开字距 + 弱化色，不再抢主色
     &__title {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--md-sys-color-primary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 0;
+        @include ui-caption;
     }
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--ui-space-2);
 
     &--checkbox {
         flex-direction: row;
         align-items: center;
-        gap: 8px;
     }
 }
 
 .form-label {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 13px;
+    gap: var(--ui-space-1);
+    font-size: var(--ui-font-small);
     font-weight: 600;
-    color: var(--md-sys-color-on-surface);
+    letter-spacing: var(--ui-track-tight);
+    color: var(--ui-ink);
 }
 
 .form-required {
-    color: var(--md-sys-color-error);
+    color: var(--ui-danger);
 }
 
+// 原生 select 与 BaseInput 对齐：同描边、同圆角、同焦点环
 .form-select {
     width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--md-sys-color-outline);
-    border-radius: 10px;
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-    font-size: 14px;
+    min-height: 36px;
+    padding: 0 var(--ui-space-3);
+    border: 1px solid var(--ui-hairline-strong);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-panel);
+    color: var(--ui-ink);
+    font-size: var(--ui-font-body);
     font-family: inherit;
     outline: none;
     cursor: pointer;
-    @include md-transition(border-color, var(--md-transition-fast));
+    @include ui-transition(border-color);
 
     &:focus {
-        border-color: var(--md-sys-color-primary);
-        box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.08);
+        border-color: var(--ui-accent);
+        box-shadow: 0 0 0 3px var(--ui-accent-softer);
     }
 
     &--error {
-        border-color: var(--md-sys-color-error);
+        border-color: var(--ui-danger);
     }
 }
 
 .form-error {
     margin: 0;
-    font-size: 12px;
-    color: var(--md-sys-color-error);
-    line-height: 1.4;
+    font-size: var(--ui-font-caption);
+    line-height: 1.45;
+    color: var(--ui-danger);
 }
 
+// 重复站点提示：中性提示块，用 tertiary 容器色与错误红区分
 .form-warning {
     display: flex;
     align-items: flex-start;
-    gap: 6px;
+    gap: var(--ui-space-2);
     margin: 0;
-    padding: 8px 10px;
-    border-radius: 8px;
-    font-size: 12px;
+    padding: var(--ui-space-2) var(--ui-space-3);
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-tertiary) 28%, transparent);
+    border-radius: var(--ui-radius-md);
+    background: var(--md-sys-color-tertiary-container);
+    color: var(--md-sys-color-on-tertiary-container);
+    font-size: var(--ui-font-caption);
     line-height: 1.5;
-    color: var(--md-sys-color-on-tertiary-container, #4a3200);
-    background: var(--md-sys-color-tertiary-container, rgba(255, 179, 0, 0.16));
 
     :deep(.icon-svg) {
         margin-top: 1px;
@@ -609,37 +615,39 @@ watch(
     }
 }
 
+// ==================== 图标设置 ====================
+// 卡片比弹窗表面深一档，内部控件再浅回来，形成「升 - 降 - 升」的层次
 .icon-card {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: 14px;
-    background: var(--md-sys-color-surface-variant);
+    gap: var(--ui-space-3);
+    padding: var(--ui-space-3);
+    @include ui-surface(var(--ui-elevated), var(--ui-radius-lg));
 }
 
 .icon-selector {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--ui-space-3);
 }
 
 .icon-preview {
+    @include flex-center(row, 0);
     width: 56px;
     height: 56px;
     flex-shrink: 0;
-    border-radius: 12px;
-    background: var(--md-sys-color-surface);
-    border: 1px solid var(--md-sys-color-outline);
-    @include flex-center(row, 0);
+    border: 1px solid var(--ui-hairline);
+    border-radius: var(--ui-radius-lg);
+    background: var(--ui-panel);
+    color: var(--ui-muted);
 }
 
 .icon-input-group {
     flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--ui-space-2);
 
     :deep(.mnt-base-input) {
         flex: 1;
@@ -648,81 +656,80 @@ watch(
 
 .icon-actions {
     display: flex;
-    gap: 8px;
     align-items: center;
+    gap: var(--ui-space-2);
 }
 
 .icon-larger-toggle {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--md-sys-color-on-surface);
-    cursor: pointer;
+    gap: var(--ui-space-1);
     margin-left: auto;
+    font-size: var(--ui-font-small);
+    color: var(--ui-muted);
+    cursor: pointer;
+    @include ui-transition(color);
+
+    &:hover {
+        color: var(--ui-ink);
+    }
 
     input[type='checkbox'] {
         width: 16px;
         height: 16px;
         cursor: pointer;
-        accent-color: var(--md-sys-color-primary);
+        accent-color: var(--ui-accent);
     }
 }
 
+// 图标网格：凹陷井底，格子本身回到面板色，形成「井 - 砖」的层次
 .icon-picker {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
+    gap: var(--ui-space-2);
     max-height: 140px;
     overflow-y: auto;
-    padding: 8px;
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: 10px;
-    background: var(--md-sys-color-surface);
+    padding: var(--ui-space-2);
+    border: 1px solid var(--ui-hairline);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-sunken);
+    @include hide-scrollbar;
 }
 
 .icon-picker-item {
     @include button-reset;
+    @include flex-center(row, 0);
+    @include ui-interactive;
+    @include ui-focus-ring;
     width: 40px;
     height: 40px;
-    border-radius: 8px;
-    background: var(--md-sys-color-surface);
-    border: 1px solid var(--md-sys-color-outline);
-    @include flex-center(row, 0);
-    @include md-transition(all, var(--md-transition-fast));
-    @include focus-ring;
+    border: 1px solid var(--ui-hairline);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-panel);
+    color: var(--ui-muted);
 
     &:hover {
-        border-color: var(--md-sys-color-primary);
-        background: var(--md-sys-color-primary-container);
+        border-color: var(--ui-hairline-strong);
     }
 }
 
 .checkbox-label {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--ui-space-2);
+    font-size: var(--ui-font-body);
+    color: var(--ui-body);
     cursor: pointer;
-    font-size: 14px;
-    color: var(--md-sys-color-on-surface-variant);
 
     input[type='checkbox'] {
         width: 18px;
         height: 18px;
         cursor: pointer;
-        accent-color: var(--md-sys-color-primary);
+        accent-color: var(--ui-accent);
     }
 }
 
-// 深色模式只补「比表面深一档」的填充，颜色仍取自主题 token
-// 注意：后代选择器必须直接写在 scoped 样式里。用 `:global(html.dark-mode) { … }` 包裹时，
-// Vue 的 scoped 编译会把后代选择器丢掉，声明直接落到 html 上（会盖住壁纸层）。
-html.dark-mode .icon-card,
-html.dark-mode .icon-picker,
-html.dark-mode .icon-picker-item {
-    background: var(--hover-bg);
-    border-color: var(--md-sys-color-outline-variant);
-}
+// 底色 / 描边 / 文字全部由 --ui-* 按当前主题派生，深色主题无需另写一套覆盖
 
 @include respond-to(mobile) {
     .icon-picker {

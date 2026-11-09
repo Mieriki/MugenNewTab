@@ -104,14 +104,14 @@ function handleDelete(app: AppItem): void {
 @use '@/styles/mixins' as *;
 
 .category-section {
-    margin-bottom: 24px;
-    animation: fadeInUp 0.5s ease-out both;
+    margin-bottom: var(--ui-space-6);
+    animation: fadeInUp 0.4s var(--ui-ease) both;
     contain: layout;
 
     @keyframes fadeInUp {
         from {
             opacity: 0;
-            transform: translateY(16px);
+            transform: translateY(8px);
         }
 
         to {
@@ -121,19 +121,16 @@ function handleDelete(app: AppItem): void {
     }
 
     &__title {
-        font-size: 0.95rem;
-        color: var(--md-sys-color-on-surface);
-        margin: 0 0 12px;
-        font-weight: 600;
+        @include ui-caption;
+        margin: 0 0 var(--ui-space-3);
         display: flex;
         align-items: center;
-        gap: 8px;
-        opacity: 0.85;
+        gap: var(--ui-space-2);
     }
 
     &__icon {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -144,6 +141,4 @@ function handleDelete(app: AppItem): void {
         @include text-ellipsis;
     }
 }
-
-// 分类标题沿用 on-surface + 降透明度即可，深色主题不需要另写一套白
 </style>

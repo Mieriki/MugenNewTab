@@ -236,20 +236,21 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 8px;
-        border-radius: 10px;
+        min-height: 28px;
+        padding: 0 8px;
+        border-radius: var(--ui-radius-sm);
         background: transparent;
-        color: var(--md-sys-color-on-surface);
-        font-size: 14px;
-        font-weight: 600;
+        color: var(--ui-ink);
+        font-size: var(--ui-font-small);
+        font-weight: 500;
         border: none;
         min-width: auto;
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        @include ui-transition(background-color, color);
+        @include ui-focus-ring;
 
         &:hover:not(:disabled) {
-            background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
-            color: var(--md-sys-color-primary);
+            background: var(--ui-elevated-hover);
+            color: var(--ui-ink);
         }
 
         &:disabled {
@@ -298,12 +299,12 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         overflow-y: auto;
         // 完全不透明 + 背景模糊双保险：极简模式下磁贴紧贴搜索框下方，
         // 下拉展开时盖住磁贴是预期行为，但不能让磁贴「穿透」面板显示出来
-        background: var(--md-sys-color-surface);
-        border-radius: 14px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        background: var(--ui-panel);
+        border-radius: var(--ui-radius-lg);
         padding: 6px;
         z-index: 3000;
         backdrop-filter: blur(16px);
+        @include ui-floating(3, var(--ui-radius-lg));
         @include hide-scrollbar;
     }
 
@@ -312,24 +313,25 @@ const searchIconPath = 'M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z';
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 8px 10px;
-        border-radius: 10px;
-        color: var(--md-sys-color-on-surface);
-        font-size: 13px;
-        font-weight: 500;
+        gap: var(--ui-space-2);
+        padding: 7px 9px;
+        border-radius: var(--ui-radius-md);
+        color: var(--ui-ink);
+        font-size: var(--ui-font-small);
+        font-weight: 400;
         text-align: left;
-        @include md-transition(all, var(--md-transition-fast));
-        @include focus-ring;
+        @include ui-transition(background-color, color);
+        @include ui-focus-ring;
 
         &:hover,
         &.is-active {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
+            background: var(--ui-elevated-hover);
         }
 
         &.is-selected {
-            font-weight: 600;
+            // 已选中：用主色文字标记，不用整块主色底
+            color: var(--ui-accent);
+            font-weight: 500;
         }
     }
 

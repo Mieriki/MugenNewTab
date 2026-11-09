@@ -125,12 +125,12 @@ describe('ThemeSelector', () => {
 
         await flushPromises();
 
-        const modeButtons = wrapper.findAll('.theme-mode__btn');
+        const modeButtons = wrapper.findAll('.mnt-segmented__item');
         expect(modeButtons).toHaveLength(2);
         expect(modeButtons[0].text()).toContain('明亮');
         expect(modeButtons[1].text()).toContain('深色');
-        expect(modeButtons[0].classes()).toContain('active');
-        expect(modeButtons[1].classes()).not.toContain('active');
+        expect(modeButtons[0].classes()).toContain('is-active');
+        expect(modeButtons[1].classes()).not.toContain('is-active');
     });
 
     it('点击深色开关应切换到当前族的深色变体并触发事件', async () => {
@@ -138,15 +138,15 @@ describe('ThemeSelector', () => {
 
         await flushPromises();
 
-        await wrapper.findAll('.theme-mode__btn')[1].trigger('click');
+        await wrapper.findAll('.mnt-segmented__item')[1].trigger('click');
         await flushPromises();
 
         expect(wrapper.emitted('select-mode')).toHaveLength(1);
         expect(wrapper.emitted('select-mode')![0]).toEqual(['dark']);
         expect(wrapper.emitted('select-theme')![0]).toEqual(['material-rose-dark']);
 
-        const modeButtons = wrapper.findAll('.theme-mode__btn');
-        expect(modeButtons[1].classes()).toContain('active');
+        const modeButtons = wrapper.findAll('.mnt-segmented__item');
+        expect(modeButtons[1].classes()).toContain('is-active');
         // 切模式不换族，列表里的 active 仍停在同一个主题族
         const active = wrapper.findAll('.theme-option.active');
         expect(active).toHaveLength(1);
@@ -170,7 +170,7 @@ describe('ThemeSelector', () => {
 
         await flushPromises();
 
-        await wrapper.findAll('.theme-mode__btn')[1].trigger('click');
+        await wrapper.findAll('.mnt-segmented__item')[1].trigger('click');
         await flushPromises();
 
         await wrapper.findAll('.theme-option')[1].trigger('click');

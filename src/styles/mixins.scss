@@ -159,3 +159,121 @@
     white-space: nowrap;
     border: 0;
 }
+
+// =====================================================
+// UI 语义层 mixin —— 组件统一从这里取外观，避免各写一套
+// =====================================================
+
+/**
+ * 面板 / 卡片表面：底色 + 1px 发丝描边，不带投影
+ * @param {String} $bg - 背景，默认 var(--ui-panel)
+ * @param {String} $radius - 圆角，默认 var(--ui-radius-lg)
+ */
+@mixin ui-surface($bg: var(--ui-panel), $radius: var(--ui-radius-lg)) {
+    background: $bg;
+    border: 1px solid var(--ui-hairline);
+    border-radius: $radius;
+}
+
+/**
+ * 浮层表面：比面板多一档中性投影，仅用于弹窗 / 菜单 / Toast
+ * @param {Number} $level - 阴影档位 1-3，默认 3
+ * @param {String} $radius - 圆角，默认 var(--ui-radius-xl)
+ */
+@mixin ui-floating($level: 3, $radius: var(--ui-radius-xl)) {
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-hairline);
+    border-radius: $radius;
+    box-shadow: var(--ui-shadow-#{$level});
+}
+
+/**
+ * 颜色 / 底色 / 描边过渡，不做位移
+ *
+ * 属性用可变参数传：`@include ui-transition(background-color, color, opacity)`。
+ * 用逗号列表当单个参数不行——Sass 会把它拆成多个位置参数。
+ */
+@mixin ui-transition($properties...) {
+    $list: ();
+
+    @each $property in $properties {
+        $list: append($list, #{$property} var(--ui-dur-base) var(--ui-ease), comma);
+    }
+
+    transition: $list;
+}
+
+/**
+ * 焦点环：主色 2px 描边 + 柔和光晕，键盘可见时才出现
+ */
+@mixin ui-focus-ring {
+    outline: none;
+
+    &:focus-visible {
+        outline: 2px solid var(--ui-accent);
+        outline-offset: 2px;
+    }
+}
+
+/**
+ * 分组小标题：12.5px / 600 / 放开字距 / 弱化色
+ * 对应截图里「外观」「通知」「数据与隐私」那一行
+ */
+@mixin ui-caption {
+    font-size: var(--ui-font-caption);
+    font-weight: 600;
+    letter-spacing: var(--ui-track-caps);
+    color: var(--ui-muted);
+    margin: 0;
+}
+
+/**
+ * 设置行：左「标题 + 描述」右「控件」，两栏对齐
+ * 行与行之间的发丝分隔由父容器负责（见 SettingsSection）
+ */
+@mixin ui-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ui-space-4);
+    min-height: 52px;
+}
+
+/**
+ * 截断单行标题
+ */
+@mixin ui-label {
+    font-size: var(--ui-font-subtitle);
+    font-weight: 500;
+    color: var(--ui-ink);
+    letter-spacing: var(--ui-track-tight);
+    @include text-ellipsis;
+}
+
+/**
+ * 行描述文字
+ */
+@mixin ui-description {
+    font-size: var(--ui-font-caption);
+    line-height: 1.45;
+    color: var(--ui-muted);
+}
+
+/**
+ * 中性可点区（菜单项 / 列表行 / 图标按钮）的 hover 与选中态
+ */
+@mixin ui-interactive {
+    transition:
+        background-color var(--ui-dur-base) var(--ui-ease),
+        color var(--ui-dur-base) var(--ui-ease),
+        border-color var(--ui-dur-base) var(--ui-ease);
+
+    &:hover {
+        background: var(--ui-elevated-hover);
+        color: var(--ui-ink);
+    }
+
+    &:active {
+        background: var(--ui-sunken);
+    }
+}

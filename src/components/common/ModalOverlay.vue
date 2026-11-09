@@ -188,13 +188,13 @@ const closeIconPath = 'M18 6L6 18M6 6l12 12';
     @include absolute-fill;
     position: fixed;
     @include flex-center(row, 0);
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    background: rgba(12, 10, 9, 0.42);
+    backdrop-filter: blur(6px);
     opacity: 0;
     visibility: hidden;
     transition:
-        opacity 0.3s var(--md-easing),
-        visibility 0.3s var(--md-easing);
+        opacity var(--ui-dur-slow) var(--ui-ease),
+        visibility var(--ui-dur-slow) var(--ui-ease);
     padding: 24px;
 
     &--active {
@@ -204,27 +204,28 @@ const closeIconPath = 'M18 6L6 18M6 6l12 12';
 }
 
 .mnt-modal-content {
-    background: var(--md-sys-color-surface);
-    border-radius: 16px;
+    @include ui-floating(3, var(--ui-radius-xl));
     width: 90%;
     max-width: 520px;
     max-height: 85vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--md-sys-color-outline-variant);
-    transform: scale(0.9) translateY(20px);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(0.97);
+    opacity: 0;
+    transition:
+        transform var(--ui-dur-slow) var(--ui-ease),
+        opacity var(--ui-dur-slow) var(--ui-ease);
 
     .mnt-modal-overlay--active & {
-        transform: scale(1) translateY(0);
+        transform: scale(1);
+        opacity: 1;
     }
 }
 
 .mnt-modal-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--ui-hairline);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -237,48 +238,49 @@ const closeIconPath = 'M18 6L6 18M6 6l12 12';
 }
 
 .mnt-modal-title {
-    font-size: 1.25rem;
+    font-size: var(--ui-font-title);
     font-weight: 600;
-    color: var(--md-sys-color-on-surface);
+    color: var(--ui-ink);
+    letter-spacing: var(--ui-track-tight);
     margin: 0;
     line-height: 1.4;
 }
 
 .mnt-modal-close {
     @include button-reset;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--ui-radius-md);
     background: transparent;
-    color: var(--md-sys-color-on-surface-variant);
+    color: var(--ui-muted);
     @include flex-center(row, 0);
     flex-shrink: 0;
-    @include md-transition(all, var(--md-transition-fast));
-    @include focus-ring;
+    @include ui-transition(background-color, color);
+    @include ui-focus-ring;
 
     &:hover {
-        background: var(--md-sys-color-surface-variant);
-        color: var(--md-sys-color-error);
+        background: var(--ui-elevated-hover);
+        color: var(--ui-ink);
     }
 }
 
 .mnt-modal-body {
-    padding: 24px;
+    padding: 20px;
     overflow-y: auto;
     flex: 1;
     @include hide-scrollbar;
 }
 
 .mnt-modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid var(--md-sys-color-outline-variant);
+    padding: 14px 20px;
+    border-top: 1px solid var(--ui-hairline);
     display: flex;
-    gap: 12px;
+    gap: 8px;
     justify-content: flex-end;
     align-items: center;
 }
 
-// 深色模式不需要单独换底色：.mnt-modal-content 用的就是当前主题的 surface
+// 弹窗底色 / 描边都来自语义 token，深色主题不需要另换一套灰
 
 // 移动端适配
 @include respond-to(mobile) {
@@ -290,7 +292,7 @@ const closeIconPath = 'M18 6L6 18M6 6l12 12';
     .mnt-modal-content {
         width: 100%;
         max-height: 80vh;
-        border-radius: 20px 20px 0 0;
+        border-radius: var(--ui-radius-xl) var(--ui-radius-xl) 0 0;
         transform: translateY(100%);
 
         .mnt-modal-overlay--active & {

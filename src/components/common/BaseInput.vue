@@ -120,13 +120,14 @@ function handleFocus(event: FocusEvent): void {
         display: flex;
         align-items: center;
         gap: 4px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--md-sys-color-on-surface);
+        font-size: var(--ui-font-small);
+        font-weight: 500;
+        color: var(--ui-ink);
+        letter-spacing: var(--ui-track-tight);
     }
 
     &__required {
-        color: var(--md-sys-color-error);
+        color: var(--ui-danger);
     }
 
     &__wrapper {
@@ -134,12 +135,15 @@ function handleFocus(event: FocusEvent): void {
         align-items: center;
         gap: 8px;
         width: 100%;
-        padding: 10px 14px;
-        border: 1px solid var(--md-sys-color-outline);
-        border-radius: 10px;
-        background: var(--md-sys-color-surface);
-        color: var(--md-sys-color-on-surface);
-        @include md-transition(border-color, var(--md-transition-fast));
+        padding: 0 12px;
+        min-height: 36px;
+        border: 1px solid var(--ui-hairline-strong);
+        border-radius: var(--ui-radius-md);
+        background: var(--ui-panel);
+        color: var(--ui-ink);
+        transition:
+            border-color var(--ui-dur-fast) var(--ui-ease),
+            box-shadow var(--ui-dur-fast) var(--ui-ease);
     }
 
     &__field {
@@ -148,13 +152,12 @@ function handleFocus(event: FocusEvent): void {
         border: none;
         background: transparent;
         color: inherit;
-        font-size: 14px;
+        font-size: var(--ui-font-body);
         font-family: inherit;
         outline: none;
 
         &::placeholder {
-            color: var(--md-sys-color-on-surface-variant);
-            opacity: 0.55;
+            color: var(--ui-muted-soft);
         }
 
         &--has-prefix {
@@ -172,7 +175,7 @@ function handleFocus(event: FocusEvent): void {
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        color: var(--md-sys-color-on-surface-variant);
+        color: var(--ui-muted);
     }
 
     &__messages {
@@ -184,42 +187,40 @@ function handleFocus(event: FocusEvent): void {
     &__hint,
     &__error {
         margin: 0;
-        font-size: 12px;
-        line-height: 1.4;
+        font-size: var(--ui-font-caption);
+        line-height: 1.45;
     }
 
     &__hint {
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.85;
+        color: var(--ui-muted);
     }
 
     &__error {
-        color: var(--md-sys-color-error);
+        color: var(--ui-danger);
     }
 
+    // 焦点：描边转主色 + 柔和光环，不加位移
     &:focus-within &__wrapper {
-        border-color: var(--md-sys-color-primary);
-        box-shadow: 0 0 0 3px rgba(177, 74, 107, 0.08);
+        border-color: var(--ui-accent);
+        box-shadow: 0 0 0 3px var(--ui-accent-softer);
     }
 
     &--error &__wrapper {
-        border-color: var(--md-sys-color-error);
+        border-color: var(--ui-danger);
     }
 
     &--error:focus-within &__wrapper {
-        box-shadow: 0 0 0 3px rgba(186, 26, 26, 0.08);
+        box-shadow: 0 0 0 3px var(--ui-danger-soft);
     }
 
     &--disabled &__wrapper {
-        background: var(--md-sys-color-surface-variant);
+        background: var(--ui-sunken);
         opacity: 0.65;
         cursor: not-allowed;
     }
 }
 
-// 深色模式覆盖（后代选择器直接写在 scoped 里，用 :global() 包裹会被编译丢成 html 自身）
-html.dark-mode .mnt-base-input__wrapper {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-}
+// 深色模式不再单独覆盖输入框底色：
+// --ui-panel / --ui-hairline-strong 都由当前主题的 surface / on-surface 混合得出，
+// 明暗两套自动成立。写死 rgba(255,255,255,.05) 会让 12 套深色主题都变成同一种灰。
 </style>

@@ -150,22 +150,24 @@ function onClear() {
 .icon-preview {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--ui-space-3);
 
     &__box {
-        border-radius: 12px;
-        border: 2px solid var(--md-sys-color-outline);
-        background: var(--md-sys-color-surface-variant);
+        border-radius: var(--ui-radius-md);
+        border: 1px solid var(--ui-hairline-strong);
+        background: var(--ui-sunken);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         overflow: hidden;
-        @include md-transition(border-color, box-shadow);
+        transition:
+            border-color var(--ui-dur-fast) var(--ui-ease),
+            box-shadow var(--ui-dur-fast) var(--ui-ease);
 
         &:focus-within {
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+            border-color: var(--ui-accent);
+            box-shadow: 0 0 0 3px var(--ui-accent-softer);
         }
     }
 
@@ -181,37 +183,38 @@ function onClear() {
     }
 
     &__label {
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--ui-font-caption);
+        color: var(--ui-muted);
         line-height: 1.3;
     }
 
     &__actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: var(--ui-space-2);
     }
 
     &__btn {
         @include button-reset;
         @include flex-center(row, 4px);
-        padding: 6px 10px;
-        border-radius: 8px;
-        font-size: 12px;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: var(--ui-radius-sm);
+        font-size: var(--ui-font-caption);
         font-weight: 500;
-        color: var(--md-sys-color-on-surface);
-        background: var(--md-sys-color-surface);
-        border: 1px solid var(--md-sys-color-outline);
-        @include md-transition(background, border-color);
+        color: var(--ui-ink);
+        background: var(--ui-panel);
+        border: 1px solid var(--ui-hairline-strong);
+        @include ui-transition(background-color, border-color, color);
 
         &:hover {
-            background: var(--md-sys-color-surface-variant);
-            border-color: var(--md-sys-color-primary);
+            background: var(--ui-elevated);
+            border-color: var(--ui-hairline-strong);
         }
 
         &--danger:hover {
-            border-color: var(--md-sys-color-error);
-            color: var(--md-sys-color-error);
+            border-color: var(--ui-danger);
+            color: var(--ui-danger);
         }
     }
 }

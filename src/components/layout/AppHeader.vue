@@ -108,10 +108,8 @@ function handleBrandDblclick(): void {
     left: 0;
     right: 0;
     height: var(--header-height);
-    // 顶栏回到「主色渐变」的主题色语言：主色 → 主色混入一点次色。
-    // 不用满幅 secondary：实测 5 套主题的 on-primary 压在 secondary 上只有 1.8~3.5:1，
-    // 渐变右端的标题/按钮会糊掉；混 38% 后最差 3.1，其余 4.5+，视觉上仍是明显的两段渐变。
-    // 先给纯主色兜底：万一 color-mix 不被支持，顶栏仍是主题色而不是透明。
+    // 顶栏保留主题主色渐变，但去掉"大色块"观感：渐变收窄明度差、底部换发丝描边，
+    // 让它可以当作品牌元素而不是一块压在上面的色板。
     background: var(--md-sys-color-primary);
     background: linear-gradient(
         135deg,
@@ -119,12 +117,12 @@ function handleBrandDblclick(): void {
         color-mix(in srgb, var(--md-sys-color-primary) 62%, var(--md-sys-color-secondary)) 100%
     );
     color: var(--md-sys-color-on-primary);
-    padding: 0 16px;
+    padding: 0 var(--ui-space-4);
     z-index: 1000;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 18%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 14%, transparent);
 }
 
 .header-brand {
@@ -142,54 +140,49 @@ function handleBrandDblclick(): void {
     gap: 10px;
     height: 100%;
     min-width: 0;
-    transition: gap 0.2s ease;
     /* 双击切换隐藏站点时不希望顺带选中标题文字 */
     user-select: none;
 }
 
 .collapse-toggle-btn {
     @include button-reset;
-    color: color-mix(in srgb, var(--md-sys-color-on-primary) 70%, transparent);
+    color: color-mix(in srgb, var(--md-sys-color-on-primary) 72%, transparent);
     width: 28px;
     height: 28px;
-    border-radius: 6px;
+    border-radius: var(--ui-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    @include md-transition(color transform);
+    transition:
+        color var(--ui-dur-fast) var(--ui-ease),
+        background-color var(--ui-dur-fast) var(--ui-ease);
 
     &:hover {
         color: var(--md-sys-color-on-primary);
         background: color-mix(in srgb, var(--md-sys-color-on-primary) 14%, transparent);
-        transform: scale(1.1);
-    }
-
-    &:active {
-        transform: scale(0.95);
     }
 }
 
 .brand-icon {
     width: 32px;
     height: 32px;
-    // 顶栏现在是渐变主色，容器色一律用 on-primary 的半透明层
+    // 顶栏是渐变主色，容器色一律用 on-primary 的半透明层
     background: color-mix(in srgb, var(--md-sys-color-on-primary) 15%, transparent);
-    border-radius: 8px;
+    border-radius: var(--ui-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     border: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 20%, transparent);
     overflow: hidden;
     flex-shrink: 0;
-    @include md-transition(all);
 
     // 品牌图自带白底，直接按原图显示，只做圆角裁切，不加内边距/边框/投影
     &.is-image {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
         background: transparent;
         border: none;
-        border-radius: 10px;
+        border-radius: var(--ui-radius-md);
         box-shadow: none;
         padding: 0;
     }
@@ -212,18 +205,16 @@ function handleBrandDblclick(): void {
     flex-direction: column;
     justify-content: center;
     height: 100%;
-    gap: 1px;
-    transition: opacity 0.2s ease, width 0.2s ease;
     overflow: hidden;
     white-space: nowrap;
 
     h1 {
-        font-size: 1.05rem;
+        font-size: 15px;
         font-weight: 600;
         // 顶栏是主色渐变，标题用配套的 on-primary
         color: var(--md-sys-color-on-primary);
         margin: 0;
-        letter-spacing: -0.3px;
+        letter-spacing: var(--ui-track-tight);
         line-height: 1.2;
     }
 }
@@ -233,13 +224,13 @@ function handleBrandDblclick(): void {
     width: 32px;
     height: 32px;
     background: color-mix(in srgb, var(--md-sys-color-on-primary) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 22%, transparent);
-    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 20%, transparent);
+    border-radius: var(--ui-radius-sm);
     color: var(--md-sys-color-on-primary);
     cursor: pointer;
     align-items: center;
     justify-content: center;
-    @include md-transition(all);
+    transition: background-color var(--ui-dur-fast) var(--ui-ease);
     flex-shrink: 0;
 
     &:hover {
@@ -250,7 +241,7 @@ function handleBrandDblclick(): void {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--ui-space-3);
     flex-shrink: 0;
 }
 

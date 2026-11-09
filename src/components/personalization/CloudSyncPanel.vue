@@ -1,14 +1,16 @@
 <script setup lang="ts">
 /**
- * CloudSyncPanel - 云同步状态面板
+ * CloudSyncPanel - 设置中心的「数据与同步」栏目
  *
- * 两条互补的同步路径：
- *   1. 云同步：用 GitHub / Gitee 的 Token 读写 Gist（数据本体）；
+ * 按「分组 + 行」组织成两个分组：
+ *   1. 云同步：连接状态、Token 登录（GitHub / Gitee）、自动同步与手动同步；
  *   2. 浏览器同步：把 Token 加密后写进浏览器账号同步区（storage.sync），
  *      让同一浏览器账号的其他设备免 Token 登录，再自动拉取 Gist 数据。
  *
- * 浏览器同步区块在未登录 / 已登录两种状态下都常驻显示：
+ * 两条路径互补：云同步负责数据本体（Gist），浏览器同步只负责把「登录凭据」
+ * 迁移到其他设备。浏览器同步分组在未登录 / 已登录两种状态下都常驻显示：
  * 未登录时可以先设密码（登录后自动补推凭据），也可以凭密码恢复其他设备的登录状态。
+ *
  * 提示使用 useToast，确认/输入框使用 useConfirm（依赖 App.vue 挂载的 MntConfirmHost）。
  */
 import { computed, ref } from 'vue';
@@ -20,6 +22,9 @@ import { MIN_PASSPHRASE_LENGTH } from '@/utils/crypto.util';
 import IconSvg from '@/components/icon/IconSvg.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
+import BaseSwitch from '@/components/common/BaseSwitch.vue';
+import SettingsSection from '@/components/settings/SettingsSection.vue';
+import SettingsRow from '@/components/settings/SettingsRow.vue';
 
 export interface CloudSyncPanelProps {
     /** 面板标题 */
@@ -107,8 +112,6 @@ const PROVIDER_OPTIONS: Array<{ id: ProviderId; name: string; placeholder: strin
 const selectedProvider = ref<ProviderId>('github');
 
 const currentProviderOption = computed(() => PROVIDER_OPTIONS.find((option) => option.id === selectedProvider.value) ?? PROVIDER_OPTIONS[0]);
-
-const CLOUD_PATH = 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z';
 
 /** 挂锁图标（浏览器同步） */
 const LOCK_PATHS = [
@@ -275,10 +278,10 @@ async function handlePull(): Promise<void> {
     }
 }
 
-async function handleAutoSyncChange(event: Event): Promise<void> {
-    const checked = (event.target as HTMLInputElement).checked;
+/** 自动同步开关（BaseSwitch 直接给出布尔值） */
+async function handleAutoSyncChange(value: boolean): Promise<void> {
     try {
-        await setAutoSync(checked);
+        await setAutoSync(value);
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         emit('error', message);
@@ -286,8 +289,8 @@ async function handleAutoSyncChange(event: Event): Promise<void> {
 }
 
 /** 勾选「开启浏览器同步」：展开密码输入 */
-function handleBrowserToggle(event: Event): void {
-    browserExpanded.value = (event.target as HTMLInputElement).checked;
+function handleBrowserToggle(value: boolean): void {
+    browserExpanded.value = value;
     if (!browserExpanded.value) {
         browserPassphrase.value = '';
     }
@@ -430,473 +433,438 @@ const statusClass = computed(() => {
 
 <template>
     <section class="cloud-sync-panel" aria-label="云同步">
-        <header class="cloud-sync-panel__header">
-            <IconSvg :path="CLOUD_PATH" :size="18" color="var(--md-sys-color-primary)" />
-            <h3 class="cloud-sync-panel__title">{{ title }}</h3>
-        </header>
-
-        <div v-if="error" class="cloud-sync-panel__error" role="alert">
-            {{ error }}
-        </div>
-
-        <div class="cloud-sync-panel__status" :class="statusClass">
-            {{ statusText }}
-        </div>
-
-        <div v-if="!isLoggedIn" class="cloud-sync-panel__guest">
-            <p class="cloud-sync-panel__hint">
-                使用 GitHub / Gitee 代码片段（Gist）备份和同步你的站点数据
-            </p>
-
-            <div class="cloud-sync-provider" role="tablist" aria-label="同步平台">
-                <button
-                    v-for="option in PROVIDER_OPTIONS"
-                    :key="option.id"
-                    type="button"
-                    role="tab"
-                    class="cloud-sync-provider__btn"
-                    :class="{ 'is-active': selectedProvider === option.id }"
-                    :aria-selected="selectedProvider === option.id"
-                    :disabled="isLoading"
-                    @click="selectedProvider = option.id"
-                >
-                    {{ option.name }}
-                </button>
-            </div>
-
-            <BaseInput
-                v-model="tokenInput"
-                type="password"
-                :label="`${currentProviderOption.name} Token`"
-                :placeholder="currentProviderOption.placeholder"
-                autocomplete="off"
-                :disabled="isLoading"
-                @enter="handleLogin"
-            />
-
-            <p class="cloud-sync-panel__hint">{{ currentProviderOption.hint }}</p>
-
-            <BaseButton
-                variant="primary"
-                size="small"
-                block
-                :loading="isLoading"
-                @click="handleLogin"
-            >
-                <template #icon>
-                    <IconSvg name="link" :size="16" />
-                </template>
-                连接 {{ currentProviderOption.name }}
-            </BaseButton>
-        </div>
-
-        <div v-else class="cloud-sync-panel__logged">
-            <div v-if="userInfo" class="cloud-sync-user">
-                <img
-                    :src="userInfo.avatar"
-                    alt=""
-                    class="cloud-sync-user__avatar"
-                    loading="lazy"
-                />
-                <div class="cloud-sync-user__info">
-                    <div class="cloud-sync-user__name">{{ userInfo.login }}</div>
-                    <div class="cloud-sync-user__time">
-                        上次同步：{{ formattedLastSyncTime }}
-                    </div>
-                </div>
-            </div>
-
-            <label class="cloud-sync-toggle">
-                <input
-                    type="checkbox"
-                    :checked="autoSync"
-                    :disabled="isLoading"
-                    @change="handleAutoSyncChange"
-                >
-                <span>自动同步</span>
-            </label>
-
-            <div class="cloud-sync-actions">
-                <BaseButton
-                    variant="primary"
-                    size="small"
-                    :loading="isLoading"
-                    @click="handleSync"
-                >
-                    <template #icon>
-                        <IconSvg name="upload" :size="16" />
-                    </template>
-                    立即同步
-                </BaseButton>
-
-                <BaseButton
-                    variant="outlined"
-                    size="small"
-                    :loading="isLoading"
-                    @click="handlePull"
-                >
-                    <template #icon>
-                        <IconSvg name="download" :size="16" />
-                    </template>
-                    强制恢复云端
-                </BaseButton>
-            </div>
-
-            <BaseButton
-                variant="text"
-                size="small"
-                class="cloud-sync-logout"
-                :loading="isLoading"
-                @click="handleLogout"
-            >
-                <template #icon>
-                    <IconSvg name="logout" :size="16" />
-                </template>
-                断开连接
-            </BaseButton>
-        </div>
-
-        <!-- ============ 浏览器同步（始终可见） ============ -->
-        <div
-            class="cloud-sync-cross"
-            :class="{
-                'is-restore': browserMode === 'restore',
-                'is-on': browserMode === 'enabled',
-                'is-unavailable': !syncAreaNative
-            }"
+        <!-- ============ 云同步：登录、同步 ============ -->
+        <SettingsSection
+            :title="title"
+            description="使用 GitHub / Gitee 代码片段（Gist）备份和同步你的站点数据，Token 只保存在本机。"
         >
-            <div class="cloud-sync-cross__head">
-                <IconSvg :paths="LOCK_PATHS" :size="16" color="var(--md-sys-color-primary)" />
-                <span class="cloud-sync-cross__name">浏览器同步</span>
-                <span v-if="browserMode === 'enabled'" class="cloud-sync-cross__badge">已开启</span>
-            </div>
+            <SettingsRow label="连接状态">
+                <template #icon>
+                    <IconSvg name="cloud" :size="16" />
+                </template>
+                <template #actions>
+                    <span class="cloud-sync-panel__status" :class="statusClass">{{ statusText }}</span>
+                </template>
+            </SettingsRow>
 
-            <p v-if="browserMode !== 'off' && browserMode !== 'setup'" class="cloud-sync-cross__status">
-                {{ browserStatusText }}
-            </p>
+            <SettingsRow v-if="error" label="同步失败" stacked>
+                <template #actions>
+                    <p class="cloud-sync-panel__error" role="alert">{{ error }}</p>
+                </template>
+            </SettingsRow>
 
-            <p v-if="browserMode === 'off' || browserMode === 'setup'" class="cloud-sync-panel__hint">
-                登录同一浏览器账号的其他设备，输入同步密码即可免 Token 登录。同步区只保存 AES-GCM 密文。
-            </p>
-
-            <p v-if="!syncAreaNative" class="cloud-sync-cross__warn">
-                当前为网页预览环境，无法写入浏览器账号同步区，该功能仅在扩展中生效。
-            </p>
-
-            <label v-if="browserMode === 'off' || browserMode === 'setup'" class="cloud-sync-toggle">
-                <input
-                    type="checkbox"
-                    :checked="browserMode === 'setup'"
-                    :disabled="isLoading || browserBusy"
-                    @change="handleBrowserToggle"
+            <template v-if="!isLoggedIn">
+                <SettingsRow
+                    label="同步平台"
+                    description="选择代码片段所在的平台，切换后需要重新填写 Token"
                 >
-                <span>开启浏览器同步</span>
-            </label>
-
-            <template v-if="browserNeedsPassphrase">
-                <p class="cloud-sync-panel__hint">{{ browserHint }}</p>
-                <BaseInput
-                    v-model="browserPassphrase"
-                    type="password"
-                    label="同步密码"
-                    :placeholder="`至少 ${MIN_PASSPHRASE_LENGTH} 位`"
-                    autocomplete="off"
-                    :disabled="browserBusy"
-                    @enter="handleBrowserSubmit"
-                />
-                <BaseButton
-                    :variant="browserMode === 'restore' ? 'primary' : 'outlined'"
-                    size="small"
-                    block
-                    :loading="browserBusy"
-                    @click="handleBrowserSubmit"
-                >
-                    <template #icon>
-                        <IconSvg :paths="LOCK_PATHS" :size="16" />
+                    <template #actions>
+                        <div class="cloud-sync-provider" role="radiogroup" aria-label="同步平台">
+                            <button
+                                v-for="option in PROVIDER_OPTIONS"
+                                :key="option.id"
+                                type="button"
+                                role="radio"
+                                class="cloud-sync-provider__btn"
+                                :class="{ 'is-active': selectedProvider === option.id }"
+                                :aria-checked="selectedProvider === option.id"
+                                :disabled="isLoading"
+                                @click="selectedProvider = option.id"
+                            >
+                                {{ option.name }}
+                            </button>
+                        </div>
                     </template>
-                    {{ browserActionLabel }}
-                </BaseButton>
+                </SettingsRow>
+
+                <SettingsRow class="cloud-sync-panel__guest" label="访问令牌" stacked>
+                    <template #actions>
+                        <div class="cloud-sync-panel__token">
+                            <BaseInput
+                                v-model="tokenInput"
+                                type="password"
+                                :label="`${currentProviderOption.name} Token`"
+                                :placeholder="currentProviderOption.placeholder"
+                                autocomplete="off"
+                                :disabled="isLoading"
+                                @enter="handleLogin"
+                            />
+                            <p class="cloud-sync-panel__hint">{{ currentProviderOption.hint }}</p>
+                            <BaseButton
+                                variant="primary"
+                                size="small"
+                                block
+                                :loading="isLoading"
+                                @click="handleLogin"
+                            >
+                                <template #icon>
+                                    <IconSvg name="link" :size="14" />
+                                </template>
+                                连接 {{ currentProviderOption.name }}
+                            </BaseButton>
+                        </div>
+                    </template>
+                </SettingsRow>
             </template>
 
-            <BaseButton
-                v-if="browserMode === 'restore'"
-                variant="text"
-                size="small"
-                class="cloud-sync-cross__skip"
-                @click="handleSkipRestore"
-            >
-                没有旧密码？直接开启新的浏览器同步
-            </BaseButton>
+            <template v-else>
+                <SettingsRow
+                    v-if="userInfo"
+                    class="cloud-sync-user"
+                    :label="userInfo.login"
+                    :description="`上次同步：${formattedLastSyncTime}`"
+                >
+                    <template #icon>
+                        <img
+                            :src="userInfo.avatar"
+                            alt=""
+                            class="cloud-sync-user__avatar"
+                            loading="lazy"
+                        />
+                    </template>
+                </SettingsRow>
 
-            <div v-if="browserMode === 'enabled'" class="cloud-sync-cross__actions">
-                <BaseButton
-                    variant="text"
-                    size="small"
-                    :disabled="browserBusy"
-                    @click="browserExpanded = !browserExpanded"
+                <SettingsRow
+                    label="自动同步"
+                    description="站点数据变化后自动上传，多端增量合并"
                 >
-                    {{ browserExpanded ? '收起' : '更新密码' }}
-                </BaseButton>
-                <BaseButton
-                    variant="text"
-                    size="small"
-                    :disabled="browserBusy"
-                    @click="handleDisableBrowserSync"
+                    <template #actions>
+                        <BaseSwitch
+                            :model-value="autoSync"
+                            :disabled="isLoading"
+                            aria-label="自动同步"
+                            @update:model-value="handleAutoSyncChange"
+                        />
+                    </template>
+                </SettingsRow>
+
+                <SettingsRow
+                    label="手动同步"
+                    description="立即同步会双向合并，强制恢复云端会丢弃本地改动"
                 >
-                    关闭浏览器同步
-                </BaseButton>
-            </div>
+                    <template #actions>
+                        <div class="cloud-sync-actions">
+                            <BaseButton
+                                variant="primary"
+                                size="small"
+                                :loading="isLoading"
+                                @click="handleSync"
+                            >
+                                <template #icon>
+                                    <IconSvg name="upload" :size="14" />
+                                </template>
+                                立即同步
+                            </BaseButton>
+
+                            <BaseButton
+                                variant="outlined"
+                                size="small"
+                                :loading="isLoading"
+                                @click="handlePull"
+                            >
+                                <template #icon>
+                                    <IconSvg name="download" :size="14" />
+                                </template>
+                                强制恢复云端
+                            </BaseButton>
+                        </div>
+                    </template>
+                </SettingsRow>
+
+                <SettingsRow
+                    label="断开连接"
+                    description="只清除本机保存的 Token，代码片段里的数据不受影响"
+                >
+                    <template #actions>
+                        <BaseButton
+                            variant="ghost"
+                            size="small"
+                            class="cloud-sync-logout"
+                            :loading="isLoading"
+                            @click="handleLogout"
+                        >
+                            <template #icon>
+                                <IconSvg name="logout" :size="14" />
+                            </template>
+                            断开连接
+                        </BaseButton>
+                    </template>
+                </SettingsRow>
+            </template>
+        </SettingsSection>
+
+        <!-- ============ 浏览器同步（始终可见） ============ -->
+        <SettingsSection
+            class="cloud-sync-cross"
+            title="浏览器同步"
+            description="登录同一浏览器账号的其他设备，输入同步密码即可免 Token 登录。同步区只保存 AES-GCM 密文。"
+        >
+            <SettingsRow
+                v-if="browserMode === 'off' || browserMode === 'setup'"
+                label="开启浏览器同步"
+                description="把登录状态加密后写进浏览器账号同步区"
+            >
+                <template #icon>
+                    <IconSvg :paths="LOCK_PATHS" :size="16" />
+                </template>
+                <template #actions>
+                    <BaseSwitch
+                        :model-value="browserMode === 'setup'"
+                        :disabled="isLoading || browserBusy"
+                        aria-label="开启浏览器同步"
+                        @update:model-value="handleBrowserToggle"
+                    />
+                </template>
+            </SettingsRow>
+
+            <SettingsRow
+                v-if="browserMode !== 'off' && browserMode !== 'setup'"
+                label="同步状态"
+                :description="browserStatusText"
+            >
+                <template #icon>
+                    <IconSvg :paths="LOCK_PATHS" :size="16" />
+                </template>
+                <template v-if="browserMode === 'enabled'" #actions>
+                    <span class="cloud-sync-cross__badge">已开启</span>
+                </template>
+            </SettingsRow>
+
+            <SettingsRow
+                v-if="!syncAreaNative"
+                label="运行环境"
+                description="当前为网页预览环境，无法写入浏览器账号同步区，该功能仅在扩展中生效。"
+            />
+
+            <SettingsRow
+                v-if="browserNeedsPassphrase"
+                label="设置同步密码"
+                :description="browserHint"
+                stacked
+            >
+                <template #actions>
+                    <div class="cloud-sync-cross__form">
+                        <BaseInput
+                            v-model="browserPassphrase"
+                            type="password"
+                            label="同步密码"
+                            :placeholder="`至少 ${MIN_PASSPHRASE_LENGTH} 位`"
+                            autocomplete="off"
+                            :disabled="browserBusy"
+                            @enter="handleBrowserSubmit"
+                        />
+                        <BaseButton
+                            :variant="browserMode === 'restore' ? 'primary' : 'outlined'"
+                            size="small"
+                            block
+                            :loading="browserBusy"
+                            @click="handleBrowserSubmit"
+                        >
+                            <template #icon>
+                                <IconSvg :paths="LOCK_PATHS" :size="14" />
+                            </template>
+                            {{ browserActionLabel }}
+                        </BaseButton>
+                    </div>
+                </template>
+            </SettingsRow>
+
+            <SettingsRow
+                v-if="browserMode === 'restore'"
+                label="没有旧密码？"
+                description="直接在本机开启新的浏览器同步，不用其他设备的旧密码"
+            >
+                <template #actions>
+                    <BaseButton
+                        variant="ghost"
+                        size="small"
+                        class="cloud-sync-cross__skip"
+                        :disabled="browserBusy"
+                        @click="handleSkipRestore"
+                    >
+                        直接开启
+                    </BaseButton>
+                </template>
+            </SettingsRow>
+
+            <SettingsRow
+                v-if="browserMode === 'enabled'"
+                label="同步密码管理"
+                description="更新密码会用新密码重新加密并覆盖同步区里的旧密文"
+            >
+                <template #actions>
+                    <div class="cloud-sync-cross__actions">
+                        <BaseButton
+                            variant="text"
+                            size="small"
+                            :disabled="browserBusy"
+                            @click="browserExpanded = !browserExpanded"
+                        >
+                            {{ browserExpanded ? '收起' : '更新密码' }}
+                        </BaseButton>
+                        <BaseButton
+                            variant="ghost"
+                            size="small"
+                            :disabled="browserBusy"
+                            @click="handleDisableBrowserSync"
+                        >
+                            关闭浏览器同步
+                        </BaseButton>
+                    </div>
+                </template>
+            </SettingsRow>
 
             <!-- 同步区诊断：让「到底同步到了没」可见，而不是靠猜 -->
-            <div class="cloud-sync-cross__diag">
-                <span :title="extensionId ? `扩展 ID：${extensionId}` : ''">
-                    同步区：{{ syncAreaNative ? '浏览器账号' : '本机模拟' }}
-                </span>
-                <span>凭据：{{ crossDeviceRemoteAvailable ? remoteMetaText : '暂无' }}</span>
-                <button
-                    type="button"
-                    class="cloud-sync-cross__refresh"
-                    :disabled="browserBusy"
-                    @click="handleRefreshSyncArea"
-                >
-                    重新检查
-                </button>
-            </div>
+            <SettingsRow label="同步区诊断">
+                <template #description>
+                    <span class="cloud-sync-cross__diag">
+                        <span :title="extensionId ? `扩展 ID：${extensionId}` : ''">
+                            同步区：{{ syncAreaNative ? '浏览器账号' : '本机模拟' }}
+                        </span>
+                        <span>凭据：{{ crossDeviceRemoteAvailable ? remoteMetaText : '暂无' }}</span>
+                    </span>
+                </template>
+                <template #actions>
+                    <BaseButton
+                        variant="ghost"
+                        size="small"
+                        class="cloud-sync-cross__refresh"
+                        :disabled="browserBusy"
+                        @click="handleRefreshSyncArea"
+                    >
+                        重新检查
+                    </BaseButton>
+                </template>
+            </SettingsRow>
 
-            <p
+            <SettingsRow
                 v-if="syncAreaNative && !crossDeviceRemoteAvailable && !isLoggedIn"
-                class="cloud-sync-cross__warn"
+                label="同步提示"
+                stacked
             >
-                <template v-if="isFirefox">
-                    Firefox 需在「设置 → 同步」勾选「附加组件」，且每 10 分钟或点「立即同步」才会把同步区数据传到另一台设备。
+                <template #description>
+                    <p class="cloud-sync-cross__warn">
+                        <template v-if="isFirefox">
+                            Firefox 需在「设置 → 同步」勾选「附加组件」，且每 10 分钟或点「立即同步」才会把同步区数据传到另一台设备。
+                        </template>
+                        <template v-else>
+                            两台设备需登录同一个浏览器账号并开启同步，数据才会在同步区之间流转。
+                        </template>
+                    </p>
                 </template>
-                <template v-else>
-                    两台设备需登录同一个浏览器账号并开启同步，数据才会在同步区之间流转。
-                </template>
-            </p>
-        </div>
+            </SettingsRow>
+        </SettingsSection>
     </section>
 </template>
 
 <style scoped lang="scss">
-@use '@/styles/variables' as *;
 @use '@/styles/mixins' as *;
 
 .cloud-sync-panel {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--ui-space-5);
 
-    &__header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    &__title {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--md-sys-color-primary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 0;
-    }
-
-    &__error {
-        font-size: 12px;
-        color: var(--md-sys-color-error);
-        padding: 8px 10px;
-        border-radius: 8px;
-        background: var(--md-sys-color-error-container);
-    }
-
+    // 连接状态：胶囊标签，连上 / 加载中用主色淡底
     &__status {
-        font-size: 13px;
-        color: var(--md-sys-color-on-surface-variant);
+        display: inline-flex;
+        align-items: center;
+        padding: 2px var(--ui-space-2);
+        border-radius: var(--ui-radius-pill);
+        background: var(--ui-sunken);
+        color: var(--ui-muted);
+        font-size: var(--ui-font-caption);
+        font-weight: 500;
+        white-space: nowrap;
+        @include ui-transition(background-color, color);
 
         &.is-connected {
-            color: var(--md-sys-color-success);
+            background: var(--ui-accent-soft);
+            color: var(--ui-accent);
         }
 
         &.is-loading {
-            color: var(--md-sys-color-primary);
+            background: var(--ui-accent-softer);
+            color: var(--ui-accent);
         }
     }
 
-    &__guest {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+    // 错误提示：占满整行，不与行标题抢横向空间
+    &__error {
+        width: 100%;
+        margin: 0;
+        padding: var(--ui-space-2) var(--ui-space-3);
+        border-radius: var(--ui-radius-md);
+        background: var(--ui-danger-soft);
+        color: var(--ui-danger);
+        font-size: var(--ui-font-caption);
+        line-height: 1.45;
     }
 
+    // 说明文字：跟在控件下方的补充说明
     &__hint {
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
-        line-height: 1.4;
         margin: 0;
+        @include ui-description;
+        color: var(--ui-muted-soft);
     }
 
-    &__logged {
+    // 未登录：Token 输入 + 说明 + 连接按钮纵向排布，占满行宽
+    &__token {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: var(--ui-space-2);
+        width: 100%;
     }
 }
 
+// ==================== 已登录：用户信息 ====================
 .cloud-sync-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
     &__avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--ui-radius-pill);
         object-fit: cover;
-        background: var(--md-sys-color-surface-variant);
+        background: var(--ui-sunken);
         flex-shrink: 0;
-    }
-
-    &__info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    &__name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--md-sys-color-on-surface);
-        @include text-ellipsis;
-    }
-
-    &__time {
-        font-size: 12px;
-        color: var(--md-sys-color-on-surface-variant);
     }
 }
 
-.cloud-sync-toggle {
-    display: flex;
+// ==================== 平台选择（分段控件外观） ====================
+.cloud-sync-provider {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--md-sys-color-on-surface);
-    cursor: pointer;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--ui-hairline);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-sunken);
 
-    input {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        accent-color: var(--md-sys-color-primary);
-    }
-}
-
-.cloud-sync-cross {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    border: 1px solid var(--md-sys-color-outline-variant);
-    border-radius: 12px;
-    background: var(--md-sys-color-surface-container-low, transparent);
-
-    &.is-restore,
-    &.is-on {
-        border-color: var(--md-sys-color-primary);
-    }
-
-    &.is-unavailable {
-        border-style: dashed;
-        opacity: 0.9;
-    }
-
-    &__head {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13px;
-        font-weight: 500;
-        color: var(--md-sys-color-on-surface);
-    }
-
-    &__name {
-        flex: 1;
-        min-width: 0;
-    }
-
-    &__badge {
-        flex-shrink: 0;
-        padding: 1px 8px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--md-sys-color-on-surface-variant);
-        background: var(--md-sys-color-surface-variant);
-    }
-
-    &.is-on &__badge {
-        color: var(--md-sys-color-on-primary);
-        background: var(--md-sys-color-primary);
-    }
-
-    &__status {
-        margin: 0;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--md-sys-color-on-surface-variant);
-    }
-
-    &.is-on &__status {
-        color: var(--md-sys-color-success);
-    }
-
-    &__warn {
-        margin: 0;
-        font-size: 12px;
-        line-height: 1.4;
-        padding: 6px 8px;
-        border-radius: 8px;
-        color: var(--md-sys-color-on-surface-variant);
-        background: var(--md-sys-color-surface-variant);
-    }
-
-    &__actions {
-        display: flex;
-        gap: 4px;
-
-        > * {
-            flex: 1;
-        }
-    }
-
-    &__skip {
-        align-self: flex-start;
-    }
-
-    &__diag {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 4px;
-        padding-top: 8px;
-        border-top: 1px dashed var(--md-sys-color-outline-variant);
-        font-size: 11px;
-        color: var(--md-sys-color-on-surface-variant);
-        opacity: 0.9;
-    }
-
-    &__refresh {
+    &__btn {
         @include button-reset;
-        margin-left: auto;
-        padding: 2px 6px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--md-sys-color-primary);
-        @include md-transition(background-color, var(--md-transition-fast));
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 26px;
+        padding: 0 var(--ui-space-3);
+        border: 1px solid transparent;
+        border-radius: var(--ui-radius-sm);
+        font-size: var(--ui-font-small);
+        font-weight: 500;
+        color: var(--ui-muted);
+        white-space: nowrap;
+        @include ui-transition(background-color, color);
+        @include ui-focus-ring;
 
-        &:hover:not(:disabled) {
-            background: var(--md-sys-color-primary-container);
+        &:hover:not(.is-active):not(:disabled) {
+            color: var(--ui-ink);
+        }
+
+        // 选中块浮在轨道上：靠底色 + 发丝描边 + 一级微阴影，不做位移
+        &.is-active {
+            background: var(--ui-panel);
+            border-color: var(--ui-hairline);
+            color: var(--ui-ink);
+            box-shadow: var(--ui-shadow-1);
         }
 
         &:disabled {
@@ -906,51 +874,59 @@ const statusClass = computed(() => {
     }
 }
 
-.cloud-sync-provider {
-    display: flex;
-    gap: 6px;
-
-    &__btn {
-        flex: 1;
-        padding: 6px 0;
-        border: 1px solid var(--md-sys-color-outline-variant);
-        border-radius: 8px;
-        background: transparent;
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 13px;
-        cursor: pointer;
-        transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-
-        &.is-active {
-            background: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
-            border-color: var(--md-sys-color-primary);
-        }
-
-        &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-    }
-}
-
+// ==================== 手动同步 ====================
 .cloud-sync-actions {
     display: flex;
-    gap: 8px;
-
-    > * {
-        flex: 1;
-    }
+    flex-wrap: wrap;
+    gap: var(--ui-space-2);
 }
 
 .cloud-sync-logout {
-    align-self: flex-start;
-    color: var(--md-sys-color-error);
+    color: var(--ui-danger);
 }
 
-html.dark-mode {
-    .cloud-sync-user__avatar {
-        background: var(--hover-bg);
+// ==================== 浏览器同步 ====================
+// 分组的边框 / 底色由 SettingsSection 负责，这里只描述行内的控件
+.cloud-sync-cross {
+    &__badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 1px var(--ui-space-2);
+        border-radius: var(--ui-radius-pill);
+        background: var(--ui-accent-soft);
+        color: var(--ui-accent);
+        font-size: var(--ui-font-micro);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    // 密码输入 + 提交按钮：纵向排布，占满行宽
+    &__form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--ui-space-2);
+        width: 100%;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--ui-space-2);
+    }
+
+    // 同步区诊断：两段等宽弱化的元信息
+    &__diag {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--ui-space-1) var(--ui-space-3);
+        @include ui-description;
+        color: var(--ui-muted-soft);
+    }
+
+    &__warn {
+        margin: 0;
+        @include ui-description;
+        color: var(--ui-muted-soft);
     }
 }
 </style>
