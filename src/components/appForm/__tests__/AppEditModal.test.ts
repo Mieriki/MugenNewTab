@@ -86,19 +86,15 @@ describe('AppEditModal', () => {
         expect(document.querySelector('input[placeholder="例如：GitHub"]')).not.toBeNull();
         expect(document.querySelector('input[type="url"]')).not.toBeNull();
         expect(document.querySelector('#app-edit-category')).not.toBeNull();
-        expect(document.querySelector('.checkbox-label input[type="checkbox"]')).not.toBeNull();
+        // 「隐藏该站点」已从原生 checkbox 换成 BaseSwitch
+        expect(document.querySelector('.form-group--switch [role="switch"]')).not.toBeNull();
     });
 
-    it('区块头与操作按钮图标应用 monochrome（暗色主题自动反色）', async () => {
+    it('区块标题与操作按钮图标应用 monochrome（暗色主题自动反色）', async () => {
         mountModal();
         await wait();
 
-        const headerIcons = document.querySelectorAll('.form-section__header .icon-svg');
-        expect(headerIcons.length).toBe(2);
-        headerIcons.forEach((icon) => {
-            expect(icon.classList.contains('is-monochrome')).toBe(true);
-        });
-
+        // 分组标题改由 SettingsSection 承担，图标只剩图标操作区那些
         const actionIcons = document.querySelectorAll('.icon-actions .icon-svg, .icon-input-group .mnt-base-button .icon-svg');
         expect(actionIcons.length).toBeGreaterThan(0);
         actionIcons.forEach((icon) => {
@@ -123,7 +119,10 @@ describe('AppEditModal', () => {
         expect((document.querySelector('input[placeholder="例如：GitHub"]') as HTMLInputElement)?.value).toBe('GitHub');
         expect((document.querySelector('input[type="url"]') as HTMLInputElement)?.value).toBe('https://github.com');
         expect((document.querySelector('#app-edit-category') as HTMLSelectElement)?.value).toBe('dev');
-        expect((document.querySelector('.checkbox-label input[type="checkbox"]') as HTMLInputElement)?.checked).toBe(true);
+        // 「隐藏该站点」现在是 BaseSwitch（role="switch"），状态由 aria-checked 反映
+        expect(
+            document.querySelector('.form-group--switch [role="switch"]')?.getAttribute('aria-checked')
+        ).toBe('true');
     });
 
     it('initialCategoryId 在添加模式下默认选中分类', async () => {
@@ -366,10 +365,10 @@ describe('AppEditModal', () => {
         urlInput.dispatchEvent(new Event('input'));
         await flushPromises();
 
-        const largerToggle = document.querySelector('.icon-larger-toggle input[type="checkbox"]') as HTMLInputElement;
+        // 「获取高清图标」改为 BaseSwitch，点击切换
+        const largerToggle = document.querySelector('.icon-larger-toggle [role="switch"]') as HTMLButtonElement;
         expect(largerToggle).not.toBeNull();
-        largerToggle.checked = true;
-        largerToggle.dispatchEvent(new Event('change'));
+        largerToggle.click();
         await flushPromises();
 
         const fetchBtn = Array.from(document.querySelectorAll('.mnt-base-button')).find(
@@ -448,9 +447,9 @@ describe('AppEditModal', () => {
         categorySelect.value = 'dev';
         categorySelect.dispatchEvent(new Event('change'));
 
-        const hiddenCheckbox = document.querySelector('.app-edit-form .checkbox-label input[type="checkbox"]') as HTMLInputElement;
-        hiddenCheckbox.checked = true;
-        hiddenCheckbox.dispatchEvent(new Event('change'));
+        // 「隐藏该站点」改为 BaseSwitch，点击切换
+        const hiddenSwitch = document.querySelector('.app-edit-form .form-group--switch [role="switch"]') as HTMLButtonElement;
+        hiddenSwitch.click();
         await flushPromises();
 
         const saveBtn = document.querySelector('.mnt-base-button--primary') as HTMLButtonElement;

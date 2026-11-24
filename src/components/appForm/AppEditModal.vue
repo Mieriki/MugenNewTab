@@ -15,7 +15,9 @@ import { ref, computed, watch } from 'vue';
 import ModalOverlay from '@/components/common/ModalOverlay.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
+import BaseSwitch from '@/components/common/BaseSwitch.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
+import SettingsSection from '@/components/settings/SettingsSection.vue';
 import HiddenTipModal from '@/components/appForm/HiddenTipModal.vue';
 import { useDataManager } from '@/composables/useDataManager';
 import { useToast } from '@/composables/useToast';
@@ -315,17 +317,12 @@ watch(
     <ModalOverlay
         :model-value="modelValue"
         :title="modalTitle"
-        :max-width="520"
+        :max-width="600"
         close-on-overlay
         @update:model-value="$emit('update:modelValue', $event)"
     >
         <form class="app-edit-form" @submit.prevent="handleSubmit">
-            <section class="form-section">
-                <header class="form-section__header">
-                    <IconSvg name="edit" :size="16" monochrome />
-                    <h3 class="form-section__title">基本信息</h3>
-                </header>
-
+            <SettingsSection title="基本信息">
                 <div class="form-group">
                     <BaseInput
                         v-model="form.name"
@@ -396,14 +393,20 @@ watch(
                         placeholder="简短描述网站用途..."
                     />
                 </div>
-            </section>
 
-            <section class="form-section">
-                <header class="form-section__header">
-                    <IconSvg name="picture" :size="16" monochrome />
-                    <h3 class="form-section__title">图标设置</h3>
-                </header>
+                <div class="form-group form-group--switch">
+                    <div class="form-switch-text">
+                        <span class="form-switch-label">隐藏该站点</span>
+                        <span class="form-switch-hint">默认不在首页显示，可用双击 Logo 或 Alt+Shift+H 临时显示</span>
+                    </div>
+                    <BaseSwitch
+                        v-model="form.hidden"
+                        aria-label="隐藏该站点"
+                    />
+                </div>
+            </SettingsSection>
 
+            <SettingsSection title="图标">
                 <div class="icon-card">
                     <div class="icon-selector">
                         <div class="icon-preview">
@@ -454,10 +457,13 @@ watch(
                         >
                             清除
                         </BaseButton>
-                        <label class="icon-larger-toggle">
-                            <input v-model="fetchLargerIcon" type="checkbox" />
+                        <div class="icon-larger-toggle">
                             <span>获取高清图标</span>
-                        </label>
+                            <BaseSwitch
+                                v-model="fetchLargerIcon"
+                                aria-label="获取高清图标"
+                            />
+                        </div>
                     </div>
 
                     <div v-if="showIconPicker" class="icon-picker">
@@ -478,14 +484,7 @@ watch(
                         </button>
                     </div>
                 </div>
-            </section>
-
-            <div class="form-group form-group--checkbox">
-                <label class="checkbox-label">
-                    <input v-model="form.hidden" type="checkbox" />
-                    <span>隐藏该站点（默认不在首页显示）</span>
-                </label>
-            </div>
+            </SettingsSection>
         </form>
 
         <template #footer>
@@ -514,38 +513,37 @@ watch(
     gap: var(--ui-space-5);
 }
 
-// ==================== 表单区块 ====================
-// 层级只靠底色差与发丝描边：区块头一条下划线，区块之间靠留白分隔
-.form-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ui-space-3);
-
-    &__header {
-        display: flex;
-        align-items: center;
-        gap: var(--ui-space-2);
-        padding-bottom: var(--ui-space-2);
-        border-bottom: 1px solid var(--ui-hairline);
-        // 图标走 currentColor（内置图标是 CSS mask），随标题一起弱化
-        color: var(--ui-muted);
-    }
-
-    // 装饰性小标题：小字 + 放开字距 + 弱化色，不再抢主色
-    &__title {
-        @include ui-caption;
-    }
-}
-
+// ==================== 表单分组 ====================
+// 分组外框由 SettingsSection 负责（卡片 + 发丝分隔），这里只管组内纵向节奏。
+// 字段保持「标签在上、控件在下」的竖排：文本输入框塞进行式右栏会窄到不可用。
 .form-group {
     display: flex;
     flex-direction: column;
     gap: var(--ui-space-2);
+    padding: var(--ui-space-3) 0;
 
-    &--checkbox {
+    // 带开关的行：左文案右开关，与设置中心的行式控件对齐
+    &--switch {
         flex-direction: row;
         align-items: center;
+        justify-content: space-between;
+        gap: var(--ui-space-4);
     }
+}
+
+.form-switch-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.form-switch-label {
+    @include ui-label;
+}
+
+.form-switch-hint {
+    @include ui-description;
 }
 
 .form-label {
@@ -663,23 +661,10 @@ watch(
 .icon-larger-toggle {
     display: flex;
     align-items: center;
-    gap: var(--ui-space-1);
+    gap: var(--ui-space-2);
     margin-left: auto;
-    font-size: var(--ui-font-small);
+    font-size: var(--ui-font-caption);
     color: var(--ui-muted);
-    cursor: pointer;
-    @include ui-transition(color);
-
-    &:hover {
-        color: var(--ui-ink);
-    }
-
-    input[type='checkbox'] {
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-        accent-color: var(--ui-accent);
-    }
 }
 
 // 图标网格：凹陷井底，格子本身回到面板色，形成「井 - 砖」的层次
@@ -710,22 +695,6 @@ watch(
 
     &:hover {
         border-color: var(--ui-hairline-strong);
-    }
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: var(--ui-space-2);
-    font-size: var(--ui-font-body);
-    color: var(--ui-body);
-    cursor: pointer;
-
-    input[type='checkbox'] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        accent-color: var(--ui-accent);
     }
 }
 

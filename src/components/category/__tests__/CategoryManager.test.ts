@@ -66,10 +66,7 @@ describe('CategoryManager', () => {
     });
 
     it('打开时渲染分类列表并排除“全部应用”', async () => {
-        mount(CategoryManager, {
-            props: { modelValue: true },
-            attachTo: document.body,
-        });
+        mount(CategoryManager, { attachTo: document.body });
         await flushPromises();
 
         const items = document.querySelectorAll('.mnt-category-manager__item');
@@ -80,10 +77,7 @@ describe('CategoryManager', () => {
     });
 
     it('显示每个分类下的网站数量', async () => {
-        mount(CategoryManager, {
-            props: { modelValue: true },
-            attachTo: document.body,
-        });
+        mount(CategoryManager, { attachTo: document.body });
         await flushPromises();
 
         expect(document.body.textContent).toContain('1 个网站');
@@ -97,10 +91,7 @@ describe('CategoryManager', () => {
             userUiLib: { categories: [], items: [] },
         });
 
-        mount(CategoryManager, {
-            props: { modelValue: true },
-            attachTo: document.body,
-        });
+        mount(CategoryManager, { attachTo: document.body });
         await flushPromises();
 
         expect(document.querySelector('.mnt-category-manager__empty')).not.toBeNull();
@@ -108,10 +99,7 @@ describe('CategoryManager', () => {
     });
 
     it('点击编辑按钮触发 edit 事件', async () => {
-        const wrapper = mount(CategoryManager, {
-            props: { modelValue: true },
-            attachTo: document.body,
-        });
+        const wrapper = mount(CategoryManager, { attachTo: document.body });
         await flushPromises();
 
         const firstItem = document.querySelector('.mnt-category-manager__item');
@@ -123,29 +111,11 @@ describe('CategoryManager', () => {
         expect((wrapper.emitted('edit')![0] as [Category])[0].id).toBe('media');
     });
 
-    it('点击新建分类按钮触发 add 事件', async () => {
-        const wrapper = mount(CategoryManager, {
-            props: { modelValue: true },
-            attachTo: document.body,
-        });
+    it('点击新建分类行触发 add 事件', async () => {
+        const wrapper = mount(CategoryManager, { attachTo: document.body });
         await flushPromises();
 
-        const addBtn = Array.from(document.querySelectorAll('.mnt-modal-footer .mnt-base-button--primary')).find(
-            (btn) => btn.textContent?.includes('新建分类')
-        ) as HTMLButtonElement | undefined;
-        addBtn?.click();
-        await flushPromises();
-
-        expect(wrapper.emitted('add')).toHaveLength(1);
-    });
-
-    it('点击列表底部新建分类行触发 add 事件', async () => {
-        const wrapper = mount(CategoryManager, {
-            props: { modelValue: true },
-            attachTo: document.body,
-        });
-        await flushPromises();
-
+        // footer 里的重复入口已删除，只保留列表分组底部的这一行
         const addRow = document.querySelector('.mnt-category-manager__add-row') as HTMLButtonElement | null;
         addRow?.click();
         await flushPromises();
@@ -154,10 +124,7 @@ describe('CategoryManager', () => {
     });
 
     it('点击删除按钮并从存储中移除分类及其应用', async () => {
-        mount(CategoryManager, {
-            props: { modelValue: true },
-            attachTo: document.body,
-        });
+        mount(CategoryManager, { attachTo: document.body });
         await flushPromises();
 
         const firstItem = document.querySelector('.mnt-category-manager__item');

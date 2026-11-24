@@ -1,24 +1,13 @@
 <!--
-  UiLibPanel - 图标库统一面板
+  UiLibPanel - 设置中心的「图标库」栏目
   集浏览、搜索与分类/图标管理于一体（替代原 UiLibPicker + UiLibManager 两层弹窗）。
   系统数据仅可查看，用户分类与图标支持删除；点击图标卡片可预览大图。
+
+  自身不再承载弹窗外壳：由 SettingsCenter 作为栏目内容渲染。
+  「图标预览」仍是独立浮层，那是真正的模态查看，保留 ModalOverlay。
 -->
 <template>
-    <ModalOverlay
-        v-model="isOpen"
-        max-width="640"
-        max-height="80vh"
-        :z-index="2100"
-        @close="emit('close')"
-    >
-        <template #header>
-            <div class="ui-lib-panel__title">
-                <IconSvg name="picture" :size="20" />
-                <span>图标库</span>
-            </div>
-        </template>
-
-        <div class="ui-lib-panel">
+    <div class="ui-lib-panel">
             <div class="ui-lib-panel__search">
                 <BaseInput
                     v-model="searchKeyword"
@@ -167,13 +156,9 @@
             </template>
         </div>
 
-        <template #footer>
-            <span class="ui-lib-panel__footer-total">
-                共 {{ categories.length }} 个分类 · {{ items.length }} 个图标
-            </span>
-            <BaseButton variant="text" size="small" @click="close">关闭</BaseButton>
-        </template>
-    </ModalOverlay>
+        <div class="ui-lib-panel__footer-total">
+            共 {{ categories.length }} 个分类 · {{ items.length }} 个图标
+        </div>
 
     <ModalOverlay
         v-model="previewVisible"
@@ -195,7 +180,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import ModalOverlay from '@/components/common/ModalOverlay.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
 import BaseInput from '@/components/common/BaseInput.vue';
@@ -205,18 +190,9 @@ import { useConfirm } from '@/composables/useConfirm';
 import { useToast } from '@/composables/useToast';
 import type { UiItem } from '@/types/ui';
 
-/** 组件 Props */
-interface Props {
-    /** 是否显示面板（支持 v-model） */
-    modelValue: boolean;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-    /** 面板显示状态变化 */
-    (e: 'update:modelValue', value: boolean): void;
-    /** 面板关闭 */
+/** 组件不再需要 props / 与弹窗相关的 emit：它由 SettingsCenter 作为栏目直接渲染 */
+defineEmits<{
+    /** 面板关闭（保留以兼容旧调用方） */
     (e: 'close'): void;
 }>();
 
@@ -239,11 +215,6 @@ const isAddingItem = ref(false);
 
 const previewVisible = ref(false);
 const previewTarget = ref<UiItem | null>(null);
-
-const isOpen = computed({
-    get: () => props.modelValue,
-    set: (value: boolean) => emit('update:modelValue', value),
-});
 
 const categories = computed(() => store.categories);
 const items = computed(() => store.items);
@@ -276,23 +247,13 @@ const emptyText = computed(() => {
     return '该分类下暂无图标';
 });
 
-/** 打开时初始化 store 并重置面板状态 */
-watch(
-    () => props.modelValue,
-    async (visible) => {
-        if (visible) {
-            searchKeyword.value = '';
-            addingCategory.value = false;
-            newCategoryName.value = '';
-            cancelAddItem();
-            await store.init();
-            if (!activeCategoryId.value && categories.value.length > 0) {
-                activeCategoryId.value = categories.value[0].id;
-            }
-        }
-    },
-    { immediate: true }
-);
+/** 挂载即初始化：作为设置栏目渲染时没有“打开”这个事件了 */
+onMounted(async () => {
+    await store.init();
+    if (!activeCategoryId.value && categories.value.length > 0) {
+        activeCategoryId.value = categories.value[0].id;
+    }
+});
 
 /** 分类变化后，若当前分类不存在则回退到第一个 */
 watch(
@@ -427,11 +388,6 @@ function previewItem(item: UiItem): void {
     previewTarget.value = item;
     previewVisible.value = true;
 }
-
-function close(): void {
-    isOpen.value = false;
-    emit('close');
-}
 </script>
 
 <style scoped lang="scss">
@@ -460,8 +416,10 @@ function close(): void {
     }
 
     &__footer-total {
-        margin-right: auto;
         font-size: var(--ui-font-caption);
+        color: var(--ui-muted-soft);
+        font-variant-numeric: tabular-nums;
+        padding-top: var(--ui-space-1);
         color: var(--ui-muted);
     }
 

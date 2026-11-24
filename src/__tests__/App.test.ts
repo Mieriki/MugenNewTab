@@ -10,7 +10,6 @@ import FabMenu from '@/components/layout/FabMenu.vue';
 import SearchModal from '@/components/search/SearchModal.vue';
 import AppEditModal from '@/components/appForm/AppEditModal.vue';
 import CategoryEditModal from '@/components/category/CategoryEditModal.vue';
-import CategoryManager from '@/components/category/CategoryManager.vue';
 import SettingsCenter from '@/components/personalization/SettingsCenter.vue';
 import { useDataManager } from '@/composables/useDataManager';
 import { useTheme } from '@/composables/useTheme';
@@ -336,7 +335,7 @@ describe('App.vue', () => {
         expect(modal.props('app')).toBeNull();
     });
 
-    it('FAB 菜单点击"管理分类"打开分类管理弹窗', async () => {
+    it('FAB 菜单点击"管理分类"打开设置中心的分类管理栏目', async () => {
         const wrapper = mountApp();
         await flushPromises();
 
@@ -344,11 +343,13 @@ describe('App.vue', () => {
         await fab.vm.$emit('select', 'manage-categories');
         await flushPromises();
 
-        const manager = wrapper.findComponent(CategoryManager);
-        expect(manager.props('modelValue')).toBe(true);
+        // 分类管理已并入设置中心
+        const settings = wrapper.findComponent(SettingsCenter);
+        expect(settings.props('modelValue')).toBe(true);
+        expect(settings.props('tab')).toBe('categories');
     });
 
-    it('分类管理触发 add 后打开分类编辑模态框', async () => {
+    it('分类管理触发 add 后关闭设置中心并打开分类编辑弹窗', async () => {
         const wrapper = mountApp();
         await flushPromises();
 
@@ -356,11 +357,12 @@ describe('App.vue', () => {
         await fab.vm.$emit('select', 'manage-categories');
         await flushPromises();
 
-        const manager = wrapper.findComponent(CategoryManager);
-        await manager.vm.$emit('add');
+        // 新建/编辑分类是独立表单弹窗，两者不叠在一起：先关设置中心再开弹窗
+        const settings = wrapper.findComponent(SettingsCenter);
+        await settings.vm.$emit('add-category');
         await flushPromises();
 
-        expect(manager.props('modelValue')).toBe(false);
+        expect(settings.props('modelValue')).toBe(false);
         const modal = wrapper.findComponent(CategoryEditModal);
         expect(modal.props('modelValue')).toBe(true);
         expect(modal.props('category')).toBeUndefined();

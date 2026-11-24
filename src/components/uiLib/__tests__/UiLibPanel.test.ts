@@ -66,10 +66,8 @@ async function seedUserData() {
 }
 
 function mountPanel() {
-    return mount(UiLibPanel, {
-        props: { modelValue: true },
-        attachTo: document.body,
-    });
+    // 组件已内嵌为设置栏目，不再接收 modelValue，也不再靠弹窗挂到 body
+    return mount(UiLibPanel, { attachTo: document.body });
 }
 
 describe('UiLibPanel', () => {
@@ -85,14 +83,18 @@ describe('UiLibPanel', () => {
         document.body.innerHTML = '';
     });
 
-    it('modelValue 为 false 时隐藏面板内容', () => {
-        mount(UiLibPanel, {
-            props: { modelValue: false },
-            attachTo: document.body,
-        });
-        const overlay = document.querySelector('.mnt-modal-overlay') as HTMLElement;
-        expect(overlay).not.toBeNull();
-        expect(overlay.style.display).toBe('none');
+    it('挂载即渲染面板内容（不再有弹窗开合状态）', async () => {
+        mount(UiLibPanel, { attachTo: document.body });
+        await wait();
+
+        const panel = document.querySelector('.ui-lib-panel') as HTMLElement;
+        expect(panel).not.toBeNull();
+
+        // 预览浮层是唯一的 ModalOverlay，且处于隐藏态；面板本身不再被弹窗包裹
+        const overlays = document.querySelectorAll('.mnt-modal-overlay');
+        expect(overlays).toHaveLength(1);
+        expect((overlays[0] as HTMLElement).style.display).toBe('none');
+        expect(panel.closest('.mnt-modal-overlay')).toBeNull();
     });
 
     it('打开时渲染分类标签（含计数）与图标网格', async () => {
@@ -257,16 +259,11 @@ describe('UiLibPanel', () => {
         expect(document.querySelector('.ui-lib-panel__preview-desc')?.textContent).toContain('系统分类');
     });
 
-    it('点击关闭按钮关闭面板', async () => {
-        const wrapper = mountPanel();
+    it('底部显示分类与图标总数', async () => {
+        mountPanel();
         await wait();
 
-        const closeBtn = Array.from(document.querySelectorAll('button')).find(
-            (btn) => btn.textContent?.includes('关闭')
-        );
-        closeBtn?.click();
-        await nextTick();
-
-        expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+        expect(document.querySelector('.ui-lib-panel__footer-total')?.textContent).toContain('个分类');
+        expect(document.querySelector('.ui-lib-panel__footer-total')?.textContent).toContain('个图标');
     });
 });

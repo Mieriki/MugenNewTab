@@ -18,9 +18,20 @@ import CacheSettings from '@/components/personalization/CacheSettings.vue';
 import CloudSyncPanel from '@/components/personalization/CloudSyncPanel.vue';
 import DataTransferPanel from '@/components/personalization/DataTransferPanel.vue';
 import AboutPanel from '@/components/personalization/AboutPanel.vue';
+import CategoryManager from '@/components/category/CategoryManager.vue';
+import UiLibPanel from '@/components/uiLib/UiLibPanel.vue';
+import type { Category } from '@/types/app';
 
 /** 设置栏目 ID */
-export type SettingsTabId = 'appearance' | 'wallpaper' | 'layout' | 'card' | 'data' | 'about';
+export type SettingsTabId =
+    | 'appearance'
+    | 'wallpaper'
+    | 'layout'
+    | 'card'
+    | 'categories'
+    | 'icons'
+    | 'data'
+    | 'about';
 
 interface NavItem {
     id: SettingsTabId;
@@ -52,6 +63,10 @@ const emit = defineEmits<{
     (e: 'export-data'): void;
     /** 导入数据 */
     (e: 'import-data'): void;
+    /** 编辑分类：App.vue 需要先关掉设置中心再打开分类编辑弹窗 */
+    (e: 'edit-category', category: Category): void;
+    /** 新建分类 */
+    (e: 'add-category'): void;
 }>();
 
 /** 栏目注册表：分组顺序即导航渲染顺序 */
@@ -60,6 +75,8 @@ const NAV_ITEMS: NavItem[] = [
     { id: 'wallpaper', label: '壁纸', icon: 'picture', group: '通用' },
     { id: 'layout', label: '页面布局', icon: 'sort', group: '通用' },
     { id: 'card', label: '卡片样式', icon: 'filter', group: '通用' },
+    { id: 'categories', label: '分类管理', icon: 'folder', group: '管理' },
+    { id: 'icons', label: '图标库', icon: 'star', group: '管理' },
     { id: 'data', label: '数据与同步', icon: 'cloud', group: '数据' },
     { id: 'about', label: '关于', icon: 'info', group: '数据' },
 ];
@@ -189,6 +206,15 @@ function handleEsc(event: KeyboardEvent): void {
                             </div>
                             <div v-show="activeTab === 'card'" class="settings-panel__tab">
                                 <CardStyleSettings />
+                            </div>
+                            <div v-show="activeTab === 'categories'" class="settings-panel__tab">
+                                <CategoryManager
+                                    @edit="emit('edit-category', $event)"
+                                    @add="emit('add-category')"
+                                />
+                            </div>
+                            <div v-show="activeTab === 'icons'" class="settings-panel__tab">
+                                <UiLibPanel />
                             </div>
                             <div v-show="activeTab === 'data'" class="settings-panel__tab">
                                 <CloudSyncPanel />

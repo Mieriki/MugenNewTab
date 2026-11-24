@@ -36,8 +36,6 @@ import FabMenu from '@/components/layout/FabMenu.vue';
 import SearchModal from '@/components/search/SearchModal.vue';
 import AppEditModal from '@/components/appForm/AppEditModal.vue';
 import CategoryEditModal from '@/components/category/CategoryEditModal.vue';
-import CategoryManager from '@/components/category/CategoryManager.vue';
-import UiLibPanel from '@/components/uiLib/UiLibPanel.vue';
 import SettingsCenter from '@/components/personalization/SettingsCenter.vue';
 import type { SettingsTabId } from '@/components/personalization/SettingsCenter.vue';
 import ToastContainer from '@/components/common/ToastContainer.vue';
@@ -91,8 +89,6 @@ const cardStyleStore = useCardStyleStore();
 // ==================== 模态框状态 ====================
 const appEditOpen = ref(false);
 const categoryEditOpen = ref(false);
-const categoryManagerOpen = ref(false);
-const uiLibPanelOpen = ref(false);
 const fabOpen = ref(false);
 
 const editingApp = ref<AppItem | null>(null);
@@ -403,10 +399,12 @@ function handleFabSelect(action: string): void {
             openAddApp();
             break;
         case 'manage-categories':
-            categoryManagerOpen.value = true;
+            // 分类管理已并入设置中心
+            openSettings('categories');
             break;
         case 'ui-lib':
-            uiLibPanelOpen.value = true;
+            // 图标库已并入设置中心
+            openSettings('icons');
             break;
         case 'personalize':
             openSettings('appearance');
@@ -424,8 +422,14 @@ function handleFabSelect(action: string): void {
     }
 }
 
+/**
+ * 从设置中心进入分类编辑
+ *
+ * 分类编辑是独立表单弹窗，而设置中心是整屏浮层，两者叠在一起会撞 z-index
+ * 与 Esc 处理，所以先关掉设置中心，等一帧后再打开编辑弹窗。
+ */
 function handleCategoryManagerEdit(category: Category): void {
-    categoryManagerOpen.value = false;
+    settingsOpen.value = false;
     nextTick(() => {
         editingCategory.value = category;
         categoryEditOpen.value = true;
@@ -433,7 +437,7 @@ function handleCategoryManagerEdit(category: Category): void {
 }
 
 function handleCategoryManagerAdd(): void {
-    categoryManagerOpen.value = false;
+    settingsOpen.value = false;
     nextTick(() => {
         editingCategory.value = undefined;
         categoryEditOpen.value = true;
@@ -636,19 +640,13 @@ const fabItems = [
             @saved="handleSavedCategory"
         />
 
-        <CategoryManager
-            v-model="categoryManagerOpen"
-            @edit="handleCategoryManagerEdit"
-            @add="handleCategoryManagerAdd"
-        />
-
-        <UiLibPanel v-model="uiLibPanelOpen" />
-
         <SettingsCenter
             v-model="settingsOpen"
             v-model:tab="settingsTab"
             @export-data="handleExport"
             @import-data="triggerImport"
+            @edit-category="handleCategoryManagerEdit"
+            @add-category="handleCategoryManagerAdd"
         />
 
         <MntConfirmHost />

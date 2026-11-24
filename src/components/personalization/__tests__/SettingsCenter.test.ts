@@ -57,18 +57,31 @@ describe('SettingsCenter', () => {
         const dialog = document.body.querySelector('.settings-center');
         expect(dialog).not.toBeNull();
 
-        // 6 个栏目：外观 / 壁纸 / 页面布局 / 卡片样式 / 数据与同步 / 关于
-        expect(dialog!.querySelectorAll('.settings-nav__item')).toHaveLength(6);
+        // 8 个栏目：外观 / 壁纸 / 页面布局 / 卡片样式 / 分类管理 / 图标库 / 数据与同步 / 关于
+        expect(dialog!.querySelectorAll('.settings-nav__item')).toHaveLength(8);
 
-        // 五个存量栏目与两个新增栏目都渲染出来（v-show，切换不重建）
+        // 各栏目内容都渲染出来（v-show，切换不重建）
         expect(dialog!.querySelector('.theme-selector')).not.toBeNull();
         expect(dialog!.querySelector('.wallpaper-settings')).not.toBeNull();
         expect(dialog!.querySelector('.layout-settings')).not.toBeNull();
         expect(dialog!.querySelector('.card-style-settings')).not.toBeNull();
+        expect(dialog!.querySelector('.mnt-category-manager')).not.toBeNull();
+        expect(dialog!.querySelector('.ui-lib-panel')).not.toBeNull();
         expect(dialog!.querySelector('.cloud-sync-panel')).not.toBeNull();
 
         // 默认激活「外观」
         expect(dialog!.querySelector('.settings-nav__item.active')?.textContent).toContain('外观');
+    });
+
+    it('导航按「通用 / 管理 / 数据」三个分组', async () => {
+        mount(SettingsCenter, { props: { modelValue: true, autoInit: false } });
+        await flushPromises();
+
+        const groups = Array.from(
+            document.body.querySelectorAll('.settings-nav__group-title')
+        ).map((el) => el.textContent?.trim());
+
+        expect(groups).toEqual(['通用', '管理', '数据']);
     });
 
     it('点击导航切换激活栏目', async () => {

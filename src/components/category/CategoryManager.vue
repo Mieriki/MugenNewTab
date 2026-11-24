@@ -1,31 +1,25 @@
 <script setup lang="ts">
 /**
- * CategoryManager - 分类管理列表
+ * CategoryManager - 设置中心的「分类管理」栏目
  *
  * 展示用户自定义分类（排除“全部应用”），显示每个分类下的网站数量，
  * 支持新建、编辑与删除。删除前会弹出确认对话框，并直接通过 useDataManager 执行删除。
+ *
+ * 自身不再承载弹窗外壳：由 SettingsCenter 作为栏目内容渲染，
+ * 新建 / 编辑通过事件抛给 App.vue，由它关掉设置中心再打开 CategoryEditModal。
  */
 import { computed, onMounted } from 'vue';
 import type { Category } from '@/types/app';
 import { useDataManager } from '@/composables/useDataManager';
 import { useConfirm } from '@/composables/useConfirm';
 import { useToast } from '@/composables/useToast';
-import ModalOverlay from '@/components/common/ModalOverlay.vue';
 import BaseButton from '@/components/common/BaseButton.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
-
-export interface CategoryManagerProps {
-    /** 是否显示模态框（支持 v-model） */
-    modelValue: boolean;
-}
-
-defineProps<CategoryManagerProps>();
+import SettingsSection from '@/components/settings/SettingsSection.vue';
 
 const emit = defineEmits<{
-    (e: 'update:modelValue', value: boolean): void;
     (e: 'edit', category: Category): void;
     (e: 'add'): void;
-    (e: 'close'): void;
 }>();
 
 const dataManager = useDataManager({ autoInit: true });
@@ -54,11 +48,6 @@ const appCounts = computed(() => {
 const totalApps = computed(() =>
     categories.value.reduce((sum, category) => sum + (appCounts.value[category.id] || 0), 0)
 );
-
-function handleClose(): void {
-    emit('update:modelValue', false);
-    emit('close');
-}
 
 function handleAdd(): void {
     emit('add');
@@ -96,103 +85,82 @@ function formatCount(categoryId: string): string {
 </script>
 
 <template>
-    <ModalOverlay
-        :model-value="modelValue"
-        title="管理分类"
-        :max-width="480"
-        close-on-overlay
-        close-on-esc
-        @update:model-value="$emit('update:modelValue', $event)"
-        @close="handleClose"
-    >
-        <div class="mnt-category-manager">
-            <div
-                v-if="categories.length === 0"
-                class="mnt-category-manager__empty"
-                role="status"
+    <div class="mnt-category-manager">
+        <div
+            v-if="categories.length === 0"
+            class="mnt-category-manager__empty"
+            role="status"
+        >
+            <IconSvg name="folder" :size="40" />
+            <p class="mnt-category-manager__empty-title">暂无自定义分类</p>
+            <p class="mnt-category-manager__empty-hint">点击下方「新建分类」创建第一个分类</p>
+        </div>
+
+        <template v-else>
+            <SettingsSection
+                title="分类"
+                :description="`共 ${categories.length} 个分类 · ${totalApps} 个网站`"
             >
-                <IconSvg name="folder" :size="48" />
-                <p class="mnt-category-manager__empty-title">暂无自定义分类</p>
-                <p class="mnt-category-manager__empty-hint">点击下方「新建分类」创建第一个分类</p>
-            </div>
-
-            <template v-else>
-                <p class="mnt-category-manager__summary">
-                    共 {{ categories.length }} 个分类 · {{ totalApps }} 个网站
-                </p>
-
-                <ul class="mnt-category-manager__list" role="list">
-                    <li
-                        v-for="category in categories"
-                        :key="category.id"
-                        class="mnt-category-manager__item"
-                        role="listitem"
-                    >
-                        <div class="mnt-category-manager__info">
-                            <div class="mnt-category-manager__icon">
-                                <IconSvg
-                                    :src="category.icon"
-                                    :size="24"
-                                    :monochrome="category.monochrome"
-                                    :alt="category.name"
-                                />
-                            </div>
-                            <div class="mnt-category-manager__text">
-                                <span class="mnt-category-manager__name">{{ category.name }}</span>
-                                <span class="mnt-category-manager__meta">
-                                    <span class="mnt-category-manager__count">{{ formatCount(category.id) }}</span>
-                                    <span v-if="category.monochrome" class="mnt-category-manager__badge">反色</span>
-                                </span>
-                            </div>
+                <div
+                    v-for="category in categories"
+                    :key="category.id"
+                    class="mnt-category-manager__item"
+                    role="listitem"
+                >
+                    <div class="mnt-category-manager__info">
+                        <div class="mnt-category-manager__icon">
+                            <IconSvg
+                                :src="category.icon"
+                                :size="20"
+                                :monochrome="category.monochrome"
+                                :alt="category.name"
+                            />
                         </div>
-
-                        <div class="mnt-category-manager__actions">
-                            <BaseButton
-                                variant="text"
-                                size="small"
-                                aria-label="编辑分类"
-                                @click="handleEdit(category)"
-                            >
-                                <template #icon>
-                                    <IconSvg name="edit" :size="16" />
-                                </template>
-                            </BaseButton>
-                            <BaseButton
-                                variant="text"
-                                size="small"
-                                class="mnt-category-manager__delete-btn"
-                                aria-label="删除分类"
-                                @click="handleDelete(category)"
-                            >
-                                <template #icon>
-                                    <IconSvg name="delete" :size="16" />
-                                </template>
-                            </BaseButton>
+                        <div class="mnt-category-manager__text">
+                            <span class="mnt-category-manager__name">{{ category.name }}</span>
+                            <span class="mnt-category-manager__meta">
+                                <span class="mnt-category-manager__count">{{ formatCount(category.id) }}</span>
+                                <span v-if="category.monochrome" class="mnt-category-manager__badge">反色</span>
+                            </span>
                         </div>
-                    </li>
-                </ul>
+                    </div>
+
+                    <div class="mnt-category-manager__actions">
+                        <BaseButton
+                            variant="text"
+                            size="small"
+                            aria-label="编辑分类"
+                            @click="handleEdit(category)"
+                        >
+                            <template #icon>
+                                <IconSvg name="edit" :size="16" />
+                            </template>
+                        </BaseButton>
+                        <BaseButton
+                            variant="text"
+                            size="small"
+                            class="mnt-category-manager__delete-btn"
+                            aria-label="删除分类"
+                            @click="handleDelete(category)"
+                        >
+                            <template #icon>
+                                <IconSvg name="delete" :size="16" />
+                            </template>
+                        </BaseButton>
+                    </div>
+                </div>
 
                 <button
                     type="button"
                     class="mnt-category-manager__add-row"
                     @click="handleAdd"
                 >
-                    <IconSvg name="plus" :size="18" />
+                    <IconSvg name="plus" :size="16" />
                     <span>新建分类</span>
                 </button>
-            </template>
-        </div>
-
-        <template #footer>
-            <BaseButton variant="text" @click="handleClose">关闭</BaseButton>
-            <BaseButton variant="primary" @click="handleAdd">
-                <template #icon>
-                    <IconSvg name="plus" :size="16" />
-                </template>
-                新建分类
-            </BaseButton>
+            </SettingsSection>
         </template>
-    </ModalOverlay>
+    </div>
 </template>
 
 <style scoped lang="scss">
@@ -202,16 +170,12 @@ function formatCount(categoryId: string): string {
 .mnt-category-manager {
     display: flex;
     flex-direction: column;
-
-    &__summary {
-        @include ui-description;
-        margin: 0 var(--ui-space-1) var(--ui-space-2);
-    }
+    gap: var(--ui-space-5);
 
     // ============ 空状态 ============
     &__empty {
         @include flex-center(column, var(--ui-space-3));
-        padding: var(--ui-space-7) var(--ui-space-4);
+        padding: var(--ui-space-8) var(--ui-space-4);
         color: var(--ui-muted-soft);
         text-align: center;
 
@@ -237,32 +201,16 @@ function formatCount(categoryId: string): string {
         color: var(--ui-muted-soft);
     }
 
-    // ============ 列表 ============
-    &__list {
-        list-style: none;
-        margin: 0;
-        padding: var(--ui-space-1);
-        display: flex;
-        flex-direction: column;
-        gap: var(--ui-space-2);
-        max-height: 400px;
-        overflow-y: auto;
-        @include hide-scrollbar;
-    }
-
-    // 列表行：中性底 + 发丝描边，hover 只换底色与描边，不做位移
+    // ============ 列表行 ============
+    // 行与行之间的发丝分隔由 SettingsSection 的 :not(:first-child) 负责，
+    // 这里只管行自身的两栏布局
     &__item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: var(--ui-space-3);
-        padding: var(--ui-space-3) var(--ui-space-4);
-        @include ui-surface(var(--ui-elevated), var(--ui-radius-lg));
-        @include ui-interactive;
-
-        &:hover {
-            border-color: var(--ui-hairline-strong);
-        }
+        gap: var(--ui-space-4);
+        min-height: 56px;
+        padding: var(--ui-space-3) 0;
     }
 
     &__info {
@@ -275,13 +223,13 @@ function formatCount(categoryId: string): string {
 
     &__icon {
         @include flex-center(row, 0);
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         flex-shrink: 0;
         overflow: hidden;
         border: 1px solid var(--ui-hairline);
         border-radius: var(--ui-radius-md);
-        background: var(--ui-panel);
+        background: var(--ui-sunken);
         color: var(--ui-ink);
     }
 
@@ -294,8 +242,6 @@ function formatCount(categoryId: string): string {
 
     &__name {
         @include ui-label;
-        font-size: var(--ui-font-body);
-        line-height: 1.3;
     }
 
     &__meta {
@@ -327,27 +273,27 @@ function formatCount(categoryId: string): string {
     }
 
     &__delete-btn {
-        color: var(--ui-danger);
+        color: var(--ui-muted);
 
         &:hover {
-            background: var(--md-sys-color-error-container);
+            background: var(--ui-danger-soft);
             color: var(--ui-danger);
         }
     }
 
-    // ============ 底部「新建分类」行 ============
-    // 虚线描边的空位提示，hover 才点亮主色
+    // ============ 「新建分类」行 ============
+    // 组内最后一行：虚线描边表示「可新增」，hover 才点亮主色
     &__add-row {
         @include button-reset;
         @include flex-center(row, var(--ui-space-2));
         @include ui-focus-ring;
-        @include ui-transition(border-color, color);
+        @include ui-transition(border-color, color, background-color);
         width: 100%;
-        margin-top: var(--ui-space-3);
+        margin: var(--ui-space-3) 0;
         padding: var(--ui-space-3) var(--ui-space-4);
         border: 1px dashed var(--ui-hairline-strong);
-        border-radius: var(--ui-radius-lg);
-        font-size: var(--ui-font-body);
+        border-radius: var(--ui-radius-md);
+        font-size: var(--ui-font-small);
         font-weight: 500;
         color: var(--ui-muted);
 
