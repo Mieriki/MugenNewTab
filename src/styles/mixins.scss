@@ -188,6 +188,20 @@
 }
 
 /**
+ * 卡片圆角：苹果式超椭圆（连续曲率）
+ *
+ * 必须同时给出 border-radius——corner-shape 只改变该半径画出的曲线形状。
+ * Chrome / Edge 139+ 原生生效；Firefox / Safari 目前不支持，
+ * 会忽略这条声明自动退回普通圆弧，无需 @supports 分支。
+ *
+ * @param {String} $radius - 圆角，默认 var(--card-radius)
+ */
+@mixin card-squircle($radius: var(--card-radius, var(--ui-radius-lg))) {
+    border-radius: $radius;
+    corner-shape: squircle;
+}
+
+/**
  * 颜色 / 底色 / 描边过渡，不做位移
  *
  * 属性用可变参数传：`@include ui-transition(background-color, color, opacity)`。

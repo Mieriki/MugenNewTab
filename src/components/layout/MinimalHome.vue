@@ -730,7 +730,7 @@ defineExpose({ focusInput });
     position: relative;
     width: 88px;
     padding: var(--ui-space-3) var(--ui-space-1) var(--ui-space-2);
-    border-radius: var(--ui-radius-lg);
+    @include card-squircle(var(--ui-radius-lg));
     display: flex;
     flex-direction: column;
     align-items: center;

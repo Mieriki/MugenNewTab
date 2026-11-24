@@ -92,7 +92,7 @@ describe('CardStyleSettings', () => {
         await resetButton!.trigger('click');
         await flushPromises();
 
-        expect(store.radius).toBe(12);
+        expect(store.radius).toBe(16);
         expect(store.opacity).toBeCloseTo(0.78);
     });
 });

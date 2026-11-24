@@ -69,7 +69,7 @@ const ghostStyle = computed(() => ({
     padding: var(--ui-space-3);
     background: var(--card-bg);
     border: 1px solid var(--ui-accent);
-    border-radius: var(--card-radius, var(--ui-radius-lg));
+    @include card-squircle;
     box-shadow: var(--ui-shadow-3);
     -webkit-backdrop-filter: var(--card-backdrop, none);
     backdrop-filter: var(--card-backdrop, none);
@@ -80,7 +80,7 @@ const ghostStyle = computed(() => ({
     &__icon {
         width: 40px;
         height: 40px;
-        border-radius: var(--ui-radius-md);
+        @include card-squircle(var(--ui-radius-md));
         display: flex;
         align-items: center;
         justify-content: center;

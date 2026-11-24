@@ -34,12 +34,12 @@ describe('cardStyle.store', () => {
 
         expect(store.opacity).toBeCloseTo(0.78);
         expect(store.blur).toBe(0);
-        expect(store.radius).toBe(12);
+        expect(store.radius).toBe(16);
         expect(store.shadow).toBe(1);
         expect(store.bordered).toBe(true);
 
         expect(readVar('--card-surface-opacity')).toBe('0.78');
-        expect(readVar('--card-radius')).toBe('12px');
+        expect(readVar('--card-radius')).toBe('16px');
         expect(readVar('--card-shadow-alpha')).toBe('1');
         expect(readVar('--card-border-color')).toBe('var(--md-sys-color-outline-variant)');
         expect(readVar('--card-backdrop')).toBe('none');
@@ -97,7 +97,7 @@ describe('cardStyle.store', () => {
         await store.init();
 
         expect(store.opacity).toBeCloseTo(0.78);
-        expect(store.radius).toBe(12);
+        expect(store.radius).toBe(16);
         expect(store.blur).toBe(0);
         expect(store.shadow).toBe(1);
         expect(store.bordered).toBe(true);
@@ -140,7 +140,7 @@ describe('cardStyle.store', () => {
         await store.setBlur(-3);
         await store.setOpacity(2);
 
-        expect(store.radius).toBe(12);
+        expect(store.radius).toBe(16);
         expect(store.blur).toBe(0);
         expect(store.opacity).toBeCloseTo(0.78);
     });
@@ -154,10 +154,10 @@ describe('cardStyle.store', () => {
 
         expect(store.opacity).toBeCloseTo(0.78);
         expect(store.blur).toBe(0);
-        expect(store.radius).toBe(12);
+        expect(store.radius).toBe(16);
         expect(store.shadow).toBe(1);
         expect(store.bordered).toBe(true);
-        expect(readVar('--card-radius')).toBe('12px');
+        expect(readVar('--card-radius')).toBe('16px');
         expect(readVar('--card-backdrop')).toBe('none');
     });
 });

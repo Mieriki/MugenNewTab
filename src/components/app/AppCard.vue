@@ -176,7 +176,7 @@ function handleMore(event: MouseEvent): void {
     height: 76px;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    border-radius: var(--card-radius, var(--ui-radius-lg));
+    @include card-squircle;
     box-shadow: var(--card-shadow);
     // 磨砂：默认 none，开启后采样卡片背后的壁纸（值由 cardStyle.store 下发）
     -webkit-backdrop-filter: var(--card-backdrop, none);
@@ -233,7 +233,7 @@ function handleMore(event: MouseEvent): void {
     &__icon {
         width: 40px;
         height: 40px;
-        border-radius: var(--ui-radius-md);
+        @include card-squircle(var(--ui-radius-md));
         display: flex;
         align-items: center;
         justify-content: center;

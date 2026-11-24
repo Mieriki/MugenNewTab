@@ -19,8 +19,8 @@ import { STORAGE_KEYS, type CardStyleSettings } from '@/types/storage';
 const DEFAULT_OPACITY = 0.78;
 /** 磨砂默认关闭（backdrop-filter 对几十张卡片有合成开销，按需开启） */
 const DEFAULT_BLUR = 0;
-/** 默认圆角，对应 --card-radius 的默认值 */
-const DEFAULT_RADIUS = 12;
+/** 默认圆角，对应 --card-radius 的默认值；超椭圆在同一半径下更收，故比圆弧时代的 12 大一档 */
+const DEFAULT_RADIUS = 16;
 /** 阴影默认满强度 */
 const DEFAULT_SHADOW = 1;
 /** 默认显示描边 */

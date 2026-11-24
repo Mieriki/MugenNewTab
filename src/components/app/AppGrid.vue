@@ -234,7 +234,7 @@ function handleOpenMenu(payload: AppCardContextMenuPayload): void {
     &__placeholder {
         min-height: 76px;
         border: 1px dashed color-mix(in srgb, var(--ui-accent) 60%, transparent);
-        border-radius: var(--card-radius, var(--ui-radius-lg));
+        @include card-squircle;
         background: var(--ui-accent-softer);
     }
 

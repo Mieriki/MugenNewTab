@@ -53,7 +53,7 @@
     // 和颜色拼起来，所以卡片外观变化不需要任何组件重新渲染，主题换色时也会
     // 顺着 --md-sys-color-surface-rgb 自动跟上。
     --card-surface-opacity: 0.78; // 卡片不透明度 0-1
-    --card-radius: 12px; // 圆角
+    --card-radius: 16px; // 圆角（苹果式超椭圆，见 mixins 的 card-squircle）
     --card-shadow-alpha: 1; // 阴影强度 0-1，按比例缩放下面的两段阴影
     --card-border-color: var(--md-sys-color-outline-variant); // 关闭描边时被置为 transparent
     --card-backdrop: none; // 磨砂：none 或 blur(Npx)
