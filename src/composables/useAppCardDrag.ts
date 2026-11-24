@@ -310,11 +310,17 @@ export function createAppCardDragManager(): AppCardDragManager {
     ): void {
         reset();
 
+        // 初始落点取被拖卡片在原可见列表中的索引：
+        // 拖拽开始后它会被从列表移除，插回原索引恰好等于它原来的格子，
+        // 否则占位符会先跳到网格首位，等指针移动才纠正
+        const getOrderedIds = grids.get(categoryId);
+        const sourceIndex = getOrderedIds ? getOrderedIds().indexOf(app.id) : -1;
+
         state.phase = 'pressing';
         state.app = app;
         state.sourceCategoryId = categoryId;
         state.targetCategoryId = categoryId;
-        state.targetIndex = 0;
+        state.targetIndex = Math.max(sourceIndex, 0);
         state.ghostX = point.clientX;
         state.ghostY = point.clientY;
         state.cardWidth = cardSize.width;

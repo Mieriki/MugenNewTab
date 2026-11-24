@@ -90,6 +90,36 @@ describe('useAppCardDrag', () => {
         expect(document.body.classList.contains('is-dragging-cards')).toBe(true);
     });
 
+    it('长按进入拖拽时初始落点取被拖卡片原索引', async () => {
+        manager.registerGrid('cat_a', () => ['a1', 'a2', 'a3']);
+        // 被拖卡片位于可见列表第 2 位
+        manager.press(createApp('a2'), 'cat_a', { clientX: 10, clientY: 20 }, { width: 300, height: 80 });
+
+        await advanceTime(300);
+
+        // 无需任何指针移动，占位符即落在原格：移除 a2 后 ['a1','a3'] 的索引 1
+        expect(manager.state.phase).toBe('dragging');
+        expect(manager.state.targetCategoryId).toBe('cat_a');
+        expect(manager.state.targetIndex).toBe(1);
+    });
+
+    it('网格未注册时初始落点回退为 0', async () => {
+        manager.press(createApp('a1'), 'cat_unregistered', { clientX: 10, clientY: 20 }, { width: 300, height: 80 });
+
+        await advanceTime(300);
+
+        expect(manager.state.targetIndex).toBe(0);
+    });
+
+    it('被拖应用不在注册列表时初始落点回退为 0', async () => {
+        manager.registerGrid('cat_a', () => ['a1', 'a3']);
+        manager.press(createApp('a9'), 'cat_a', { clientX: 10, clientY: 20 }, { width: 300, height: 80 });
+
+        await advanceTime(300);
+
+        expect(manager.state.targetIndex).toBe(0);
+    });
+
     it('按压期间移动超过阈值取消长按', async () => {
         manager.press(createApp('a1'), 'cat_a', { clientX: 10, clientY: 20 }, { width: 300, height: 80 });
 
