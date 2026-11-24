@@ -11,6 +11,7 @@ import type { AppItem } from '@/types/app';
 import { useAppCardDrag } from '@/composables/useAppCardDrag';
 import { useLayoutStore } from '@/stores/layout.store';
 import AppCard from './AppCard.vue';
+import type { AppCardContextMenuPayload } from './AppCard.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
 export interface AppGridProps {
@@ -22,26 +23,20 @@ export interface AppGridProps {
     draggable?: boolean;
     /** 是否显示隐藏应用（已过滤传入时此属性仅影响空状态提示） */
     showHidden?: boolean;
-    /** 是否显示编辑按钮 */
-    editable?: boolean;
-    /** 是否显示删除按钮 */
-    deletable?: boolean;
 }
 
 const props = withDefaults(defineProps<AppGridProps>(), {
     draggable: false,
     showHidden: false,
-    editable: true,
-    deletable: true,
 });
 
 const emit = defineEmits<{
     /** 点击应用卡片 */
     (e: 'app-click', app: AppItem): void;
-    /** 点击编辑按钮 */
-    (e: 'edit-app', app: AppItem): void;
-    /** 点击删除按钮 */
-    (e: 'delete-app', app: AppItem): void;
+    /** 右键或键盘菜单键请求打开操作菜单 */
+    (e: 'contextmenu-app', payload: AppCardContextMenuPayload): void;
+    /** 点击「更多」按钮请求打开操作菜单 */
+    (e: 'open-menu-app', payload: AppCardContextMenuPayload): void;
 }>();
 
 const gridRef = ref<HTMLElement | null>(null);
@@ -132,14 +127,14 @@ onUnmounted(() => {
 });
 
 /**
- * pointerdown 委托：命中卡片（操作按钮除外）时启动长按拖拽检测
+ * pointerdown 委托：命中卡片（「更多」按钮除外）时启动长按拖拽检测
  */
 function handlePointerDown(event: PointerEvent): void {
     if (!props.draggable) return;
     if (event.button !== 0) return;
 
     const target = event.target as HTMLElement | null;
-    if (!target || target.closest('.app-card__actions')) return;
+    if (!target || target.closest('.app-card__more')) return;
 
     const card = target.closest('.app-card') as HTMLElement | null;
     if (!card) return;
@@ -164,12 +159,12 @@ function handleAppClick(app: AppItem): void {
     emit('app-click', app);
 }
 
-function handleEdit(app: AppItem): void {
-    emit('edit-app', app);
+function handleContextMenu(payload: AppCardContextMenuPayload): void {
+    emit('contextmenu-app', payload);
 }
 
-function handleDelete(app: AppItem): void {
-    emit('delete-app', app);
+function handleOpenMenu(payload: AppCardContextMenuPayload): void {
+    emit('open-menu-app', payload);
 }
 </script>
 
@@ -188,12 +183,10 @@ function handleDelete(app: AppItem): void {
                 :app="entry.app"
                 :draggable="draggable"
                 :pressing="cardDrag.state.phase === 'pressing' && cardDrag.state.app?.id === entry.app.id"
-                :editable="editable"
-                :deletable="deletable"
                 :icon-background="layoutStore.showIconBackground"
                 @click="handleAppClick"
-                @edit="handleEdit"
-                @delete="handleDelete"
+                @contextmenu="handleContextMenu"
+                @open-menu="handleOpenMenu"
             />
         </template>
 

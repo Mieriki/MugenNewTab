@@ -8,14 +8,14 @@
  * 交互：
  * - 搜索框自动聚焦，输入即联想（复用 useSearch 与 SearchSuggestions）
  * - Enter 搜索 / 选中高亮建议，↑↓ 切换建议，Esc 清空
- * - 磁贴 hover 浮起并露出「更多」按钮，点击打开站点
- * - 磁贴右键 / 触屏长按 / 更多按钮 / ContextMenu 键 → 站点操作菜单
+ * - 「更多」按钮（`minimal-tile__more`）与卡片模式保持一致，触屏也能打开菜单
+ * - 磁贴右键 / ContextMenu 键 / 更多按钮 → 站点操作菜单
  *   （打开、复制链接、编辑、移动到分类、隐藏、删除）
  * - 磁贴可直接拖拽排序，仅在当前分类范围内生效
  * - 分类切换用一行极轻的胶囊标签承载，超过 16 个站点时可展开全部
  * - 右下角悬停控制区提供：添加站点 / 完整搜索 / 云同步 / 个性化 / 显示隐藏站点 / 退出极简
  */
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import type { AppItem } from '@/types/app';
 import { useDataManager } from '@/composables/useDataManager';
 import { useSearch } from '@/composables/useSearch';
@@ -26,16 +26,11 @@ import { openUrl } from '@/utils/navigation.util';
 import IconSvg from '@/components/icon/IconSvg.vue';
 import SearchSuggestions from '@/components/search/SearchSuggestions.vue';
 import EngineSelector from '@/components/search/EngineSelector.vue';
-import MinimalSiteMenu from '@/components/layout/MinimalSiteMenu.vue';
+import SiteActionMenu from '@/components/app/SiteActionMenu.vue';
+import { useSiteActionMenu } from '@/composables/useSiteActionMenu';
 
 /** 首屏磁贴数量（超出后需手动展开） */
 const TILE_LIMIT = 16;
-
-/** 触屏长按打开菜单的等待时长（毫秒） */
-const LONG_PRESS_DURATION = 480;
-
-/** 长按弹出菜单后，抑制随后的 click 事件的时长（毫秒） */
-const CLICK_SUPPRESS_DURATION = 700;
 
 export interface MinimalHomeProps {
     /** 是否显示隐藏站点（与完整模式的揭示模式共享同一状态） */
@@ -74,19 +69,10 @@ const showAll = ref(false);
 const inputEl = ref<HTMLInputElement | null>(null);
 const rootEl = ref<HTMLElement | null>(null);
 
-/** 当前打开操作菜单的站点（null 表示菜单关闭） */
-const menuApp = ref<AppItem | null>(null);
-const menuPoint = ref({ x: 0, y: 0 });
-
 /** 正在拖拽的站点 id */
 const dragId = ref<string | null>(null);
 /** 拖拽经过的目标索引 */
 const dropIndex = ref<number | null>(null);
-
-/** 长按计时器 */
-let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-/** 该时间戳之前忽略磁贴 click（长按菜单弹出后手指抬起会触发一次 click） */
-let suppressClickUntil = 0;
 
 const {
     query,
@@ -220,8 +206,6 @@ function handlePagePointerDown(event: PointerEvent): void {
 // ==================== 磁贴 ====================
 
 function handleTileClick(app: AppItem): void {
-    // 长按刚弹出菜单时，手指抬起会补发一次 click，这里直接吞掉
-    if (Date.now() < suppressClickUntil) return;
     if (!app.url) return;
     openUrl(app.url, layoutStore.openMode);
 }
@@ -237,24 +221,25 @@ function toggleShowAll(): void {
 
 // ==================== 站点操作菜单 ====================
 
-function openMenu(app: AppItem, point: { clientX: number; clientY: number }): void {
-    clearLongPress();
-    menuApp.value = app;
-    menuPoint.value = { x: point.clientX, y: point.clientY };
-}
-
-function closeMenu(): void {
-    menuApp.value = null;
-}
-
-/** 「更多」按钮：把菜单挂在按钮右下角 */
-function openMenuFromButton(app: AppItem, event: MouseEvent): void {
-    const rect = (event.currentTarget as HTMLElement | null)?.getBoundingClientRect();
-    openMenu(app, {
-        clientX: rect ? rect.left + rect.width : 0,
-        clientY: rect ? rect.bottom + 4 : 0
-    });
-}
+const {
+    menuApp,
+    menuPoint,
+    openMenu,
+    openMenuFromButton,
+    closeMenu,
+    handleMenuOpen,
+    handleMenuCopyLink,
+    handleMenuEdit,
+    handleMenuDelete,
+    handleMenuToggleHidden,
+    handleMenuMove
+} = useSiteActionMenu({
+    updateApp: (id, patch) => dataManager.updateApp(id, patch),
+    getCategoryById: (id) => dataManager.getCategoryById(id),
+    openUrl: (url) => openUrl(url, layoutStore.openMode),
+    onEdit: (app) => emit('edit-app', app),
+    onDelete: (app) => emit('delete-app', app)
+});
 
 /** 键盘打开菜单（ContextMenu 键 / Shift+F10），锚定在磁贴中心 */
 function handleTileKeydown(app: AppItem, event: KeyboardEvent): void {
@@ -265,112 +250,15 @@ function handleTileKeydown(app: AppItem, event: KeyboardEvent): void {
     event.preventDefault();
     const rect = (event.currentTarget as HTMLElement | null)?.getBoundingClientRect();
     openMenu(app, {
-        clientX: rect ? rect.left + rect.width / 2 : window.innerWidth / 2,
-        clientY: rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+        x: rect ? rect.left + rect.width / 2 : window.innerWidth / 2,
+        y: rect ? rect.top + rect.height / 2 : window.innerHeight / 2
     });
-}
-
-function clearLongPress(): void {
-    if (longPressTimer) {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-    }
-}
-
-/** 触屏长按打开菜单；鼠标交给 contextmenu 事件 */
-function handleTilePointerDown(app: AppItem, event: PointerEvent): void {
-    if (event.pointerType === 'mouse') return;
-
-    clearLongPress();
-    const { clientX, clientY } = event;
-    longPressTimer = setTimeout(() => {
-        longPressTimer = null;
-        suppressClickUntil = Date.now() + CLICK_SUPPRESS_DURATION;
-        openMenu(app, { clientX, clientY });
-    }, LONG_PRESS_DURATION);
-}
-
-function handleMenuOpen(): void {
-    const app = menuApp.value;
-    closeMenu();
-    if (!app?.url) return;
-    openUrl(app.url, layoutStore.openMode);
-}
-
-async function handleMenuCopyLink(): Promise<void> {
-    const app = menuApp.value;
-    closeMenu();
-    if (!app) return;
-
-    try {
-        await navigator.clipboard?.writeText(app.url);
-        toast.success('链接已复制');
-        return;
-    } catch {
-        // 剪贴板 API 不可用（未聚焦 / 无权限）时退回临时 textarea 方案
-    }
-
-    try {
-        const textarea = document.createElement('textarea');
-        textarea.value = app.url;
-        textarea.setAttribute('readonly', '');
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        const copied = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        if (!copied) throw new Error('execCommand failed');
-        toast.success('链接已复制');
-    } catch {
-        toast.error('复制失败，请手动复制链接');
-    }
-}
-
-function handleMenuEdit(): void {
-    const app = menuApp.value;
-    closeMenu();
-    if (app) emit('edit-app', app);
-}
-
-function handleMenuDelete(): void {
-    const app = menuApp.value;
-    closeMenu();
-    if (app) emit('delete-app', app);
-}
-
-async function handleMenuToggleHidden(): Promise<void> {
-    const app = menuApp.value;
-    closeMenu();
-    if (!app) return;
-
-    try {
-        await dataManager.updateApp(app.id, { hidden: !app.hidden });
-        toast.success(app.hidden ? `已取消隐藏「${app.name}」` : `已隐藏「${app.name}」`);
-    } catch (error) {
-        toast.error(error instanceof Error ? error.message : '操作失败');
-    }
-}
-
-async function handleMenuMove(categoryId: string): Promise<void> {
-    const app = menuApp.value;
-    closeMenu();
-    if (!app || app.category === categoryId) return;
-
-    try {
-        await dataManager.updateApp(app.id, { category: categoryId });
-        const target = dataManager.getCategoryById(categoryId);
-        toast.success(`已移动到「${target?.name ?? '新分类'}」`);
-    } catch (error) {
-        toast.error(error instanceof Error ? error.message : '移动失败');
-    }
 }
 
 // ==================== 拖拽排序 ====================
 
 function handleDragStart(app: AppItem, event: DragEvent): void {
     closeMenu();
-    clearLongPress();
     dragId.value = app.id;
     dropIndex.value = null;
 
@@ -452,10 +340,6 @@ async function handleDrop(index: number): Promise<void> {
 onMounted(() => {
     // 首屏自动聚焦，模拟浏览器默认新标签页「打开即可打字」
     window.setTimeout(focusInput, 80);
-});
-
-onUnmounted(() => {
-    clearLongPress();
 });
 
 // 切换分类后收起展开态，避免停留在超长列表；菜单锚定的站点可能已不在当前视图
@@ -549,10 +433,6 @@ defineExpose({ focusInput });
                     @click="handleTileClick(app)"
                     @contextmenu.prevent="openMenu(app, $event)"
                     @keydown="handleTileKeydown(app, $event)"
-                    @pointerdown="handleTilePointerDown(app, $event)"
-                    @pointerup="clearLongPress"
-                    @pointercancel="clearLongPress"
-                    @pointerleave="clearLongPress"
                     @dragstart="handleDragStart(app, $event)"
                     @dragover.prevent="handleDragOver(index)"
                     @drop.prevent="handleDrop(index)"
@@ -640,8 +520,8 @@ defineExpose({ focusInput });
             </button>
         </div>
 
-        <!-- ============ 站点操作菜单（右键 / 长按 / 更多按钮触发） ============ -->
-        <MinimalSiteMenu
+        <!-- ============ 站点操作菜单（右键 / ContextMenu 键 / 更多按钮触发） ============ -->
+        <SiteActionMenu
             v-if="menuApp"
             :app="menuApp"
             :categories="userCategories"

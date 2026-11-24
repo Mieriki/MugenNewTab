@@ -20,6 +20,7 @@ import { provideConfirm, MntConfirmHost } from '@/composables/useConfirm';
 import { useToast } from '@/composables/useToast';
 import { useUpdateCheck } from '@/composables/useUpdateCheck';
 import { useAppCardDrag, type AppCardDragCommit } from '@/composables/useAppCardDrag';
+import { useSiteActionMenu } from '@/composables/useSiteActionMenu';
 import { useLayoutStore } from '@/stores/layout.store';
 import { useCardStyleStore } from '@/stores/cardStyle.store';
 import { storageManager } from '@/services/storage.service';
@@ -43,6 +44,8 @@ import UpdateBanner from '@/components/common/UpdateBanner.vue';
 import CategorySection from '@/components/app/CategorySection.vue';
 import AppGrid from '@/components/app/AppGrid.vue';
 import AppCardDragGhost from '@/components/app/AppCardDragGhost.vue';
+import SiteActionMenu from '@/components/app/SiteActionMenu.vue';
+import type { AppCardContextMenuPayload } from '@/components/app/AppCard.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
 // ==================== 初始化与全局能力 ====================
@@ -375,8 +378,33 @@ async function handleDeleteApp(app: AppItem): Promise<void> {
     }
 }
 
+// ==================== 站点操作菜单（卡片右键） ====================
+
+const {
+    menuApp: cardMenuApp,
+    menuPoint: cardMenuPoint,
+    openMenu: openCardMenu,
+    closeMenu: closeCardMenu,
+    handleMenuOpen: handleCardMenuOpen,
+    handleMenuCopyLink: handleCardMenuCopyLink,
+    handleMenuEdit: handleCardMenuEdit,
+    handleMenuDelete: handleCardMenuDelete,
+    handleMenuToggleHidden: handleCardMenuToggleHidden,
+    handleMenuMove: handleCardMenuMove
+} = useSiteActionMenu({
+    updateApp: (id, patch) => dataManager.updateApp(id, patch),
+    getCategoryById: (id) => dataManager.getCategoryById(id),
+    openUrl: (url) => openUrl(url, layoutStore.openMode),
+    onEdit: openEditApp,
+    onDelete: (app) => void handleDeleteApp(app)
+});
+
+/** 卡片右键 / 键盘菜单键 → 打开操作菜单 */
+function handleCardContextMenu(payload: AppCardContextMenuPayload): void {
+    openCardMenu(payload.app, payload.point);
+}
+
 function handleSavedCategory(category: Category): void {
-    // 新建分类后可选中该分类
     if (!editingCategory.value) {
         activeCategoryId.value = category.id;
     }
@@ -586,8 +614,8 @@ const fabItems = [
                     :category-id="'all'"
                     :draggable="true"
                     @app-click="handleAppClick"
-                    @edit-app="openEditApp"
-                    @delete-app="handleDeleteApp"
+                    @contextmenu-app="handleCardContextMenu"
+                    @open-menu-app="handleCardContextMenu"
                 />
             </template>
 
@@ -600,8 +628,8 @@ const fabItems = [
                     :draggable="true"
                     :animation-delay="index * 0.05"
                     @app-click="handleAppClick"
-                    @edit-app="openEditApp"
-                    @delete-app="handleDeleteApp"
+                    @contextmenu-app="handleCardContextMenu"
+                    @open-menu-app="handleCardContextMenu"
                 />
             </template>
 
@@ -612,8 +640,8 @@ const fabItems = [
                     :show-title="false"
                     :draggable="true"
                     @app-click="handleAppClick"
-                    @edit-app="openEditApp"
-                    @delete-app="handleDeleteApp"
+                    @contextmenu-app="handleCardContextMenu"
+                    @open-menu-app="handleCardContextMenu"
                 />
             </template>
         </MainContent>
@@ -661,6 +689,22 @@ const fabItems = [
         />
 
         <AppCardDragGhost />
+
+        <!-- ============ 站点操作菜单（卡片右键 / ContextMenu 键触发） ============ -->
+        <SiteActionMenu
+            v-if="cardMenuApp && !layoutStore.minimalMode"
+            :app="cardMenuApp"
+            :categories="dataManager.userCategories.value"
+            :x="cardMenuPoint.x"
+            :y="cardMenuPoint.y"
+            @close="closeCardMenu"
+            @open="handleCardMenuOpen"
+            @copy-link="handleCardMenuCopyLink"
+            @edit="handleCardMenuEdit"
+            @delete="handleCardMenuDelete"
+            @toggle-hidden="handleCardMenuToggleHidden"
+            @move="handleCardMenuMove"
+        />
 
         <input
             ref="fileInputRef"

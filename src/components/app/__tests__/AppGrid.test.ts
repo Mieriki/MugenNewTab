@@ -63,18 +63,30 @@ describe('AppGrid', () => {
         expect(wrapper.emitted('app-click')?.[0]).toEqual([apps[0]]);
     });
 
-    it('透传 edit-app 与 delete-app 事件', async () => {
+    it('透传 contextmenu-app 事件', async () => {
         const apps = [createApp('app_1')];
         const wrapper = mount(AppGrid, {
             props: { apps, categoryId: 'cat_test' }
         });
 
-        const card = wrapper.findComponent(AppCard);
-        await card.vm.$emit('edit', apps[0]);
-        await card.vm.$emit('delete', apps[0]);
+        const payload = { app: apps[0], point: { x: 10, y: 20 } };
+        await wrapper.findComponent(AppCard).vm.$emit('contextmenu', payload);
 
-        expect(wrapper.emitted('edit-app')).toHaveLength(1);
-        expect(wrapper.emitted('delete-app')).toHaveLength(1);
+        expect(wrapper.emitted('contextmenu-app')).toHaveLength(1);
+        expect(wrapper.emitted('contextmenu-app')?.[0]).toEqual([payload]);
+    });
+
+    it('透传 open-menu-app 事件', async () => {
+        const apps = [createApp('app_1')];
+        const wrapper = mount(AppGrid, {
+            props: { apps, categoryId: 'cat_test' }
+        });
+
+        const payload = { app: apps[0], point: { x: 30, y: 40 } };
+        await wrapper.findComponent(AppCard).vm.$emit('open-menu', payload);
+
+        expect(wrapper.emitted('open-menu-app')).toHaveLength(1);
+        expect(wrapper.emitted('open-menu-app')?.[0]).toEqual([payload]);
     });
 
     it('渲染自定义空状态插槽', () => {

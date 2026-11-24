@@ -54,39 +54,28 @@ describe('AppCard', () => {
         expect(wrapper.emitted('click')?.[0]).toEqual([app]);
     });
 
-    it('点击编辑按钮触发 edit 事件且不触发 click', async () => {
+    it('点击「更多」按钮触发 open-menu 事件、坐标挂在按钮右下角，且不触发 click', async () => {
         const app = createApp();
         const wrapper = mount(AppCard, { props: { app } });
 
-        const editBtn = wrapper.find('[aria-label*="编辑"]');
-        expect(editBtn.exists()).toBe(true);
+        const moreBtn = wrapper.find('.app-card__more');
+        expect(moreBtn.exists()).toBe(true);
 
-        await editBtn.trigger('click');
-        expect(wrapper.emitted('edit')).toHaveLength(1);
-        expect(wrapper.emitted('edit')?.[0]).toEqual([app]);
+        await moreBtn.trigger('click');
+
+        const emitted = wrapper.emitted('open-menu');
+        expect(emitted).toHaveLength(1);
+        expect(emitted![0][0]).toMatchObject({ app });
         expect(wrapper.emitted('click')).toBeUndefined();
     });
 
-    it('点击删除按钮触发 delete 事件且不触发 click', async () => {
+    it('不再渲染独立的编辑 / 删除按钮', () => {
         const app = createApp();
         const wrapper = mount(AppCard, { props: { app } });
-
-        const deleteBtn = wrapper.find('[aria-label*="删除"]');
-        expect(deleteBtn.exists()).toBe(true);
-
-        await deleteBtn.trigger('click');
-        expect(wrapper.emitted('delete')).toHaveLength(1);
-        expect(wrapper.emitted('delete')?.[0]).toEqual([app]);
-        expect(wrapper.emitted('click')).toBeUndefined();
-    });
-
-    it('隐藏操作按钮时不再渲染操作区', () => {
-        const app = createApp();
-        const wrapper = mount(AppCard, {
-            props: { app, editable: false, deletable: false }
-        });
 
         expect(wrapper.find('.app-card__actions').exists()).toBe(false);
+        expect(wrapper.find('[aria-label*="编辑"]').exists()).toBe(false);
+        expect(wrapper.find('[aria-label*="删除"]').exists()).toBe(false);
     });
 
     it('键盘 Enter 触发 click 事件', async () => {
@@ -95,6 +84,41 @@ describe('AppCard', () => {
 
         await wrapper.find('.app-card').trigger('keydown', { key: 'Enter' });
         expect(wrapper.emitted('click')).toHaveLength(1);
+    });
+
+    it('右键卡片触发 contextmenu 事件并带上指针坐标，且不触发 click', async () => {
+        const app = createApp();
+        const wrapper = mount(AppCard, { props: { app } });
+
+        await wrapper.find('.app-card').trigger('contextmenu', { clientX: 120, clientY: 240 });
+
+        const emitted = wrapper.emitted('contextmenu');
+        expect(emitted).toHaveLength(1);
+        expect(emitted![0][0]).toMatchObject({
+            app,
+            point: { x: 120, y: 240 }
+        });
+        expect(wrapper.emitted('click')).toBeUndefined();
+    });
+
+    it('ContextMenu 键与 Shift+F10 触发 contextmenu 事件', async () => {
+        const app = createApp();
+        const wrapper = mount(AppCard, { props: { app } });
+
+        await wrapper.find('.app-card').trigger('keydown', { key: 'ContextMenu' });
+        await wrapper.find('.app-card').trigger('keydown', { key: 'F10', shiftKey: true });
+
+        expect(wrapper.emitted('contextmenu')).toHaveLength(2);
+    });
+
+    it('右键不会在「更多」按钮上误触发其它行为', async () => {
+        const app = createApp();
+        const wrapper = mount(AppCard, { props: { app } });
+
+        await wrapper.find('.app-card__more').trigger('click');
+
+        expect(wrapper.emitted('open-menu')).toHaveLength(1);
+        expect(wrapper.emitted('contextmenu')).toBeUndefined();
     });
 
     it('拖拽与按压状态类正确应用', () => {

@@ -2,14 +2,13 @@
 /**
  * AppCard - 应用卡片
  *
- * 展示单个应用站点的图标、名称与描述，支持点击打开、编辑与删除操作按钮。
+ * 展示单个应用站点的图标、名称与描述，支持点击打开与「更多」菜单（编辑 / 删除等）。
  * 隐藏应用会附加半透明虚线边框样式。所有图标使用 IconSvg，不使用 emoji。
  */
 import { computed } from 'vue';
 import type { AppItem } from '@/types/app';
 import { isImageIcon } from '@/utils/image.util';
 import IconSvg from '@/components/icon/IconSvg.vue';
-import BaseButton from '@/components/common/BaseButton.vue';
 
 export interface AppCardProps {
     /** 应用数据 */
@@ -20,12 +19,6 @@ export interface AppCardProps {
     dragging?: boolean;
     /** 是否处于长按按压中 */
     pressing?: boolean;
-    /** 是否显示编辑按钮 */
-    editable?: boolean;
-    /** 是否显示删除按钮 */
-    deletable?: boolean;
-    /** 是否始终显示操作按钮（默认悬停显示） */
-    showActions?: boolean;
     /** 是否显示图标背景（false 时图标背景透明） */
     iconBackground?: boolean;
 }
@@ -34,19 +27,22 @@ const props = withDefaults(defineProps<AppCardProps>(), {
     draggable: false,
     dragging: false,
     pressing: false,
-    editable: true,
-    deletable: true,
-    showActions: false,
     iconBackground: true,
 });
 
+export interface AppCardContextMenuPayload {
+    app: AppItem;
+    /** 触发坐标（视口坐标），用于定位菜单 */
+    point: { x: number; y: number };
+}
+
 const emit = defineEmits<{
-    /** 点击卡片主体（操作按钮区域除外） */
+    /** 点击卡片主体（「更多」按钮区域除外） */
     (e: 'click', app: AppItem): void;
-    /** 点击编辑按钮 */
-    (e: 'edit', app: AppItem): void;
-    /** 点击删除按钮 */
-    (e: 'delete', app: AppItem): void;
+    /** 右键或键盘菜单键请求打开操作菜单 */
+    (e: 'contextmenu', payload: AppCardContextMenuPayload): void;
+    /** 点击「更多」按钮请求打开操作菜单 */
+    (e: 'open-menu', payload: AppCardContextMenuPayload): void;
 }>();
 
 const isHidden = computed(() => !!props.app.hidden);
@@ -66,29 +62,57 @@ const hasIcon = computed(() => !!iconSrc.value);
 
 function handleClick(event: MouseEvent): void {
     const target = event.target as HTMLElement | null;
-    if (target?.closest('.app-card__actions')) {
+    if (target?.closest('.app-card__more')) {
         return;
     }
     emit('click', props.app);
 }
 
 function handleKeydown(event: KeyboardEvent): void {
+    // ContextMenu 键 / Shift+F10 打开操作菜单，锚定在卡片中心
+    const isMenuKey =
+        event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10');
+    if (isMenuKey) {
+        event.preventDefault();
+        const rect = event.currentTarget instanceof HTMLElement
+            ? event.currentTarget.getBoundingClientRect()
+            : null;
+        emit('contextmenu', {
+            app: props.app,
+            point: {
+                x: rect ? rect.left + rect.width / 2 : window.innerWidth / 2,
+                y: rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+            }
+        });
+        return;
+    }
+
     if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         emit('click', props.app);
     }
 }
 
-function handleEdit(event: MouseEvent): void {
-    event.stopPropagation();
-    emit('edit', props.app);
+function handleContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    emit('contextmenu', {
+        app: props.app,
+        point: { x: event.clientX, y: event.clientY }
+    });
 }
 
-function handleDelete(event: MouseEvent): void {
+/** 「更多」按钮：把菜单挂在按钮右下角，与极简模式的磁贴一致 */
+function handleMore(event: MouseEvent): void {
     event.stopPropagation();
-    emit('delete', props.app);
-}
-</script>
+    const rect = (event.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+    emit('open-menu', {
+        app: props.app,
+        point: {
+            x: rect ? rect.left + rect.width : 0,
+            y: rect ? rect.bottom + 4 : 0
+        }
+    });
+}</script>
 
 <template>
     <article
@@ -98,7 +122,6 @@ function handleDelete(event: MouseEvent): void {
             'is-dragging': dragging,
             'is-pressing': pressing,
             'is-draggable': draggable,
-            'show-actions': showActions,
             'no-icon-bg': !iconBackground,
         }"
         :data-app-id="app.id"
@@ -107,6 +130,7 @@ function handleDelete(event: MouseEvent): void {
         :aria-label="app.name"
         @click="handleClick"
         @keydown="handleKeydown"
+        @contextmenu="handleContextMenu"
     >
         <div class="app-card__icon">
             <IconSvg
@@ -126,32 +150,15 @@ function handleDelete(event: MouseEvent): void {
             </p>
         </div>
 
-        <div v-if="editable || deletable" class="app-card__actions">
-            <BaseButton
-                v-if="editable"
-                class="app-card__action-btn"
-                variant="text"
-                size="small"
-                :aria-label="`编辑 ${app.name}`"
-                @click="handleEdit"
-            >
-                <template #icon>
-                    <IconSvg name="edit" :size="16" monochrome :alt="`编辑 ${app.name}`" />
-                </template>
-            </BaseButton>
-            <BaseButton
-                v-if="deletable"
-                class="app-card__action-btn app-card__action-btn--delete"
-                variant="text"
-                size="small"
-                :aria-label="`删除 ${app.name}`"
-                @click="handleDelete"
-            >
-                <template #icon>
-                    <IconSvg name="delete" :size="16" monochrome :alt="`删除 ${app.name}`" />
-                </template>
-            </BaseButton>
-        </div>
+        <button
+            type="button"
+            class="app-card__more"
+            :aria-label="`更多操作 ${app.name}`"
+            title="更多操作"
+            @click="handleMore"
+        >
+            <IconSvg name="more" :size="16" monochrome alt="" />
+        </button>
     </article>
 </template>
 
@@ -268,32 +275,26 @@ function handleDelete(event: MouseEvent): void {
         max-height: 2.8em;
     }
 
-    &__actions {
+    // 「更多」按钮：与极简模式磁贴的 .minimal-tile__more 保持同一套外观
+    &__more {
+        @include button-reset;
         position: absolute;
         top: 6px;
         right: 6px;
+        width: 20px;
+        height: 20px;
+        border-radius: var(--ui-radius-pill);
         display: flex;
         align-items: center;
-        gap: 2px;
-        opacity: 0;
-        transition: opacity var(--ui-dur-fast) var(--ui-ease);
-    }
-
-    &:hover &__actions,
-    &.show-actions &__actions,
-    &:focus-within &__actions {
-        opacity: 1;
-    }
-
-    &__action-btn {
-        width: 26px;
-        height: 26px;
-        min-width: auto;
-        padding: 0 !important;
-        border-radius: var(--ui-radius-sm);
-        background: var(--ui-elevated);
+        justify-content: center;
+        background: var(--ui-panel);
         border: 1px solid var(--ui-hairline);
         color: var(--ui-muted);
+        opacity: 0;
+        transition:
+            opacity var(--ui-dur-fast) var(--ui-ease),
+            background-color var(--ui-dur-fast) var(--ui-ease),
+            color var(--ui-dur-fast) var(--ui-ease);
 
         &:hover {
             background: var(--ui-accent);
@@ -301,11 +302,16 @@ function handleDelete(event: MouseEvent): void {
             color: var(--ui-on-accent);
         }
 
-        &--delete:hover {
-            background: var(--ui-danger);
-            border-color: var(--ui-danger);
-            color: #fff;
+        &:focus-visible {
+            opacity: 1;
+            outline: 2px solid var(--ui-accent);
+            outline-offset: 2px;
         }
+    }
+
+    &:hover &__more,
+    &:focus-within &__more {
+        opacity: 1;
     }
 }
 

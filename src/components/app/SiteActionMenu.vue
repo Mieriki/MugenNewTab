@@ -1,12 +1,11 @@
 <script setup lang="ts">
 /**
- * MinimalSiteMenu - 极简模式下的站点操作菜单
+ * SiteActionMenu - 站点操作菜单
  *
- * 极简模式把三栏布局压成了一个搜索框加几行磁贴，编辑入口只剩磁贴右上角一个小按钮，
- * 删除、隐藏、改分类这些操作在极简模式下完全不可达。本组件用一个浮层菜单把这些能力补回来。
+ * 卡片模式与极简模式共用的右键菜单：打开、复制链接、编辑、移动到分类、隐藏、删除。
  *
  * 设计要点：
- * - 只负责呈现与键盘导航，所有动作通过事件交给 MinimalHome 执行，便于单测
+ * - 只负责呈现与键盘导航，所有动作通过事件交给调用方执行，便于单测
  * - 定位基于视口坐标，右侧/底部空间不足时自动翻转，避免菜单被裁切
  * - 「移动到分类」用内联展开而不是二级浮层，省掉子菜单的边界计算，触屏也更好点
  * - 支持 ↑↓ / Home / End 在菜单项间移动，Esc 关闭，外部指针按下即关闭
@@ -16,7 +15,7 @@ import type { AppItem, Category } from '@/types/app';
 import { isImageIcon } from '@/utils/image.util';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
-export interface MinimalSiteMenuProps {
+export interface SiteActionMenuProps {
     /** 当前操作的站点 */
     app: AppItem;
     /** 可移动到的分类列表（不含「全部」虚拟分类） */
@@ -27,7 +26,7 @@ export interface MinimalSiteMenuProps {
     y: number;
 }
 
-const props = defineProps<MinimalSiteMenuProps>();
+const props = defineProps<SiteActionMenuProps>();
 
 const emit = defineEmits<{
     /** 关闭菜单 */

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import MinimalSiteMenu from '../MinimalSiteMenu.vue';
+import SiteActionMenu from '../SiteActionMenu.vue';
 import type { AppItem, Category } from '@/types/app';
 
 const categories: Category[] = [
@@ -17,7 +17,7 @@ const app: AppItem = {
 };
 
 function mountMenu(overrides: Partial<{ app: AppItem; categories: Category[]; x: number; y: number }> = {}) {
-    return mount(MinimalSiteMenu, {
+    return mount(SiteActionMenu, {
         props: {
             app,
             categories,
@@ -35,7 +35,7 @@ function findItemByLabel(wrapper: ReturnType<typeof mountMenu>, label: string) {
         .find((item) => item.text().includes(label));
 }
 
-describe('MinimalSiteMenu', () => {
+describe('SiteActionMenu', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
     });

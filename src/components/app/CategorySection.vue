@@ -9,6 +9,7 @@ import { computed } from 'vue';
 import type { AppItem, Category } from '@/types/app';
 import { isImageIcon } from '@/utils/image.util';
 import AppGrid from './AppGrid.vue';
+import type { AppCardContextMenuPayload } from './AppCard.vue';
 import IconSvg from '@/components/icon/IconSvg.vue';
 
 export interface CategorySectionProps {
@@ -22,10 +23,6 @@ export interface CategorySectionProps {
     draggable?: boolean;
     /** 是否显示隐藏应用（已过滤传入时此属性仅影响空状态） */
     showHidden?: boolean;
-    /** 是否显示编辑按钮 */
-    editable?: boolean;
-    /** 是否显示删除按钮 */
-    deletable?: boolean;
     /** 入场动画延迟（秒） */
     animationDelay?: number;
 }
@@ -34,18 +31,16 @@ const props = withDefaults(defineProps<CategorySectionProps>(), {
     showTitle: true,
     draggable: false,
     showHidden: false,
-    editable: true,
-    deletable: true,
     animationDelay: 0,
 });
 
 const emit = defineEmits<{
     /** 点击应用卡片 */
     (e: 'app-click', app: AppItem): void;
-    /** 点击编辑按钮 */
-    (e: 'edit-app', app: AppItem): void;
-    /** 点击删除按钮 */
-    (e: 'delete-app', app: AppItem): void;
+    /** 右键或键盘菜单键请求打开操作菜单 */
+    (e: 'contextmenu-app', payload: AppCardContextMenuPayload): void;
+    /** 点击「更多」按钮请求打开操作菜单 */
+    (e: 'open-menu-app', payload: AppCardContextMenuPayload): void;
 }>();
 
 const iconIsImage = computed(() => isImageIcon(props.category.icon?.trim() || 'folder'));
@@ -54,12 +49,12 @@ function handleAppClick(app: AppItem): void {
     emit('app-click', app);
 }
 
-function handleEdit(app: AppItem): void {
-    emit('edit-app', app);
+function handleContextMenu(payload: AppCardContextMenuPayload): void {
+    emit('contextmenu-app', payload);
 }
 
-function handleDelete(app: AppItem): void {
-    emit('delete-app', app);
+function handleOpenMenu(payload: AppCardContextMenuPayload): void {
+    emit('open-menu-app', payload);
 }
 </script>
 
@@ -86,11 +81,9 @@ function handleDelete(app: AppItem): void {
             :category-id="category.id"
             :draggable="draggable"
             :show-hidden="showHidden"
-            :editable="editable"
-            :deletable="deletable"
             @app-click="handleAppClick"
-            @edit-app="handleEdit"
-            @delete-app="handleDelete"
+            @contextmenu-app="handleContextMenu"
+            @open-menu-app="handleOpenMenu"
         >
             <template v-if="$slots.empty" #empty>
                 <slot name="empty" />

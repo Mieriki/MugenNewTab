@@ -63,7 +63,7 @@ describe('CategorySection', () => {
         expect(wrapper.findAllComponents(AppCard)).toHaveLength(2);
     });
 
-    it('透传 app-click、edit-app、delete-app 事件', async () => {
+    it('透传 app-click、contextmenu-app 与 open-menu-app 事件', async () => {
         const category = createCategory();
         const apps = [createApp('app_1')];
         const wrapper = mount(CategorySection, {
@@ -71,12 +71,13 @@ describe('CategorySection', () => {
         });
 
         const card = wrapper.findComponent(AppCard);
+        const payload = { app: apps[0], point: { x: 5, y: 6 } };
         await card.vm.$emit('click', apps[0]);
-        await card.vm.$emit('edit', apps[0]);
-        await card.vm.$emit('delete', apps[0]);
+        await card.vm.$emit('contextmenu', payload);
+        await card.vm.$emit('open-menu', payload);
 
         expect(wrapper.emitted('app-click')).toHaveLength(1);
-        expect(wrapper.emitted('edit-app')).toHaveLength(1);
-        expect(wrapper.emitted('delete-app')).toHaveLength(1);
+        expect(wrapper.emitted('contextmenu-app')).toHaveLength(1);
+        expect(wrapper.emitted('open-menu-app')).toHaveLength(1);
     });
 });

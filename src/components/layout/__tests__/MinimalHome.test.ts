@@ -3,7 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { computed, nextTick, ref } from 'vue';
 import { setActivePinia, createPinia } from 'pinia';
 import MinimalHome from '../MinimalHome.vue';
-import MinimalSiteMenu from '../MinimalSiteMenu.vue';
+import SiteActionMenu from '@/components/app/SiteActionMenu.vue';
 import { useDataManager } from '@/composables/useDataManager';
 import { useSearch } from '@/composables/useSearch';
 import { useToast } from '@/composables/useToast';
@@ -128,12 +128,12 @@ describe('MinimalHome 站点操作', () => {
         setupMocks();
         const wrapper = mountHome();
 
-        expect(wrapper.findComponent(MinimalSiteMenu).exists()).toBe(false);
+        expect(wrapper.findComponent(SiteActionMenu).exists()).toBe(false);
 
         await wrapper.findAll('.minimal-tile')[0].trigger('contextmenu');
         await nextTick();
 
-        const menu = wrapper.findComponent(MinimalSiteMenu);
+        const menu = wrapper.findComponent(SiteActionMenu);
         expect(menu.exists()).toBe(true);
         expect(menu.props('app')).toMatchObject({ id: 'a1' });
 
@@ -151,7 +151,7 @@ describe('MinimalHome 站点操作', () => {
 
         expect(updateApp).toHaveBeenCalledWith('a1', { hidden: true });
         expect(toast.success).toHaveBeenCalledWith('已隐藏「GitHub」');
-        expect(wrapper.findComponent(MinimalSiteMenu).exists()).toBe(false);
+        expect(wrapper.findComponent(SiteActionMenu).exists()).toBe(false);
 
         wrapper.unmount();
     });
