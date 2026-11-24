@@ -285,6 +285,12 @@ async function handleFollowSystem(enabled: boolean): Promise<void> {
         height: 7px;
         border-radius: 50%;
         background: var(--preview-accent);
+        // 点正跨在明暗分界线上：单色描边必然有一侧被吞掉（描边色跟随当前主题，
+        // 而不是预览里的那两半）。白、黑各一圈同心环，保证在两侧都留得住轮廓——
+        // 黑白主题的 accent 本身就等于其中一半的表面色，没有这层环就整个消失。
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.9),
+            0 0 0 2px rgba(0, 0, 0, 0.28);
     }
 
     &__name {
