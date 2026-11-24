@@ -10,7 +10,7 @@ import { escapeHtml, escapeAttr } from '../escape.util';
 import { isImageIcon, createImageWithFallback, createMonochromeImage } from '../image.util';
 import { adjustColor, hexToRgba } from '../color.util';
 import { debounce, throttle } from '../debounce.util';
-import { formatFileSize, validateFileSize } from '../file.util';
+import { formatFileSize, validateFileSize, compressImageFile, MAX_WALLPAPER_EDGE, MAX_WALLPAPER_INPUT_BYTES } from '../file.util';
 
 describe('id.util', () => {
     it('应生成非空唯一 ID', () => {
@@ -116,4 +116,18 @@ describe('file.util', () => {
         expect(validateFileSize(file, 10)).toBe(true);
         expect(validateFileSize(file, 0)).toBe(false);
     });
-});
+
+    it('壁纸上限常量应保持合理值', () => {
+        expect(MAX_WALLPAPER_EDGE).toBe(2560);
+        expect(MAX_WALLPAPER_INPUT_BYTES).toBe(50 * 1024 * 1024);
+    });
+
+    it('压缩图片在无法解码时应回退为原图', async () => {
+        // jsdom 没有 createImageBitmap 与 canvas 编码能力，会走回退分支
+        const file = new File(['fake-image'], 'bg.png', { type: 'image/png' });
+        const result = await compressImageFile(file);
+
+        expect(result.dataUrl).toContain('data:');
+        expect(result.bytes).toBe(file.size);
+        expect(result.type).toBe('image/png');
+    });});

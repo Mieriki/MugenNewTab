@@ -11,7 +11,13 @@ vi.mock('@/utils/file.util', async () => {
     const actual = await vi.importActual<typeof import('@/utils/file.util')>('@/utils/file.util');
     return {
         ...actual,
-        fileToBase64: vi.fn(() => Promise.resolve('data:image/png;base64,mocked'))
+        compressImageFile: vi.fn(() =>
+            Promise.resolve({
+                dataUrl: 'data:image/webp;base64,mocked',
+                bytes: 2048,
+                type: 'image/webp'
+            })
+        )
     };
 });
 
@@ -112,31 +118,33 @@ describe('useWallpaperStore', () => {
         expect(persisted).toBeNull();
     });
 
-    it('setLocalImage 应校验文件大小并持久化 Base64 图片', async () => {
+    it('setLocalImage 应压缩后持久化图片', async () => {
         const store = useWallpaperStore();
         const file = createMockFile('bg.png', 'image/png', 100);
 
         await store.setLocalImage(file);
 
-        expect(fileUtil.fileToBase64).toHaveBeenCalledWith(file);
+        expect(fileUtil.compressImageFile).toHaveBeenCalledWith(file);
         expect(store.imageData).toMatchObject({
-            data: 'data:image/png;base64,mocked',
+            data: 'data:image/webp;base64,mocked',
             name: 'bg.png',
-            type: 'image/png',
-            size: 100
+            type: 'image/webp',
+            size: 2048
         });
         expect(store.settings.isLocalImage).toBe(true);
         expect(store.settings.url).toBe('');
-        expect(store.effectiveUrl).toBe('data:image/png;base64,mocked');
+        expect(store.effectiveUrl).toBe('data:image/webp;base64,mocked');
     });
 
-    it('setLocalImage 应拒绝超过 5MB 的图片', async () => {
+    it('setLocalImage 不再按原图大小拒绝（大图交由压缩处理）', async () => {
         const store = useWallpaperStore();
-        const file = createMockFile('big.png', 'image/png', 6 * 1024 * 1024);
+        const file = createMockFile('big.png', 'image/png', 20 * 1024 * 1024);
 
-        await expect(store.setLocalImage(file)).rejects.toThrow('不能超过');
-        expect(store.imageData).toBeNull();
-        expect(store.settings.isLocalImage).toBe(false);
+        await store.setLocalImage(file);
+
+        expect(fileUtil.compressImageFile).toHaveBeenCalledWith(file);
+        expect(store.settings.isLocalImage).toBe(true);
+        expect(store.imageData?.size).toBe(2048);
     });
 
     it('setLocalImageData 应直接持久化图片数据', async () => {

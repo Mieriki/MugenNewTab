@@ -16,8 +16,7 @@ import { mediaCacheService } from '@/services/mediaCache.service';
 import type { WallpaperSettings, WallpaperImageData } from '@/types/storage';
 import {
     isImageFile,
-    validateFileSize,
-    DEFAULT_MAX_FILE_SIZE,
+    MAX_WALLPAPER_INPUT_BYTES,
     formatFileSize
 } from '@/utils/file.util';
 
@@ -287,7 +286,8 @@ export function useWallpaper(options: UseWallpaperOptions = {}): UseWallpaperRet
 
     /**
      * 上传本地图片并设为壁纸
-     * 先校验文件类型与大小，再交给 store 持久化。
+     *
+     * 只做类型与输入体积兜底校验，实际的降采样与重编码由 store 完成。
      */
     async function setLocalImage(file: File): Promise<void> {
         if (!isImageFile(file)) {
@@ -296,8 +296,8 @@ export function useWallpaper(options: UseWallpaperOptions = {}): UseWallpaperRet
             throw new Error(message);
         }
 
-        if (!validateFileSize(file, DEFAULT_MAX_FILE_SIZE)) {
-            const message = `本地图片大小不能超过 ${formatFileSize(DEFAULT_MAX_FILE_SIZE)}`;
+        if (file.size > MAX_WALLPAPER_INPUT_BYTES) {
+            const message = `图片文件不能超过 ${formatFileSize(MAX_WALLPAPER_INPUT_BYTES)}`;
             error.value = message;
             throw new Error(message);
         }

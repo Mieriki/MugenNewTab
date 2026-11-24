@@ -37,7 +37,7 @@ npm run dev
 # 然后访问 http://localhost:5173
 ```
 
-网页版使用 `localStorage` 存储数据。
+网页版使用 `localStorage` 存储数据。网页预览（`npm run dev`）受浏览器 `localStorage` 配额限制（约 5MB），扩展版没有该限制。
 
 ### 方式二：作为 Chrome 扩展运行
 
@@ -52,7 +52,7 @@ npm run build:chromium
 4. 选择 `./build-chromium.sh` 生成的 `build-chromium/` 目录（或 `npm run build:chromium` 生成的 `dist-chrome/`）
 5. 打开新标签页即可看到 MugenNewTab
 
-扩展版使用 `chrome.storage.local` 存储数据。
+扩展版使用 `chrome.storage.local` 存储数据。三份 manifest 均声明了 `unlimitedStorage` 权限，因此扩展内不受 `storage.local` 默认配额（约 10MB）限制；本地壁纸在上传时会自动降采样到最长边 2560px 后再落盘，避免单个大对象拖慢首屏。
 
 ### 方式三：作为 Firefox 扩展运行
 

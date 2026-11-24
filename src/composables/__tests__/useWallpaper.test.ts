@@ -16,7 +16,13 @@ vi.mock('@/utils/file.util', async () => {
     const actual = await vi.importActual<typeof import('@/utils/file.util')>('@/utils/file.util');
     return {
         ...actual,
-        fileToBase64: vi.fn(() => Promise.resolve('data:image/png;base64,mocked'))
+        compressImageFile: vi.fn(() =>
+            Promise.resolve({
+                dataUrl: 'data:image/webp;base64,mocked',
+                bytes: 2048,
+                type: 'image/webp'
+            })
+        )
     };
 });
 
@@ -112,9 +118,9 @@ describe('useWallpaper', () => {
 
         await result.setLocalImage(file);
 
-        expect(fileUtil.fileToBase64).toHaveBeenCalledWith(file);
+        expect(fileUtil.compressImageFile).toHaveBeenCalledWith(file);
         expect(result.isLocalImage.value).toBe(true);
-        expect(result.effectiveUrl.value).toBe('data:image/png;base64,mocked');
+        expect(result.effectiveUrl.value).toBe('data:image/webp;base64,mocked');
     });
 
     it('非图片文件应被拒绝并记录错误', async () => {
@@ -129,15 +135,28 @@ describe('useWallpaper', () => {
         expect(result.loading.value).toBe(false);
     });
 
-    it('超过 5MB 的图片应被拒绝并记录错误', async () => {
+    it('超过输入兜底上限的图片应被拒绝并记录错误', async () => {
         const { result, wrapper } = useSetup({ autoInit: false });
         wrappers.push(wrapper);
 
         await result.init();
-        const file = createMockFile('big.png', 'image/png', 6 * 1024 * 1024);
+        const file = createMockFile('huge.png', 'image/png', 51 * 1024 * 1024);
 
         await expect(result.setLocalImage(file)).rejects.toThrow('不能超过');
         expect(result.error.value).toContain('不能超过');
+    });
+
+    it('大图（未超输入上限）应交给压缩处理而不是被拒绝', async () => {
+        const { result, wrapper } = useSetup({ autoInit: false });
+        wrappers.push(wrapper);
+
+        await result.init();
+        const file = createMockFile('big.png', 'image/png', 20 * 1024 * 1024);
+
+        await result.setLocalImage(file);
+
+        expect(fileUtil.compressImageFile).toHaveBeenCalledWith(file);
+        expect(result.isLocalImage.value).toBe(true);
     });
 
     it('setLocalImageData 应直接持久化图片数据', async () => {

@@ -11,7 +11,7 @@ import { ref, computed } from 'vue';
 import { storageManager } from '@/services/storage.service';
 import { STORAGE_KEYS } from '@/types/storage';
 import type { WallpaperSettings, WallpaperImageData } from '@/types/storage';
-import { fileToBase64, validateFileSize, DEFAULT_MAX_FILE_SIZE } from '@/utils/file.util';
+import { compressImageFile } from '@/utils/file.util';
 
 /** 默认壁纸设置 */
 export const DEFAULT_WALLPAPER_SETTINGS: WallpaperSettings = {
@@ -22,8 +22,6 @@ export const DEFAULT_WALLPAPER_SETTINGS: WallpaperSettings = {
     isLocalImage: false
 };
 
-/** 本地图片最大限制（与原项目一致：5MB） */
-export const MAX_LOCAL_IMAGE_SIZE = DEFAULT_MAX_FILE_SIZE;
 
 /** 深拷贝辅助
  * 兼容 Vue reactive proxy：structuredClone 无法克隆 Proxy，
@@ -219,23 +217,21 @@ export const useWallpaperStore = defineStore('wallpaper', () => {
 
     /**
      * 上传本地图片并设为壁纸
-     * 文件会被读取为 Base64 Data URL 后持久化。
+     *
+     * 图片会先降采样并重编码再落盘：壁纸是整个存储里唯一的大对象，
+     * 原图直接存成 Base64 会让每次打开新标签页都解析一个大字符串。
      */
     async function setLocalImage(file: File): Promise<void> {
         await init();
 
-        if (!validateFileSize(file, MAX_LOCAL_IMAGE_SIZE)) {
-            throw new Error(`本地图片大小不能超过 ${MAX_LOCAL_IMAGE_SIZE / 1024 / 1024}MB`);
-        }
-
-        const data = await fileToBase64(file);
+        const compressed = await compressImageFile(file);
 
         await commitWithRollback(() => {
             imageData.value = {
-                data,
+                data: compressed.dataUrl,
                 name: file.name,
-                type: file.type || 'image/png',
-                size: file.size,
+                type: compressed.type,
+                size: compressed.bytes,
                 timestamp: Date.now()
             };
             settings.value.isLocalImage = true;
