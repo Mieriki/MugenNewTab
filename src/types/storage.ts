@@ -130,8 +130,15 @@ export interface LayoutSettings {
 
 /** 媒体缓存设置 */
 export interface MediaCacheSettings {
-    /** 是否启用本地缓存（站点图标 / 网络壁纸） */
-    enabled: boolean;
+    /** 是否缓存站点图标与搜索引擎图标 */
+    icon: boolean;
+    /** 是否缓存网络壁纸；随机 / 动态壁纸接口应关闭，否则会固定为首次抓到的图片 */
+    wallpaper: boolean;
+    /**
+     * 旧版总开关，仅用于读取迁移：`false` 视为两个都关。
+     * 写入时不再产生该字段。
+     */
+    enabled?: boolean;
 }
 
 /**

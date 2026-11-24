@@ -204,14 +204,24 @@ export function useWallpaper(options: UseWallpaperOptions = {}): UseWallpaperRet
                 }
 
                 // 本地图片（data:）与相对路径本来就不走网络，直接预加载即可
-                if (!mediaCacheService.isCacheableUrl(url)) {
+                const cacheable = mediaCacheService.isCacheableUrl(url);
+                if (!cacheable) {
                     wallpaperReady.value = true;
                     preloadImage(url);
                     return;
                 }
 
+                // 壁纸缓存关闭：直接把地址交给 CSS 加载一次
+                //
+                // 这里刻意不做 preloadImage：那会让浏览器再发一次请求，对随机 / 动态
+                // 壁纸接口等于同一个地址被请求两次，还可能拿到两张不同的图。
+                if (!mediaCacheService.isEnabled('wallpaper')) {
+                    wallpaperReady.value = true;
+                    return;
+                }
+
                 void (async () => {
-                    const cached = await mediaCacheService.resolve(url);
+                    const cached = await mediaCacheService.resolve(url, 'wallpaper');
                     // 期间壁纸已被换掉，丢弃这次结果
                     if (effectiveUrl.value !== url) {
                         return;

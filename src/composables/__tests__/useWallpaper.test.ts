@@ -289,6 +289,46 @@ describe('useWallpaper', () => {
         await expect(promise).rejects.toThrow('已取消');
     });
 
+    it('壁纸缓存关闭时跳过缓存管线，不再额外预加载（避免随机接口请求两次）', async () => {
+        const { result, wrapper } = useSetup({ autoInit: false });
+        wrappers.push(wrapper);
+        await result.init();
+
+        // 关闭壁纸缓存
+        vi.spyOn(mediaCacheService, 'isEnabled').mockImplementation((kind?: 'icon' | 'wallpaper') => {
+            return kind !== 'wallpaper';
+        });
+        const resolveSpy = vi.mocked(mediaCacheService.resolve);
+        const fetchSpy = vi.mocked(mediaCacheService.fetchAndCache);
+        resolveSpy.mockClear();
+        fetchSpy.mockClear();
+
+        // 记录 preloadImage 内部创建 Image 的次数
+        const OriginalImage = globalThis.Image;
+        let imageCount = 0;
+        class CountingImage extends OriginalImage {
+            constructor() {
+                super();
+                imageCount += 1;
+            }
+        }
+        vi.stubGlobal('Image', CountingImage);
+
+        try {
+            await result.setUrl('https://api.example.com/random');
+            await flushPromises();
+
+            expect(resolveSpy).not.toHaveBeenCalled();
+            expect(fetchSpy).not.toHaveBeenCalled();
+            // 不再预加载，把唯一一次请求留给 CSS background-image
+            expect(imageCount).toBe(0);
+            // 地址已交给背景层，等 CSS 自己加载
+            expect(result.wallpaperStyle.value.backgroundImage).toBe('url(https://api.example.com/random)');
+        } finally {
+            vi.stubGlobal('Image', OriginalImage);
+        }
+    });
+
     it('wallpaperStyle 应根据当前设置生成样式对象', async () => {
         const { result, wrapper } = useSetup({ autoInit: false });
         wrappers.push(wrapper);

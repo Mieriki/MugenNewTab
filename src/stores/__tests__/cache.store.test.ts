@@ -1,7 +1,8 @@
 /**
  * cache.store 单元测试
  *
- * 覆盖默认开关、镜像同步读取、持久化、用量统计与清理。
+ * 覆盖图标 / 壁纸两个独立开关的默认值、镜像同步读取、旧版总开关迁移、
+ * 持久化、用量统计与清理。
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -30,53 +31,90 @@ describe('cache.store', () => {
         vi.restoreAllMocks();
     });
 
-    it('默认开启本地缓存', () => {
+    it('默认开启图标与壁纸缓存', () => {
         const store = useCacheStore();
 
-        expect(store.enabled).toBe(true);
+        expect(store.iconEnabled).toBe(true);
+        expect(store.wallpaperEnabled).toBe(true);
     });
 
     it('首帧同步读取镜像：关闭状态不必等 init 就生效', () => {
-        localStorage.setItem(STORAGE_KEYS.MEDIA_CACHE, JSON.stringify({ enabled: false }));
+        localStorage.setItem(
+            STORAGE_KEYS.MEDIA_CACHE,
+            JSON.stringify({ icon: true, wallpaper: false })
+        );
 
         const store = useCacheStore();
 
         expect(store.initialized).toBe(false);
-        expect(store.enabled).toBe(false);
-        expect(mediaCacheService.setEnabled).toHaveBeenCalledWith(false);
+        expect(store.iconEnabled).toBe(true);
+        expect(store.wallpaperEnabled).toBe(false);
+        expect(mediaCacheService.setEnabled).toHaveBeenCalledWith('wallpaper', false);
+    });
+
+    it('镜像里的旧版总开关会被迁移成两个独立开关', () => {
+        localStorage.setItem(STORAGE_KEYS.MEDIA_CACHE, JSON.stringify({ enabled: false }));
+
+        const store = useCacheStore();
+
+        expect(store.iconEnabled).toBe(false);
+        expect(store.wallpaperEnabled).toBe(false);
     });
 
     it('init 读取存储中的开关并同步给缓存服务', async () => {
-        vi.mocked(storageManager.get).mockResolvedValue({ enabled: false });
+        vi.mocked(storageManager.get).mockResolvedValue({ icon: true, wallpaper: false });
 
         const store = useCacheStore();
         await store.init();
 
-        expect(store.enabled).toBe(false);
+        expect(store.iconEnabled).toBe(true);
+        expect(store.wallpaperEnabled).toBe(false);
         expect(store.initialized).toBe(true);
-        expect(mediaCacheService.setEnabled).toHaveBeenLastCalledWith(false);
+        expect(mediaCacheService.setEnabled).toHaveBeenCalledWith('icon', true);
+        expect(mediaCacheService.setEnabled).toHaveBeenCalledWith('wallpaper', false);
     });
 
-    it('init 会把开关回填到同步镜像', async () => {
+    it('init 会把开关回填到同步镜像（旧结构归一为新结构）', async () => {
         vi.mocked(storageManager.get).mockResolvedValue({ enabled: false });
 
         const store = useCacheStore();
         await store.init();
 
         expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.MEDIA_CACHE) ?? 'null')).toEqual({
-            enabled: false,
+            icon: false,
+            wallpaper: false,
         });
     });
 
-    it('setEnabled 持久化并立即作用于缓存服务', async () => {
+    it('setIconEnabled 持久化并立即作用于缓存服务', async () => {
         const store = useCacheStore();
         await store.init();
 
-        await store.setEnabled(false);
+        await store.setIconEnabled(false);
 
-        expect(store.enabled).toBe(false);
-        expect(mediaCacheService.setEnabled).toHaveBeenLastCalledWith(false);
-        expect(storageManager.set).toHaveBeenCalledWith(STORAGE_KEYS.MEDIA_CACHE, { enabled: false });
+        expect(store.iconEnabled).toBe(false);
+        expect(store.wallpaperEnabled).toBe(true);
+        expect(mediaCacheService.setEnabled).toHaveBeenCalledWith('icon', false);
+        expect(storageManager.set).toHaveBeenCalledWith(STORAGE_KEYS.MEDIA_CACHE, {
+            icon: false,
+            wallpaper: true,
+        });
+    });
+
+    it('setWallpaperEnabled 只影响壁纸，不动图标', async () => {
+        const store = useCacheStore();
+        await store.init();
+
+        await store.setWallpaperEnabled(false);
+
+        expect(store.wallpaperEnabled).toBe(false);
+        expect(store.iconEnabled).toBe(true);
+        expect(mediaCacheService.setEnabled).toHaveBeenCalledWith('wallpaper', false);
+        expect(mediaCacheService.setEnabled).not.toHaveBeenCalledWith('icon', false);
+        expect(storageManager.set).toHaveBeenCalledWith(STORAGE_KEYS.MEDIA_CACHE, {
+            icon: true,
+            wallpaper: false,
+        });
     });
 
     it('refreshStats 拉取用量', async () => {

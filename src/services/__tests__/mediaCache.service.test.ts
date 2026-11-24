@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import {
     mediaCacheService,
+    parseMediaCacheSettings,
     ICON_CACHE_TTL_MS,
     WALLPAPER_CACHE_TTL_MS,
 } from '@/services/mediaCache.service';
@@ -171,8 +172,8 @@ describe('mediaCacheService', () => {
         await mediaCacheService.cache(ICON_URL);
         expect(await mediaCacheService.resolve(ICON_URL)).not.toBeNull();
 
-        mediaCacheService.setEnabled(false);
-        expect(mediaCacheService.isEnabled()).toBe(false);
+        mediaCacheService.setEnabled('icon', false);
+        expect(mediaCacheService.isEnabled('icon')).toBe(false);
         // 关闭后即使内存里有对象地址也不返回，让界面走网络
         expect(await mediaCacheService.resolve(ICON_URL)).toBeNull();
 
@@ -181,12 +182,35 @@ describe('mediaCacheService', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it('关闭壁纸缓存不影响图标缓存，反之亦然', async () => {
+        const fetchMock = mockFetchOk();
+        await mediaCacheService.cache(ICON_URL, 'icon');
+        await mediaCacheService.cache(WALLPAPER_URL, 'wallpaper');
+
+        mediaCacheService.setEnabled('wallpaper', false);
+
+        // 壁纸：既不返回缓存，也不再抓取
+        expect(await mediaCacheService.resolve(WALLPAPER_URL, 'wallpaper')).toBeNull();
+        fetchMock.mockClear();
+        expect(await mediaCacheService.fetchAndCache(WALLPAPER_URL, 'wallpaper')).toBeNull();
+        expect(fetchMock).not.toHaveBeenCalled();
+
+        // 图标：完全不受影响
+        expect(await mediaCacheService.resolve(ICON_URL, 'icon')).toMatch(/^blob:/);
+
+        // 反向：只关图标，壁纸仍可命中
+        mediaCacheService.setEnabled('wallpaper', true);
+        mediaCacheService.setEnabled('icon', false);
+        expect(await mediaCacheService.resolve(ICON_URL, 'icon')).toBeNull();
+        expect(await mediaCacheService.resolve(WALLPAPER_URL, 'wallpaper')).toMatch(/^blob:/);
+    });
+
     it('重新打开开关后已有缓存仍可命中（关闭不清数据）', async () => {
         mockFetchOk();
         await mediaCacheService.cache(ICON_URL);
 
-        mediaCacheService.setEnabled(false);
-        mediaCacheService.setEnabled(true);
+        mediaCacheService.setEnabled('icon', false);
+        mediaCacheService.setEnabled('icon', true);
 
         expect(await mediaCacheService.resolve(ICON_URL)).not.toBeNull();
     });
@@ -270,11 +294,25 @@ describe('mediaCacheService', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('warm 在缓存开关关闭时不发请求', async () => {
+    it('warm 在对应类型的缓存开关关闭时不发请求', async () => {
         const fetchMock = mockFetchOk();
-        mediaCacheService.setEnabled(false);
+        mediaCacheService.setEnabled('icon', false);
 
         await mediaCacheService.warm([ICON_URL, ICON_URL_B]);
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('parseMediaCacheSettings 兼容旧版总开关并补齐缺失字段', () => {
+        // 旧格式：总开关关闭 -> 两类都关
+        expect(parseMediaCacheSettings({ enabled: false })).toEqual({ icon: false, wallpaper: false });
+        // 旧格式：总开关开启
+        expect(parseMediaCacheSettings({ enabled: true })).toEqual({ icon: true, wallpaper: true });
+        // 新格式：各自独立
+        expect(parseMediaCacheSettings({ icon: true, wallpaper: false })).toEqual({ icon: true, wallpaper: false });
+        // 缺字段：按开启处理
+        expect(parseMediaCacheSettings({ wallpapper: false })).toEqual({ icon: true, wallpaper: true });
+        // 非对象 / 空值
+        expect(parseMediaCacheSettings(null)).toEqual({ icon: true, wallpaper: true });
+        expect(parseMediaCacheSettings('bad')).toEqual({ icon: true, wallpaper: true });
     });
 });

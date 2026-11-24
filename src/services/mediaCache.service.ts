@@ -14,7 +14,7 @@
  * - 同一 URL 的并发读取会去重，避免首屏几十个图标同时打 IndexedDB。
  */
 
-import { STORAGE_KEYS } from '@/types/storage';
+import { STORAGE_KEYS, type MediaCacheSettings } from '@/types/storage';
 
 /** 数据库名称 */
 const DB_NAME = 'mugen-media-cache';
@@ -45,26 +45,52 @@ const DEFAULT_KIND: MediaCacheKind = 'icon';
 /** 预热时的并发上限：首屏一次预热十几个图标，限流避免抢占关键请求 */
 const WARM_CONCURRENCY = 4;
 
+/** 缓存开关的默认值：图标、壁纸都开启（与旧版总开关默认一致） */
+const DEFAULT_ENABLED: Record<MediaCacheKind, boolean> = {
+    icon: true,
+    wallpaper: true
+};
+
 /**
- * 从 localStorage 镜像同步读取开关
+ * 解析存储 / 镜像里的缓存开关
  *
- * 开关值同时写进 STORAGE_KEYS.MEDIA_CACHE 镜像，这里在服务构造时同步读一次：
- * 否则用户关闭缓存后，要等打开个性化面板（cache store 初始化）才生效，
- * 中间这段时间图标和壁纸仍会被缓存。
+ * 兼容旧版的单一总开关：`{ enabled: false }` 视为图标与壁纸都关闭，
+ * 缺字段一律按「开启」处理。两处（服务构造、cache.store）必须用同一套规则，
+ * 否则会出现「面板显示关、实际还在缓存」的分叉。
  */
-function readEnabledFromMirror(): boolean {
+export function parseMediaCacheSettings(raw: unknown): Record<MediaCacheKind, boolean> {
+    const result = { ...DEFAULT_ENABLED };
+    if (!raw || typeof raw !== 'object') {
+        return result;
+    }
+
+    const value = raw as Partial<MediaCacheSettings>;
+    const legacyEnabled = typeof value.enabled === 'boolean' ? value.enabled : null;
+
+    for (const kind of Object.keys(result) as MediaCacheKind[]) {
+        const own = value[kind];
+        if (typeof own === 'boolean') {
+            result[kind] = own;
+        } else if (legacyEnabled !== null) {
+            result[kind] = legacyEnabled;
+        }
+    }
+    return result;
+}
+
+/** 从 localStorage 镜像同步读取开关 */
+function readEnabledFromMirror(): Record<MediaCacheKind, boolean> {
     try {
         if (typeof localStorage === 'undefined') {
-            return true;
+            return { ...DEFAULT_ENABLED };
         }
         const raw = localStorage.getItem(STORAGE_KEYS.MEDIA_CACHE);
         if (!raw) {
-            return true;
+            return { ...DEFAULT_ENABLED };
         }
-        const parsed = JSON.parse(raw) as { enabled?: unknown };
-        return typeof parsed?.enabled === 'boolean' ? parsed.enabled : true;
+        return parseMediaCacheSettings(JSON.parse(raw));
     } catch {
-        return true;
+        return { ...DEFAULT_ENABLED };
     }
 }
 
@@ -131,25 +157,25 @@ class MediaCacheService {
     private readonly warmingUrls = new Set<string>();
     /** 是否已在本会话执行过期清理 */
     private swept = false;
-    /** 开关：关闭后既不读缓存也不写缓存 */
-    private enabled = readEnabledFromMirror();
+    /** 开关：按类型分开，关闭后该类资源既不读缓存也不写缓存 */
+    private readonly enabledByKind: Record<MediaCacheKind, boolean> = readEnabledFromMirror();
 
     /** 当前环境是否支持 IndexedDB 缓存 */
     isAvailable(): boolean {
         return typeof indexedDB !== 'undefined';
     }
 
-    /** 缓存开关是否开启 */
-    isEnabled(): boolean {
-        return this.enabled;
+    /** 指定类型的缓存开关是否开启 */
+    isEnabled(kind: MediaCacheKind = DEFAULT_KIND): boolean {
+        return this.enabledByKind[kind];
     }
 
     /**
-     * 设置缓存开关。
+     * 设置指定类型的缓存开关。
      * 关闭时不清理已有缓存，只是不再读写，用户重新打开可立即复用。
      */
-    setEnabled(value: boolean): void {
-        this.enabled = value;
+    setEnabled(kind: MediaCacheKind, value: boolean): void {
+        this.enabledByKind[kind] = value;
     }
 
     /** 判断 URL 是否为可缓存的远程地址（仅 http/https） */
@@ -160,10 +186,11 @@ class MediaCacheService {
     /**
      * 从缓存解析资源地址
      * @param url 原始资源 URL
+     * @param kind 资源类型，决定用哪个开关与过期时间
      * @returns 命中且未过期时返回对象 URL，否则返回 null
      */
-    async resolve(url: string): Promise<string | null> {
-        if (!this.enabled || !this.isCacheableUrl(url)) {
+    async resolve(url: string, kind: MediaCacheKind = DEFAULT_KIND): Promise<string | null> {
+        if (!this.isEnabled(kind) || !this.isCacheableUrl(url)) {
             return null;
         }
         const cached = this.memoryCache.get(url);
@@ -199,7 +226,7 @@ class MediaCacheService {
      * @returns 命中缓存或抓取成功时返回对象地址，否则返回 null
      */
     async fetchAndCache(url: string, kind: MediaCacheKind = DEFAULT_KIND): Promise<string | null> {
-        if (!this.enabled || !this.isCacheableUrl(url)) {
+        if (!this.isEnabled(kind) || !this.isCacheableUrl(url)) {
             return null;
         }
         const inMemory = this.memoryCache.get(url);
@@ -259,7 +286,7 @@ class MediaCacheService {
      * @param kind 资源类型，默认图标
      */
     async warm(urls: Iterable<string | undefined>, kind: MediaCacheKind = DEFAULT_KIND): Promise<void> {
-        if (!this.enabled) {
+        if (!this.isEnabled(kind)) {
             return;
         }
 
@@ -381,7 +408,8 @@ class MediaCacheService {
         this.failedUrls.clear();
         this.warmingUrls.clear();
         this.swept = false;
-        this.enabled = true;
+        this.enabledByKind.icon = true;
+        this.enabledByKind.wallpaper = true;
         if (this.dbPromise) {
             this.dbPromise.then(db => db?.close()).catch(() => undefined);
             this.dbPromise = null;

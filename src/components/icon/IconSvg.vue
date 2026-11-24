@@ -267,7 +267,7 @@ watch(
         }
 
         void (async () => {
-            const cached = await mediaCacheService.resolve(source);
+            const cached = await mediaCacheService.resolve(source, 'icon');
             if (effectiveSource.value !== source) return;
             if (cached) {
                 resolvedSource.value = cached;

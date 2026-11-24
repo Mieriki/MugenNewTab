@@ -3,7 +3,7 @@
  * CacheSettings - 本地缓存设置
  *
  * 站点图标、搜索引擎图标与网络壁纸默认缓存在 IndexedDB（mediaCacheService）里，
- * 这里提供总开关、用量展示与一键清理。
+ * 这里提供图标 / 壁纸两个独立开关、用量展示与一键清理。
  */
 import { computed, onMounted } from 'vue';
 import BaseButton from '@/components/common/BaseButton.vue';
@@ -46,9 +46,14 @@ onMounted(() => {
     void cacheStore.init().then(() => cacheStore.refreshStats());
 });
 
-async function handleToggle(enabled: boolean): Promise<void> {
-    await cacheStore.setEnabled(enabled);
-    toast.success(enabled ? '已开启本地缓存' : '已关闭本地缓存');
+async function handleIconToggle(enabled: boolean): Promise<void> {
+    await cacheStore.setIconEnabled(enabled);
+    toast.success(enabled ? '已开启图标缓存' : '已关闭图标缓存');
+}
+
+async function handleWallpaperToggle(enabled: boolean): Promise<void> {
+    await cacheStore.setWallpaperEnabled(enabled);
+    toast.success(enabled ? '已开启壁纸缓存' : '已关闭壁纸缓存');
 }
 
 async function handleClear(): Promise<void> {
@@ -67,14 +72,27 @@ async function handleClear(): Promise<void> {
         description="图标缓存 7 天、壁纸缓存 30 天后自动过期，只缓存 http(s) 资源，本地图片与内置图标不占空间。"
     >
         <SettingsRow
-            label="启用本地缓存"
-            description="站点图标、搜索引擎图标与网络壁纸存到本地，不再每次打开都请求网络"
+            label="缓存图标"
+            description="站点图标与搜索引擎图标存到本地，不再每次打开都请求网络"
         >
             <template #actions>
                 <BaseSwitch
-                    :model-value="cacheStore.enabled"
-                    aria-label="启用本地缓存"
-                    @update:model-value="handleToggle"
+                    :model-value="cacheStore.iconEnabled"
+                    aria-label="缓存图标"
+                    @update:model-value="handleIconToggle"
+                />
+            </template>
+        </SettingsRow>
+
+        <SettingsRow
+            label="缓存网络壁纸"
+            description="随机 / 动态壁纸接口请关闭此项，否则会固定为首次抓到的图片"
+        >
+            <template #actions>
+                <BaseSwitch
+                    :model-value="cacheStore.wallpaperEnabled"
+                    aria-label="缓存网络壁纸"
+                    @update:model-value="handleWallpaperToggle"
                 />
             </template>
         </SettingsRow>
