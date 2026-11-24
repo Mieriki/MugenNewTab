@@ -609,7 +609,7 @@ function previewItem(item: UiItem): void {
         border-radius: var(--ui-radius-pill);
         cursor: pointer;
         color: var(--ui-danger);
-        background: var(--md-sys-color-error-container);
+        background: var(--ui-danger-soft);
         opacity: 0;
         @include ui-transition(opacity, var(--ui-dur-fast));
 

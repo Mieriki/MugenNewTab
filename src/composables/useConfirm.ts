@@ -170,7 +170,7 @@ const iconInfoStyle: CSSProperties = {
 };
 
 const iconDangerStyle: CSSProperties = {
-    backgroundColor: 'var(--md-sys-color-error-container, rgba(186, 26, 26, 0.12))',
+    backgroundColor: 'var(--ui-danger-soft)',
     color: 'var(--md-sys-color-error, #BA1A1A)',
 };
 

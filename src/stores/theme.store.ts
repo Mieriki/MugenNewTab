@@ -308,6 +308,13 @@ export const useThemeStore = defineStore('theme', () => {
         updateBodyClass(resolveMode(theme) === 'dark');
         if (typeof document !== 'undefined') {
             document.documentElement.setAttribute('data-theme', theme.id);
+
+            // 浏览器地址栏 / 标签栏配色跟着主题走。首屏由 theme-preload.js 设置，
+            // 运行时切换必须在这里同步，否则会停在切换前的颜色。
+            const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+            if (metaThemeColor) {
+                metaThemeColor.setAttribute('content', theme.colors['--md-sys-color-primary']);
+            }
         }
         selectedThemeId.value = theme.id;
 

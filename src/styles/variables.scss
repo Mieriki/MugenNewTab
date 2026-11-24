@@ -26,7 +26,6 @@
     --md-sys-color-on-background: #201A1A;
     --md-sys-color-outline: #E0D0D3;
     --md-sys-color-error: #BA1A1A;
-    --md-sys-color-error-container: #FFDAD6;
     --md-sys-color-success: #376B2F;
     --md-sys-color-inverse-surface: #201A1A;
     --md-sys-color-inverse-on-surface: #F3DDE2;
@@ -132,6 +131,17 @@
     --ui-accent-softer: color-mix(in srgb, var(--md-sys-color-primary) 7%, transparent);
     --ui-on-accent: var(--md-sys-color-on-primary);
 
+    // ---- 顶栏：浅色模式是主色渐变，深色模式换深色表面 ----
+    // 深色下主色是"提亮过"的浅色，直接铺在顶栏会变成一条刺眼的白带；
+    // 而主色本身还要当按钮/链接色用，不能为了顶栏把它压暗。
+    // 所以顶栏单独取一套：浅色走品牌主色，深色走表面色（具体值见下方 html.dark-mode）。
+    --ui-header-bg: linear-gradient(
+        135deg,
+        var(--md-sys-color-primary) 0%,
+        color-mix(in srgb, var(--md-sys-color-primary) 62%, var(--md-sys-color-secondary)) 100%
+    );
+    --ui-header-ink: var(--md-sys-color-on-primary);
+
     // ---- 语义状态色：错误 / 成功，供表单校验、危险操作与 Toast 使用 ----
     // 主题只提供 --md-sys-color-error / success，这里补上"淡底"档位，
     // 免得每个组件各写一遍 color-mix。
@@ -184,13 +194,22 @@
 // 深色模式变量覆盖
 //
 // 配色本身已经由「暗色变体」主题给出（html.dark-mode 只表示当前这套是暗的），
-// 所以这里不再覆盖任何颜色 token —— 只保留与主题无关的两项：
+// 所以这里不再覆盖任何颜色 token —— 只保留与主题无关的三项：
 // - --icon-filter：仍然走 <img> 的远程图标需要反色（内置图标改走 mask，用 currentColor）
 // - surface-rgb / background-rgb：首帧兜底值，theme.store 初始化后会按当前主题改成真实值
+// - --ui-header-bg / --ui-header-ink：唯一按明暗改写的颜色，且改的是"语义层"而非主题色，
+//   理由见 :root 里的注释——暗色主题的主色是提亮过的浅色，铺满顶栏会变成一条白带。
 html.dark-mode {
     --icon-filter: invert(1) brightness(2);
     --md-sys-color-surface-rgb: 30, 30, 30;
     --md-sys-color-background-rgb: 20, 20, 20;
+    // 顶栏改用表面色，比页面底色略提一档，避免与内容区糊成一片
+    --ui-header-bg: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--md-sys-color-surface) 92%, var(--md-sys-color-on-surface)) 0%,
+        var(--md-sys-color-surface) 100%
+    );
+    --ui-header-ink: var(--md-sys-color-on-surface);
 }
 
 // 响应式布局变量

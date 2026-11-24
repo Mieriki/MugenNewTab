@@ -108,21 +108,16 @@ function handleBrandDblclick(): void {
     left: 0;
     right: 0;
     height: var(--header-height);
-    // 顶栏保留主题主色渐变，但去掉"大色块"观感：渐变收窄明度差、底部换发丝描边，
-    // 让它可以当作品牌元素而不是一块压在上面的色板。
-    background: var(--md-sys-color-primary);
-    background: linear-gradient(
-        135deg,
-        var(--md-sys-color-primary) 0%,
-        color-mix(in srgb, var(--md-sys-color-primary) 62%, var(--md-sys-color-secondary)) 100%
-    );
-    color: var(--md-sys-color-on-primary);
+    // 顶栏配色走语义层：浅色是品牌主色渐变，深色换成深色表面（见 variables.scss），
+    // 这样暗色主题的主色（提亮过的浅色）不会把顶栏铺成一条白带。
+    background: var(--ui-header-bg);
+    color: var(--ui-header-ink);
     padding: 0 var(--ui-space-4);
     z-index: 1000;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 14%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--ui-header-ink) 14%, transparent);
 }
 
 .header-brand {
@@ -146,7 +141,7 @@ function handleBrandDblclick(): void {
 
 .collapse-toggle-btn {
     @include button-reset;
-    color: color-mix(in srgb, var(--md-sys-color-on-primary) 72%, transparent);
+    color: color-mix(in srgb, var(--ui-header-ink) 72%, transparent);
     width: 28px;
     height: 28px;
     border-radius: var(--ui-radius-sm);
@@ -158,21 +153,21 @@ function handleBrandDblclick(): void {
         background-color var(--ui-dur-fast) var(--ui-ease);
 
     &:hover {
-        color: var(--md-sys-color-on-primary);
-        background: color-mix(in srgb, var(--md-sys-color-on-primary) 14%, transparent);
+        color: var(--ui-header-ink);
+        background: color-mix(in srgb, var(--ui-header-ink) 14%, transparent);
     }
 }
 
 .brand-icon {
     width: 32px;
     height: 32px;
-    // 顶栏是渐变主色，容器色一律用 on-primary 的半透明层
-    background: color-mix(in srgb, var(--md-sys-color-on-primary) 15%, transparent);
+    // 顶栏是主题色/表面色，容器色一律用 header-ink 的半透明层
+    background: color-mix(in srgb, var(--ui-header-ink) 15%, transparent);
     border-radius: var(--ui-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ui-header-ink) 20%, transparent);
     overflow: hidden;
     flex-shrink: 0;
 
@@ -211,8 +206,8 @@ function handleBrandDblclick(): void {
     h1 {
         font-size: 15px;
         font-weight: 600;
-        // 顶栏是主色渐变，标题用配套的 on-primary
-        color: var(--md-sys-color-on-primary);
+        // 顶栏配色的前景色（浅色=on-primary，深色=on-surface）
+        color: var(--ui-header-ink);
         margin: 0;
         letter-spacing: var(--ui-track-tight);
         line-height: 1.2;
@@ -223,10 +218,10 @@ function handleBrandDblclick(): void {
     display: none;
     width: 32px;
     height: 32px;
-    background: color-mix(in srgb, var(--md-sys-color-on-primary) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--md-sys-color-on-primary) 20%, transparent);
+    background: color-mix(in srgb, var(--ui-header-ink) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ui-header-ink) 20%, transparent);
     border-radius: var(--ui-radius-sm);
-    color: var(--md-sys-color-on-primary);
+    color: var(--ui-header-ink);
     cursor: pointer;
     align-items: center;
     justify-content: center;
@@ -234,7 +229,7 @@ function handleBrandDblclick(): void {
     flex-shrink: 0;
 
     &:hover {
-        background: color-mix(in srgb, var(--md-sys-color-on-primary) 22%, transparent);
+        background: color-mix(in srgb, var(--ui-header-ink) 22%, transparent);
     }
 }
 

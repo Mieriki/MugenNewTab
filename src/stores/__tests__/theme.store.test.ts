@@ -126,6 +126,7 @@ describe('useThemeStore', () => {
         document.documentElement.removeAttribute('data-theme');
         document.documentElement.classList.remove('dark-mode');
         document.body.classList.remove('dark-mode');
+        document.querySelector('meta[name="theme-color"]')?.remove();
 
         vi.mocked(loadThemes).mockResolvedValue(mockThemes);
 
@@ -262,6 +263,25 @@ describe('useThemeStore', () => {
         expect(store.normalizeThemeId('midnight-rose')).toBe('midnight-rose-dark');
         expect(store.normalizeThemeId('不存在')).toBeNull();
         expect(store.normalizeThemeId(null)).toBeNull();
+    });
+
+    it('主题切换应同步 meta theme-color 到浏览器地址栏；无该标签时不应报错', async () => {
+        const store = useThemeStore();
+
+        // index.html 才有这个标签，jsdom 环境默认没有：先验证缺失时不崩
+        await store.initialize();
+        expect(document.querySelector('meta[name="theme-color"]')).toBeNull();
+
+        const meta = document.createElement('meta');
+        meta.setAttribute('name', 'theme-color');
+        meta.setAttribute('content', '#B14A6B');
+        document.head.appendChild(meta);
+
+        await store.setTheme('midnight-rose-dark');
+        expect(meta.getAttribute('content')).toBe('#8B0000');
+
+        await store.setTheme('material-rose-light');
+        expect(meta.getAttribute('content')).toBe('#B14A6B');
     });
 
     it('setTheme 应应用主题、持久化并更新 body 类', async () => {
